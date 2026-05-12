@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace IdentityService.WebAPI.Controllers;
 
 [ApiController]
-[Route("[controller]/[action]")]
+[Route("/api/identity/[controller]/[action]")]
 
 public class LoginController : ControllerBase
 {

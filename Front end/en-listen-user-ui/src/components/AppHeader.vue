@@ -3,7 +3,7 @@
     <div class="header-container">
       <div class="logo" @click="router.push('/')">
         <el-icon :size="28" color="#409eff"><Headset /></el-icon>
-        <span class="logo-text">英语听力</span>
+        <span class="logo-text">ListenEase</span>
       </div>
 
       <!-- 未登录 -->
@@ -97,7 +97,7 @@ const announcementVisible = ref(false)
 const noShowToday = ref(false)
 const announcements = [
   { date: '2026-05-05', title: '平台上线公告', content: '欢迎访问英语听力练习平台！本站正在持续更新中，如有问题请联系管理员。' },
-  { date: '2026-05-01', title: '功能更新', content: '新增音频上传功能，管理员可通过后台上传CET听力真题音频。' },
+  { date: '2026-05-01', title: '部分音频原文缺失', content: '音频原文正在加紧整理中，后续会上线，资源整理不易，敬请期待。' },
 ]
 
 // 检查是否应该自动弹出公告
@@ -168,7 +168,7 @@ const handleCommand = (command) => {
   position: sticky;
   top: 0;
   z-index: 100;
-  border-radius: 0 0 16px 16px;
+  border-radius: 0;
   box-shadow: 0 2px 12px rgba(0,0,0,0.06);
 }
 

@@ -1,96 +1,50 @@
-# ===== .NET / C# =====
-bin/
-obj/
-[Dd]ebug/
-[Rr]elease/
-x64/
-x86/
-[Aa][Rr][Mm]/
-[Aa][Rr][Mm]64/
-bld/
-[Ll]og/
-[Ll]ogs/
+# =.NET =
+**/bin/
+**/obj/
+**/publish/
+*.dll
+*.pdb
+*.cache
 *.user
-*.rsuser
 *.suo
-*.userosscache
-*.sln.docstates
-*.userprefs
 
-# Build artifacts
-[Dd]ebugPublic/
-[Tt]est[Rr]esult*/
-[Bb]uild[Ll]og.*
+# =Node =
+**/node_modules/
+**/package-lock.json
+**/dist/
+**/build/
 
-# NuGet
-*.nupkg
-*.snupkg
-.nuget/
-packages/
-project.lock.json
-project.fragment.lock.json
-artifacts/
-
-# ===== IDE =====
-.vs/
-.vscode/
+# =IDE =
 .idea/
-*.DotSettings
+.vs/
+*.docstates
 *.DotSettings.user
 
-# ===== 敏感配置 =====
+# =日志 =
+**/*.log
+**/logs/
+
+# =数据库 =
+**/*.mdf
+**/*.ldf
+**/*.sqlite
+
+# =敏感配置 =
+appsettings.Development.json
+appsettings.Staging.json
+appsettings.Production.json
+**/appsettings.Secrets.json
+**/appsettings.Local.json
 .env
 .env.*
-appsettings.*.json
-!appsettings.json
+!.env.example
 
-# ===== 数据库 =====
-*.mdf
-*.ldf
-*.bak
+# =证书文件（运行时生成）=
+deploy/certbot/
 
-# ===== 音频 / 大文件 =====
-*.mp3
-*.wav
-*.m4a
-*.ogg
-*.mp4
-*.avi
-
-# ===== 日志 =====
-*.log
-logs/
-
-# ===== OS =====
+# =OS =
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
 
-# ===== 部署产物（单独构建）=====
-deploy/
-public/
-
-# ===== Workbuddy（仅本地开发）=====
+# =WorkBuddy =
 .workbuddy/
-
-# ===== Front-end 依赖 =====
-node_modules/
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-
-# ===== SQL / 脚本（可选保留查询脚本）=====
-*.sql
-!check_album.sql
-
-# ===== PowerShell 脚本（保留工具脚本）=====
-*.ps1
-!check_*.ps1
-!delete_*.ps1
-!fix_*.ps1
-!list_*.ps1
-!query_*.ps1

@@ -4,11 +4,13 @@
     <div class="main-content">
       <router-view />
     </div>
+    <AppFooter />
   </div>
 </template>
 
 <script setup>
 import AppHeader from './components/AppHeader.vue'
+import AppFooter from './components/AppFooter.vue'
 </script>
 
 <style>
@@ -60,13 +62,20 @@ body {
   background: rgba(0, 0, 0, 0.25);
 }
 
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 .main-content {
+  flex: 1;
   max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
   padding: 0 0 32px;
   background: var(--bg-content);
-  min-height: calc(100vh - 60px);
-  border-radius: 0 0 20px 20px;
+  border-radius: 0;
 }
 
 @media (max-width: 768px) {

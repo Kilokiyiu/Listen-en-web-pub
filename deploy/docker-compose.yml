@@ -1,0 +1,106 @@
+services:
+  # SQL Server 数据库
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: listen_sqlserver
+    environment:
+      SA_PASSWORD: "${SA_PASSWORD}"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"${SA_PASSWORD}\" -Q \"SELECT 1\" -No || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  # IdentityService 认证服务
+  identity-service:
+    build:
+      context: ..
+      dockerfile: deploy/IdentityService.WebAPI/Dockerfile
+    container_name: listen_identity
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DatabaseConnStr=Server=sqlserver;Database=Listen_En_Web_identity;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True
+      - JWT_KEY=${JWT_KEY}
+      - CorsOrigins__0=https://listenease.online
+      - CorsOrigins__1=https://www.listenease.online
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    restart: always
+
+  # ListenService 听力服务
+  listen-service:
+    build:
+      context: ..
+      dockerfile: deploy/ListenService.WebAPI/Dockerfile
+    container_name: listen_service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DatabaseConnStr=Server=sqlserver;Database=Listen_En_Web_listen;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True
+      - JWT_KEY=${JWT_KEY}
+      - CorsOrigins__0=https://listenease.online
+      - CorsOrigins__1=https://www.listenease.online
+    volumes:
+      - ./audios:/app/wwwroot/audios  # 音频文件挂载（本地目录 deploy/audios/）
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    restart: always
+
+  # ArticleService 文章服务
+  article-service:
+    build:
+      context: ..
+      dockerfile: deploy/ArticleService.WebAPI/Dockerfile
+    container_name: listen_article
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DatabaseConnStr=Server=sqlserver;Database=Listen_En_Web_article;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True
+      - JWT_KEY=${JWT_KEY}
+      - CorsOrigins__0=https://listenease.online
+      - CorsOrigins__1=https://www.listenease.online
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    restart: always
+
+  # Certbot - Let's Encrypt 证书自动申请和续期
+  certbot:
+    image: certbot/certbot
+    container_name: listen_certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $$; done;'"
+    restart: unless-stopped
+
+  # Nginx 反向代理 + 静态文件服务
+  nginx:
+    image: nginx:stable
+    container_name: listen_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./user-ui:/usr/share/nginx/user-ui:ro
+      - ./admin-ui:/usr/share/nginx/admin-ui:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    depends_on:
+      - identity-service
+      - listen-service
+      - article-service
+    restart: always
+
+volumes:
+  sqlserver_data:

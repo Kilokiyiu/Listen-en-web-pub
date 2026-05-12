@@ -41,7 +41,9 @@
           <span>英文原文</span>
         </div>
         <div class="article-text english-text">
-          {{ article.englishText }}
+          <p v-for="(para, idx) in englishParagraphs" :key="'en-'+idx" class="article-paragraph">
+            {{ para }}
+          </p>
         </div>
       </div>
 
@@ -60,7 +62,9 @@
           </el-button>
         </div>
         <div v-show="showTranslation" class="article-text chinese-text">
-          {{ article.chineseText }}
+          <p v-for="(para, idx) in chineseParagraphs" :key="'cn-'+idx" class="article-paragraph">
+            {{ para }}
+          </p>
         </div>
         <div v-show="!showTranslation" class="translation-hint">
           点击"显示翻译"查看中文翻译
@@ -101,6 +105,17 @@ const route = useRoute()
 const loading = ref(false)
 const article = ref(null)
 const showTranslation = ref(false)
+
+// 将文本按换行分割为段落数组
+const englishParagraphs = computed(() => {
+  if (!article.value?.englishText) return []
+  return article.value.englishText.split('\n').filter(p => p.trim() !== '')
+})
+
+const chineseParagraphs = computed(() => {
+  if (!article.value?.chineseText) return []
+  return article.value.chineseText.split('\n').filter(p => p.trim() !== '')
+})
 
 // 当前日期（从路由参数或今天）
 const currentDate = computed(() => {
@@ -295,6 +310,11 @@ watch(() => route.query.date, () => {
 .article-text {
   line-height: 1.8;
   font-size: 15px;
+}
+
+.article-paragraph {
+  text-indent: 2em;       /* 每段首行缩进两个字符 */
+  margin-bottom: 0.8em;
 }
 
 .english-text {

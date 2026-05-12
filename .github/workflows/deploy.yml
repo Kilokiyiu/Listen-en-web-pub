@@ -1,0 +1,127 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Build user-ui
+      working-directory: Front end/en-listen-user-ui
+      env:
+        WORKSPACE: ${{ github.workspace }}
+      run: |
+        echo "Building user-ui..."
+        npm install
+        npm run build
+        echo "Build done, listing dist:"
+        ls -la dist/
+        cd dist && tar -czf "$WORKSPACE/user-ui-dist.tar.gz" . && cd ..
+        echo "Tarball created:"
+        ls -la "$WORKSPACE/user-ui-dist.tar.gz"
+
+    - name: Build admin-ui
+      working-directory: Front end/en-listen-admin-ui
+      env:
+        WORKSPACE: ${{ github.workspace }}
+      run: |
+        echo "Building admin-ui..."
+        npm install
+        npm run build
+        echo "Build done, listing dist:"
+        ls -la dist/
+        cd dist && tar -czf "$WORKSPACE/admin-ui-dist.tar.gz" . && cd ..
+        echo "Tarball created:"
+        ls -la "$WORKSPACE/admin-ui-dist.tar.gz"
+
+    - name: Sync repository to server
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        command_timeout: 2m
+        script: |
+          set -e
+          cd /opt/Listen-en-web-production
+          
+          # 强制同步到远程最新状态，丢弃所有本地修改
+          echo "Syncing with remote repository..."
+          git fetch origin main
+          git reset --hard origin/main
+          # 清理未跟踪文件，忽略权限错误（如 Docker 生成的 certbot 文件）
+          git clean -fd || echo "Warning: Some files could not be cleaned due to permissions"
+          
+          echo "Git sync completed successfully"
+
+    - name: Upload user-ui tar
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: "user-ui-dist.tar.gz"
+        target: "/opt/Listen-en-web-production/deploy/"
+
+    - name: Upload admin-ui tar
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: "admin-ui-dist.tar.gz"
+        target: "/opt/Listen-en-web-production/deploy/"
+
+    - name: Deploy containers via SSH
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        command_timeout: 10m
+        script: |
+          set -e
+          cd /opt/Listen-en-web-production/deploy
+          
+          echo "Extracting frontend artifacts..."
+          mkdir -p user-ui admin-ui
+          tar -xzf user-ui-dist.tar.gz -C user-ui/
+          tar -xzf admin-ui-dist.tar.gz -C admin-ui/
+          rm -f user-ui-dist.tar.gz admin-ui-dist.tar.gz
+          
+          echo "Starting Docker containers..."
+          docker-compose down --remove-orphans || true
+          docker-compose up -d --remove-orphans
+          
+          echo "Waiting for nginx to be ready (max 60s)..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost/ >/dev/null 2>&1; then
+              echo "Site is ready after ${i}x2 seconds"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "WARNING: Timeout waiting for site, but continuing..."
+            fi
+            sleep 2
+          done
+          
+          echo "Container status:"
+          docker-compose ps
+          
+          echo "Deploy completed at $(date)"
+          exit 0

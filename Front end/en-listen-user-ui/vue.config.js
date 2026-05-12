@@ -10,8 +10,8 @@ module.exports = defineConfig({
       },
       '/api/identity': {
         target: 'http://localhost:5263',
-        changeOrigin: true,
-        pathRewrite: { '^/api/identity': '' }
+        changeOrigin: true
+        // 不重写路径，保持 /api/identity 前缀
       },
       '/api/article': {
         target: 'http://localhost:5000',

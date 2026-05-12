@@ -21,7 +21,7 @@ builder.Services.AddCors(options =>
 {
     var corsOrigins = builder.Configuration.GetSection("CorsOrigins").Get<string[]>() ?? new[]
     {
-        "http://localhost:8080", 
+        "http://localhost:8080",
         "http://localhost:5173",
         "http://localhost:5000"
     };
@@ -38,7 +38,6 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -54,5 +53,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// 自动执行 EF Core 数据库迁移
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ArticleDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
 
 app.Run();

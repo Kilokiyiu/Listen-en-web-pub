@@ -14,7 +14,7 @@ export function loginByUserName(data){
 
 //注册用户
 export function register(data) {
-    return identityRequest.post('/Login/RegisterAsync', data)
+    return identityRequest.post('/Login/Register', data)
 }
 
 //获取用户当前信息

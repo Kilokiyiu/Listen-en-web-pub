@@ -16,7 +16,7 @@ builder.Services.AddCors(options =>
 {
     var corsOrigins = builder.Configuration.GetSection("CorsOrigins").Get<string[]>() ?? new[]
     {
-        "http://localhost:8080", 
+        "http://localhost:8080",
         "http://localhost:5173",
         "http://localhost:5000"
     };
@@ -57,9 +57,7 @@ idBuilder.AddEntityFrameworkStores<IdentityDbContext>()
 
 builder.Services.ServiceInit();
 
-
 var app = builder.Build();
-
 
 if (app.Environment.IsDevelopment())
 {

@@ -26,7 +26,7 @@
     <main class="main-content">
       <!-- 首页公告 -->
       <div class="home-announcement">
-        <span class="home-announcement-text">🔔 欢迎访问英语听力练习平台！本站正在持续更新中，如有问题请联系管理员。</span>
+        <span class="home-announcement-text">🔔 欢迎访问ListenEase！本站正在持续更新中，如有问题请联系管理员。<br>本站的核心目标是为您提供优质的学习资源，如果您有任何资源想要分享，欢迎您以任何方式发送到我的邮箱！</span> 
       </div>
 
       <!-- 搜索区域 -->
@@ -35,7 +35,7 @@
         <p class="subtitle">{{ currentCategory.subtitle }}</p>
         <el-input
           v-model="searchWord"
-          placeholder="搜索真题、模拟题..."
+          placeholder="搜索真题、模拟题...（目前搜索功能暂不可用，敬请期待）"
           size="large"
           class="search-input"
           @keyup.enter="doSearch"
