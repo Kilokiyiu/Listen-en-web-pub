@@ -131,7 +131,7 @@
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { loginByEmail, loginByUserName } from "@/api/Auth"
+import { loginByEmail, loginByUserName, getUserInfo } from "@/api/Auth"
 import { register } from '@/api/Auth'
 import { User, Lock, Message } from '@element-plus/icons-vue'
 
@@ -228,6 +228,17 @@ const handleLogin = async () => {
     // 保存登录状态
     localStorage.setItem('token', res.token)
     localStorage.setItem('username', res.userName)
+
+    // 获取用户信息（包含 userId）
+    try {
+      const userInfo = await getUserInfo()
+      if (userInfo && userInfo.id) {
+        localStorage.setItem('userId', userInfo.id)
+      }
+    } catch (e) {
+      console.error('获取用户信息失败', e)
+    }
+
     ElMessage.success('登录成功')
     router.push('/')
   } catch (err) {

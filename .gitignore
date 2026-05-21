@@ -19,6 +19,8 @@
 .vs/
 *.docstates
 *.DotSettings.user
+*.lscache
+*.csproj.lscache
 
 # =日志 =
 **/*.log
@@ -38,9 +40,6 @@ appsettings.Production.json
 .env
 .env.*
 !.env.example
-
-# =证书文件（运行时生成）=
-deploy/certbot/
 
 # =OS =
 .DS_Store

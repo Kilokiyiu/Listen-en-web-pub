@@ -5,12 +5,15 @@
       <router-view />
     </div>
     <AppFooter />
+    <!-- 全局浮动搜索按钮 -->
+    <WordSearchFloat />
   </div>
 </template>
 
 <script setup>
 import AppHeader from './components/AppHeader.vue'
 import AppFooter from './components/AppFooter.vue'
+import WordSearchFloat from './components/WordSearchFloat.vue'
 </script>
 
 <style>

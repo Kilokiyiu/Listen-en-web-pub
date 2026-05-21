@@ -29,6 +29,8 @@
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+              <el-dropdown-item command="wordRoots">词根学习</el-dropdown-item>
+              <el-dropdown-item command="myWords">我的单词本</el-dropdown-item>
               <el-dropdown-item command="history">学习记录</el-dropdown-item>
               <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
             </el-dropdown-menu>
@@ -96,8 +98,9 @@ const route = useRoute()
 const announcementVisible = ref(false)
 const noShowToday = ref(false)
 const announcements = [
-  { date: '2026-05-05', title: '平台上线公告', content: '欢迎访问英语听力练习平台！本站正在持续更新中，如有问题请联系管理员。' },
-  { date: '2026-05-01', title: '部分音频原文缺失', content: '音频原文正在加紧整理中，后续会上线，资源整理不易，敬请期待。' },
+  { date: '2026-05-13', title: '平台上线公告', content: 'ListenEase 英语听力学习平台正式上线！提供四六级真题听力、BBC外刊阅读、单词即点即查与智能复习功能。' },
+  { date: '2026-05-13', title: '部分音频原文缺失', content: '音频原文正在加紧整理中，后续会上线，资源整理不易，敬请期待。' },
+  { date: '2026-05-13', title: '后续更新计划', content: '开放更多的学习功能' },
 ]
 
 // 检查是否应该自动弹出公告
@@ -136,7 +139,6 @@ const checkLogin = () => {
 
 onMounted(() => {
   checkLogin()
-  checkAutoShowAnnouncement()
 })
 
 // 每次路由变化都重新检查
@@ -147,6 +149,7 @@ const handleCommand = (command) => {
   if (command === 'logout') {
     localStorage.removeItem('token')
     localStorage.removeItem('username')
+    localStorage.removeItem('userId')
     isLoggedIn.value = false
     username.value = ''
     ElMessage.success('已退出登录')
@@ -155,6 +158,10 @@ const handleCommand = (command) => {
     router.push('/profile')
   } else if (command === 'history') {
     router.push('/history')
+  } else if (command === 'wordRoots') {
+    router.push('/word-roots')
+  } else if (command === 'myWords') {
+    router.push('/my-words')
   }
 }
 </script>

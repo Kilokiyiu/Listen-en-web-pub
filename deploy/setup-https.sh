@@ -5,7 +5,7 @@
 set -e
 
 DOMAIN="listenease.online"
-EMAIL="your-email@example.com"  # 修改为你的邮箱（用于 Let's Encrypt 证书通知）
+EMAIL="your-email@example.com"  # 修改为你的邮箱
 DEPLOY_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "========================================"

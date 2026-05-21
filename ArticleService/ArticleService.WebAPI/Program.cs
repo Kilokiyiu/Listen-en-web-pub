@@ -5,6 +5,7 @@ using MyJWT;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddHttpClient();  // 注册 HttpClientFactory
 
 builder.Services.AddDbContext<ArticleDbContext>(options =>
 {

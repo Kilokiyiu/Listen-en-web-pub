@@ -93,7 +93,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getDailyArticle, markArticleRead, toggleFavorite as toggleFavoriteApi } from '../api/DailyArticle.js'
@@ -211,7 +211,6 @@ onMounted(() => {
 })
 
 // 监听路由变化，重新加载
-import { watch } from 'vue'
 watch(() => route.query.date, () => {
   loadArticle()
 })

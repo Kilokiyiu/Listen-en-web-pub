@@ -20,7 +20,7 @@
             <h4>开源项目</h4>
             <a href="https://github.com/Kilokiyiu/Listen-en-web-pub" target="_blank" rel="noopener noreferrer">
               <el-icon><Link /></el-icon>
-              源代码
+              源代码(定期更新)
             </a>
             <a href="https://github.com/Kilokiyiu/Listen-en-web-pub" target="_blank" rel="noopener noreferrer">
               <el-icon><Link /></el-icon>

@@ -1,0 +1,32 @@
+# Certbot - 运行时挂载的目录，构建时不需要
+deploy/certbot/
+deploy/certbot/conf/
+deploy/certbot/www/
+
+# Docker 相关文件不需要参与构建
+deploy/*.yml
+deploy/Dockerfile*
+deploy/docker-compose*
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 日志和临时文件
+*.log
+*.tmp
+*.temp
+
+# 文档（构建不需要）
+*.md
+docs/
+
+# 前端文件（如果有独立的构建流程）
+Front\ end/

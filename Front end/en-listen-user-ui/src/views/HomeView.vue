@@ -26,26 +26,43 @@
     <main class="main-content">
       <!-- 首页公告 -->
       <div class="home-announcement">
-        <span class="home-announcement-text">🔔 欢迎访问ListenEase！本站正在持续更新中，如有问题请联系管理员。<br>本站的核心目标是为您提供优质的学习资源，如果您有任何资源想要分享，欢迎您以任何方式发送到我的邮箱！</span> 
+        <span class="home-announcement-text">🎧 ListenEase — 专注英语听力学习，提供四六级真题听力、BBC外刊阅读、智能单词复习与每日一句。<br>本站接入BBC新闻资源，所有听力素材均配备原文，即点即查，助你高效提升英语听力水平。</span>
+      </div>
+
+      <!-- 每日一句卡片 -->
+      <div class="daily-quote-card" v-if="dailyQuote">
+        <div class="quote-card-inner">
+          <div class="quote-card-header">
+            <span class="quote-card-label">每日一句</span>
+            <span class="quote-card-date">{{ dailyQuote.date }}</span>
+          </div>
+          <div class="quote-card-body">
+            <el-icon class="quote-card-icon"><Quote /></el-icon>
+            <div class="quote-card-text">
+              <p class="quote-card-en">{{ dailyQuote.content }}</p>
+              <p class="quote-card-cn">{{ dailyQuote.note }}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 搜索区域 -->
       <div class="search-section">
-        <h1>{{ currentCategory.title }}</h1>
-        <p class="subtitle">{{ currentCategory.subtitle }}</p>
         <el-input
           v-model="searchWord"
-          placeholder="搜索真题、模拟题...（目前搜索功能暂不可用，敬请期待）"
+          placeholder="输入英语单词，查询释义、例句、同根词..."
           size="large"
-          class="search-input"
+          class="search-input word-search"
           @keyup.enter="doSearch"
         >
           <template #append>
-            <el-button type="primary" @click="doSearch">
+            <el-button type="primary" @click="doSearch" :loading="searchLoading">
               <el-icon><Search /></el-icon>
             </el-button>
           </template>
         </el-input>
+        <h2 class="category-heading">{{ currentCategory.title }}</h2>
+        <p class="subtitle">{{ currentCategory.subtitle }}</p>
       </div>
 
       <!-- 试卷列表 -->
@@ -92,41 +109,205 @@
             </el-card>
           </el-col>
           <el-col :xs="12" :sm="8" :md="6">
-            <el-card shadow="hover" class="quick-card">
+            <el-card shadow="hover" class="quick-card" @click="goWordRoots">
               <el-icon :size="32" color="#67c23a"><Collection /></el-icon>
-              <div class="quick-title">错题回顾(开发中)</div>
-              <div class="quick-desc">复习做错的题目</div>
+              <div class="quick-title">词根学习</div>
+              <div class="quick-desc">提高你的词汇量</div>
             </el-card>
           </el-col>
           <el-col :xs="12" :sm="8" :md="6">
             <el-card shadow="hover" class="quick-card">
               <el-icon :size="32" color="#e6a23c"><Trophy /></el-icon>
-              <div class="quick-title">模拟考试(开发中)</div>
-              <div class="quick-desc">全真模拟，检验水平</div>
+              <div class="quick-title">考研英语(开发中)</div>
+              <div class="quick-desc">进一步提高水平</div>
             </el-card>
           </el-col>
           <el-col :xs="12" :sm="8" :md="6">
-            <el-card shadow="hover" class="quick-card">
-              <el-icon :size="32" color="#f56c6c"><TrendCharts /></el-icon>
-              <div class="quick-title">学习统计(开发中)</div>
-              <div class="quick-desc">查看学习进度</div>
+            <el-card shadow="hover" class="quick-card" @click="goBBCNews">
+              <el-icon :size="32" color="#f56c6c"><Document /></el-icon>
+              <div class="quick-title">BBC外刊</div>
+              <div class="quick-desc">精选BBC新闻阅读</div>
             </el-card>
           </el-col>
         </el-row>
       </div>
     </main>
+
+    <!-- 单词详情弹窗 -->
+    <el-dialog
+      v-model="wordDialogVisible"
+      :title="wordDetail?.word || '单词详情'"
+      width="90%"
+      :max-width="700"
+      class="word-detail-dialog"
+      :style="{ maxWidth: '700px' }"
+    >
+      <div v-if="wordDetail" class="word-detail-content">
+        <!-- 音标和发音 -->
+        <div class="phonetic-section">
+          <div class="phonetic-item" v-if="wordDetail.ukphone">
+            <span class="phonetic-label">英</span>
+            <span class="phonetic-text">/{{ wordDetail.ukphone }}/</span>
+            <el-button
+              v-if="wordDetail.ukspeech"
+              link
+              type="primary"
+              @click="playAudio(wordDetail.ukspeech)"
+            >
+              <el-icon><VideoPlay /></el-icon>
+            </el-button>
+          </div>
+          <div class="phonetic-item" v-if="wordDetail.usphone">
+            <span class="phonetic-label">美</span>
+            <span class="phonetic-text">/{{ wordDetail.usphone }}/</span>
+            <el-button
+              v-if="wordDetail.usspeech"
+              link
+              type="primary"
+              @click="playAudio(wordDetail.usspeech)"
+            >
+              <el-icon><VideoPlay /></el-icon>
+            </el-button>
+          </div>
+        </div>
+
+        <!-- 翻译 -->
+        <div class="detail-section" v-if="wordDetail.translations?.length">
+          <h4><el-icon><Collection /></el-icon> 释义</h4>
+          <div class="translation-list">
+            <el-tag
+              v-for="(t, i) in wordDetail.translations"
+              :key="i"
+              class="translation-tag"
+            >
+              {{ t.pos }}. {{ t.tran_cn }}
+            </el-tag>
+          </div>
+        </div>
+
+        <!-- 例句 -->
+        <div class="detail-section" v-if="wordDetail.sentences?.length">
+          <h4><el-icon><Document /></el-icon> 例句</h4>
+          <div
+            v-for="(s, i) in wordDetail.sentences"
+            :key="i"
+            class="sentence-item"
+          >
+            <p class="sentence-en">{{ s.s_content }}</p>
+            <p class="sentence-cn">{{ s.s_cn }}</p>
+          </div>
+        </div>
+
+        <!-- 短语 -->
+        <div class="detail-section" v-if="wordDetail.phrases?.length">
+          <h4><el-icon><Link /></el-icon> 短语</h4>
+          <div class="phrase-list">
+            <el-tag
+              v-for="(p, i) in wordDetail.phrases.slice(0, 10)"
+              :key="i"
+              type="info"
+              class="phrase-tag"
+            >
+              {{ p.p_content }}
+            </el-tag>
+          </div>
+        </div>
+
+        <!-- 同根词 -->
+        <div class="detail-section" v-if="wordDetail.relWords?.length">
+          <h4><el-icon><Connection /></el-icon> 同根词</h4>
+          <div
+            v-for="(group, i) in wordDetail.relWords"
+            :key="i"
+            class="relword-group"
+          >
+            <el-tag size="small" type="warning">{{ group.Pos }}</el-tag>
+            <span
+              v-for="(w, j) in group.Hwds"
+              :key="j"
+              class="relword-item"
+            >
+              {{ w.hwd }}
+              <span class="relword-tran">{{ w.tran }}</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- 近义词 -->
+        <div class="detail-section" v-if="wordDetail.synonyms?.length">
+          <h4><el-icon><Share /></el-icon> 近义词</h4>
+          <div
+            v-for="(group, i) in wordDetail.synonyms"
+            :key="i"
+            class="synonym-group"
+          >
+            <el-tag size="small" type="success">{{ group.pos }}</el-tag>
+            <span
+              v-for="(w, j) in group.Hwds"
+              :key="j"
+              class="synonym-item"
+            >
+              {{ w.word }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <el-button @click="wordDialogVisible = false">关闭</el-button>
+        <el-button
+          type="primary"
+          @click="addToWordBook"
+          :loading="addingWord"
+          :disabled="!isLoggedIn"
+        >
+          <el-icon><Plus /></el-icon>
+          {{ isLoggedIn ? '加入单词本' : '请先登录' }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { getCategories, getAlbumsByCategoryId } from '../api/Listen.js'
+import { queryEnglishWord, addUserWord, getDailyEnglish } from '../api/Word.js'
 
 const router = useRouter()
 const searchWord = ref('')
+const searchLoading = ref(false)
+const wordDialogVisible = ref(false)
+const wordDetail = ref(null)
+const addingWord = ref(false)
+const isLoggedIn = computed(() => !!localStorage.getItem('token'))
+
+// 每日一句
+const dailyQuote = ref(null)
+const loadingQuote = ref(false)
+
+const loadDailyQuote = async () => {
+  loadingQuote.value = true
+  try {
+    const res = await getDailyEnglish()
+    if (res.code === 200 && res.data) {
+      dailyQuote.value = res.data
+    }
+  } catch (e) {
+    console.error('获取每日一句失败', e)
+  } finally {
+    loadingQuote.value = false
+  }
+}
+
+const refreshDailyQuote = () => {
+  loadDailyQuote()
+}
 
 const activeCategory = ref('')
+const albumsLoading = ref(false)
 
 // 从后端获取的分类列表
 const categories = ref([])
@@ -148,7 +329,7 @@ const currentCategory = computed(() => {
 const currentList = computed(() => albumList.value.slice(0, 8))
 
 // 加载分类数据
-const loadCategories = async () => {
+const loadCategories = async (retryCount = 0) => {
   try {
     const data = await getCategories()
     categories.value = data || []
@@ -157,15 +338,21 @@ const loadCategories = async () => {
     }
   } catch (e) {
     console.error('获取分类失败', e)
+    // 重试最多3次
+    if (retryCount < 3) {
+      setTimeout(() => loadCategories(retryCount + 1), 1000)
+    }
   }
 }
 
 // 加载试卷数据
-const loadAlbums = async () => {
+const loadAlbums = async (retryCount = 0) => {
   if (!activeCategory.value) return
   const cat = categories.value.find(c => c.code === activeCategory.value)
   if (!cat) return
+
   try {
+    albumsLoading.value = true
     const data = await getAlbumsByCategoryId(cat.id)
     albumList.value = (data || []).map(a => ({
       id: a.id,
@@ -176,25 +363,101 @@ const loadAlbums = async () => {
   } catch (e) {
     console.error('获取试卷失败', e)
     albumList.value = []
+    // 重试最多3次
+    if (retryCount < 3) {
+      setTimeout(() => loadAlbums(retryCount + 1), 1000)
+    }
+  } finally {
+    albumsLoading.value = false
   }
 }
 
 // 切换分类时重新加载试卷
-watch(activeCategory, () => {
-  loadAlbums()
+watch(activeCategory, (newVal) => {
+  if (newVal && categories.value.length > 0) {
+    loadAlbums()
+  }
 })
 
-onMounted(() => {
-  loadCategories()
+onMounted(async () => {
+  await loadCategories()
+  // 确保分类加载完成后再加载试卷
+  await nextTick()
+  if (activeCategory.value) {
+    loadAlbums()
+  }
+  // 加载每日一句
+  loadDailyQuote()
 })
 
 const handleSelect = (index) => {
   activeCategory.value = index
 }
 
-const doSearch = () => {
-  if (searchWord.value.trim()) {
-    console.log('搜索：', searchWord.value)
+const doSearch = async () => {
+  const word = searchWord.value.trim()
+  if (!word) return
+
+  // 只允许输入英文单词
+  if (!/^[a-zA-Z\s-]+$/.test(word)) {
+    ElMessage.warning('请输入有效的英语单词')
+    return
+  }
+
+  searchLoading.value = true
+  try {
+    const res = await queryEnglishWord(word)
+    if (res.code === 200 && res.data) {
+      wordDetail.value = res.data
+      wordDialogVisible.value = true
+    } else {
+      ElMessage.warning('未找到该单词的详细信息')
+    }
+  } catch (e) {
+    ElMessage.error('查询失败，请稍后重试')
+  } finally {
+    searchLoading.value = false
+  }
+}
+
+const playAudio = (url) => {
+  const audio = new Audio(url)
+  audio.play().catch(() => {
+    ElMessage.warning('音频播放失败')
+  })
+}
+
+const addToWordBook = async () => {
+  if (!isLoggedIn.value) {
+    ElMessage.warning('请先登录')
+    router.push({ name: 'login' })
+    return
+  }
+
+  const word = wordDetail.value.word
+  // 提取释义作为 definition
+  const definition = wordDetail.value.translations
+    ?.map(t => `${t.pos}. ${t.tran_cn}`)
+    .join('; ') || ''
+
+  // 提取第一个例句
+  const example = wordDetail.value.sentences?.[0]
+    ? `${wordDetail.value.sentences[0].s_content}\n${wordDetail.value.sentences[0].s_cn}`
+    : ''
+
+  addingWord.value = true
+  try {
+    await addUserWord({ word, definition, example })
+    ElMessage.success(`"${word}" 已加入单词本`)
+    wordDialogVisible.value = false
+  } catch (e) {
+    if (e.response?.status === 409) {
+      ElMessage.warning('该单词已在单词本中')
+    } else {
+      ElMessage.error('添加失败，请稍后重试')
+    }
+  } finally {
+    addingWord.value = false
   }
 }
 
@@ -204,6 +467,14 @@ const goAlbum = (albumId) => {
 
 const goDailyArticle = () => {
   router.push({ name: 'dailyArticle' })
+}
+
+const goWordRoots = () => {
+  router.push({ name: 'wordRoots' })
+}
+
+const goBBCNews = () => {
+  router.push({ name: 'bbcNews' })
 }
 
 const goExamList = () => {
@@ -310,33 +581,104 @@ const goExamList = () => {
   box-sizing: border-box;
 }
 
-.search-section {
-  text-align: center;
-  padding: 48px 20px 40px;
-  position: relative;
-  background: linear-gradient(180deg, #f8faff 0%, var(--bg-content) 100%);
+/* 每日一句卡片 */
+.daily-quote-card {
+  max-width: 800px;
+  margin: 0 auto 24px;
 }
 
-.search-section h1 {
-  font-size: 38px;
+.quote-card-inner {
+  background: var(--bg-card, #fff);
+  border: 1px solid var(--border-glass, #e2e2e2);
+  border-radius: 12px;
+  padding: 20px 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.3s ease;
+}
+
+.daily-quote-card:hover .quote-card-inner {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.quote-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.quote-card-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-blue);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.quote-card-date {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.quote-card-body {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.quote-card-icon {
+  font-size: 22px;
+  color: var(--accent-blue);
+  margin-top: 2px;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.quote-card-text {
+  flex: 1;
+}
+
+.quote-card-en {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin-bottom: 8px;
+  font-style: italic;
+}
+
+.quote-card-cn {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.search-section {
+  text-align: center;
+  padding: 24px 20px 40px;
+}
+
+.search-section .category-heading {
+  font-size: 34px;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 12px;
-  background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-blue) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  margin-bottom: 10px;
+  margin-top: 24px;
 }
 
 .subtitle {
   color: var(--text-secondary);
-  margin-bottom: 28px;
+  margin-bottom: 0;
   font-size: 16px;
 }
 
 .search-input {
   max-width: 600px;
   margin: 0 auto;
+}
+
+.word-search {
+  margin-bottom: 28px;
 }
 
 .search-input :deep(.el-input__wrapper) {
@@ -377,103 +719,79 @@ const goExamList = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #eef1f6;
+  margin-bottom: 20px;
 }
 
 .section-header h2 {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 20px;
+  font-size: 18px;
+  font-weight: 600;
   color: var(--text-primary);
-  position: relative;
-  padding-left: 14px;
-}
-
-.section-header h2::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 3px;
-  bottom: 3px;
-  width: 4px;
-  border-radius: 2px;
-  background: linear-gradient(180deg, var(--accent-blue), var(--accent-cyan));
 }
 
 .section-header :deep(.el-link) {
   color: var(--accent-blue);
+  font-size: 14px;
 }
 
 /* 试卷卡片 */
 .exam-card {
   margin-bottom: 16px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
   position: relative;
   background: var(--bg-card) !important;
   border: 1px solid var(--border-glass) !important;
-  border-radius: 14px !important;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   overflow: hidden;
 }
 
-.exam-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
 .exam-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
-  border-color: rgba(64, 158, 255, 0.15) !important;
-}
-
-.exam-card:hover::after {
-  opacity: 1;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border-color: rgba(64, 158, 255, 0.2) !important;
 }
 
 .exam-tag {
   display: inline-block;
-  padding: 4px 12px;
-  border-radius: 20px;
+  padding: 3px 10px;
+  border-radius: 6px;
   font-size: 11px;
   font-weight: 600;
-  margin-bottom: 12px;
-  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  letter-spacing: 0.3px;
 }
 
-.exam-tag.cet {
-  background: rgba(64, 158, 255, 0.1);
+.exam-tag.cet4,
+.exam-tag.cet6 {
+  background: rgba(64, 158, 255, 0.08);
   color: var(--accent-blue);
 }
 
 .exam-tag.ielts {
-  background: rgba(139, 92, 246, 0.1);
-  color: var(--accent-purple);
+  background: rgba(103, 194, 58, 0.08);
+  color: #67c23a;
 }
 
 .exam-tag.toefl {
-  background: rgba(0, 168, 232, 0.1);
-  color: var(--accent-cyan);
+  background: rgba(230, 162, 60, 0.08);
+  color: #e6a23c;
 }
 
 .exam-title {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
   line-height: 1.5;
-  margin-bottom: 12px;
-  min-height: 45px;
+  margin-bottom: 10px;
+  min-height: 42px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .exam-info {
@@ -481,75 +799,268 @@ const goExamList = () => {
   align-items: center;
   gap: 6px;
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 /* 快捷练习卡片 */
 .quick-card {
   text-align: center;
-  padding: 28px 0;
+  padding: 24px 0;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
   margin-bottom: 16px;
   background: var(--bg-card) !important;
   border: 1px solid var(--border-glass) !important;
-  border-radius: 14px !important;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-  position: relative;
-  overflow: hidden;
-}
-
-.quick-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.03) 0%, transparent 60%);
-  opacity: 0;
-  transition: opacity 0.3s;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .quick-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
-  border-color: rgba(64, 158, 255, 0.15) !important;
-}
-
-.quick-card:hover::before {
-  opacity: 1;
-}
-
-.quick-card :deep(.el-icon) {
-  position: relative;
-  z-index: 1;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border-color: rgba(64, 158, 255, 0.2) !important;
 }
 
 .quick-title {
-  margin-top: 16px;
-  font-size: 15px;
+  margin-top: 14px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
 }
 
 .quick-desc {
-  margin-top: 6px;
+  margin-top: 4px;
   font-size: 12px;
   color: var(--text-muted);
 }
 
 /* 首页公告 */
 .home-announcement {
-  padding: 16px 28px;
-  background: linear-gradient(135deg, #eef2ff 0%, #f0f7ff 100%);
-  border-bottom: 1px solid #e0e8f5;
+  max-width: 800px;
+  margin: 0 auto 20px;
+  padding: 14px 24px;
+  background: var(--bg-card, #fff);
+  border: 1px solid var(--border-glass, #e2e2e2);
+  border-radius: 10px;
   text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
 }
 
 .home-announcement-text {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-secondary);
   letter-spacing: 0.3px;
+  line-height: 1.6;
+}
+
+/* 单词详情弹窗样式 */
+.word-detail-dialog :deep(.el-dialog) {
+  width: 90% !important;
+  max-width: 700px !important;
+  margin: 5vh auto !important;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.word-detail-dialog :deep(.el-dialog__body) {
+  flex: 1;
+  overflow: hidden;
+  padding: 16px 20px;
+}
+
+.word-detail-content {
+  max-height: calc(90vh - 120px);
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.phonetic-section {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.phonetic-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.phonetic-label {
+  font-size: 12px;
+  color: #fff;
+  background: #409eff;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.phonetic-text {
+  font-size: 16px;
+  color: var(--text-primary);
+  font-family: 'Times New Roman', serif;
+}
+
+.detail-section {
+  margin-bottom: 20px;
+}
+
+.detail-section h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.translation-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.translation-tag {
+  font-size: 14px;
+}
+
+.sentence-item {
+  margin-bottom: 12px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.sentence-en {
+  font-size: 14px;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.sentence-cn {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.phrase-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.phrase-tag {
+  font-size: 13px;
+}
+
+.relword-group,
+.synonym-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.relword-item,
+.synonym-item {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.relword-tran {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* 手机端适配 */
+@media (max-width: 768px) {
+  .daily-quote-card {
+    margin: 0 12px 16px;
+  }
+
+  .quote-card-inner {
+    padding: 16px;
+  }
+
+  .quote-card-en {
+    font-size: 14px;
+  }
+
+  .quote-card-cn {
+    font-size: 13px;
+  }
+
+  .home-announcement {
+    margin: 0 12px 16px;
+    padding: 12px 16px;
+  }
+
+  .word-detail-dialog :deep(.el-dialog) {
+    width: 95% !important;
+    max-width: 95% !important;
+    margin: 2vh auto !important;
+    max-height: 96vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .word-detail-dialog :deep(.el-dialog__body) {
+    padding: 12px 16px;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .word-detail-content {
+    max-height: calc(96vh - 120px);
+    overflow-y: auto;
+  }
+
+  .phonetic-section {
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+  }
+
+  .phonetic-text {
+    font-size: 14px;
+  }
+
+  .detail-section {
+    margin-bottom: 12px;
+  }
+
+  .detail-section h4 {
+    font-size: 14px;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+  }
+
+  .sentence-item {
+    padding: 8px;
+    margin-bottom: 8px;
+  }
+
+  .sentence-en {
+    font-size: 13px;
+  }
+
+  .sentence-cn {
+    font-size: 12px;
+  }
+
+  .translation-tag,
+  .phrase-tag {
+    font-size: 12px;
+  }
+
+  .relword-item,
+  .synonym-item {
+    font-size: 13px;
+  }
 }
 </style>

@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="../Commons/CommonInit/CommonInit.csproj" />
+  <Project Path="../Commons/DomainCommonInterface/DomainCommonInterface.csproj" />
+  <Project Path="../Commons/Infrastructure/Infrastructure.csproj" />
+  <Project Path="WordService.Domain/WordService.Domain.csproj" />
+  <Project Path="WordService.Infrastrucure/WordService.Infrastrucure.csproj" />
+  <Project Path="WordService.WebAPI/WordService.WebAPI.csproj" />
+</Solution>

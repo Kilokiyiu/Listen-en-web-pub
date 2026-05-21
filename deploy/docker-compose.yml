@@ -73,6 +73,23 @@ services:
         condition: service_healthy
     restart: always
 
+  # WordService 词根学习服务
+  word-service:
+    build:
+      context: ..
+      dockerfile: deploy/WordService.WebAPI/Dockerfile
+    container_name: listen_word
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DatabaseConnStr=Server=sqlserver;Database=Listen_En_Web_word;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True
+      - JWT_KEY=${JWT_KEY}
+      - CorsOrigins__0=https://listenease.online
+      - CorsOrigins__1=https://www.listenease.online
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    restart: always
+
   # Certbot - Let's Encrypt 证书自动申请和续期
   certbot:
     image: certbot/certbot
@@ -100,6 +117,7 @@ services:
       - identity-service
       - listen-service
       - article-service
+      - word-service
     restart: always
 
 volumes:
