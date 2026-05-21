@@ -1,14 +1,10 @@
 
-<p align="center">
-  <img src="https://listenease.online/LE.ico" alt="ListenEase Logo" width="80" />
-</p>
 
-<h1 align="center">ListenEase</h1>
-<p align="center"><em>让每一次聆听，都成为进步的阶梯</em></p>
+# ListenEase
 
-<p align="center">
-  <a href="https://listenease.online">🌐 在线体验</a>
-</p>
+*让每一次聆听，都成为进步的阶梯*
+
+[🌐 在线体验](https://listenease.online)
 
 ---
 
@@ -18,13 +14,15 @@ ListenEase 是一个专注于英语听力学习的开源平台，目前融合了
 
 ## ✨ 核心功能
 
-| 模块 | 功能描述 |
-|------|----------|
-| 🎧 **听力训练** | 按分类浏览听力试卷，逐题播放音频并显示同步字幕，支持 CET-4/CET-6 等考试练习 |
-| 📰 **外刊阅读** | 每日推送中英双语文章，支持已读标记和收藏，附带音频朗读 |
-| 📝 **词根学习** | 基于词根词缀法的系统化单词学习，包含示例词、释义和在线测验 |
-| 👤 **用户系统** | 邮箱注册登录，JWT 认证，学习进度追踪 |
-| 🖥️ **后台管理** | 试卷/文章/词根内容的增删改查，音频文件上传管理 |
+
+| 模块           | 功能描述                                         |
+| ------------ | -------------------------------------------- |
+| 🎧 **听力训练**  | 按分类浏览听力试卷，逐题播放音频并显示同步字幕，支持 CET-4/CET-6 等考试练习 |
+| 📰 **外刊阅读**  | 每日推送中英双语文章，支持已读标记和收藏，附带音频朗读                  |
+| 📝 **词根学习**  | 基于词根词缀法的系统化单词学习，包含示例词、释义和在线测验                |
+| 👤 **用户系统**  | 邮箱注册登录，JWT 认证，学习进度追踪                         |
+| 🖥️ **后台管理** | 试卷/文章/词根内容的增删改查，音频文件上传管理                     |
+
 
 ## 🏗️ 技术架构
 
@@ -60,10 +58,12 @@ ListenEase 是一个专注于英语听力学习的开源平台，目前融合了
 
 ### 前端
 
-| 项目 | 技术栈 |
-|------|--------|
-| 用户端 (`en-listen-user-ui`) | Vue 3 + Element Plus + Vue Router + Vue CLI + Axios |
-| 管理端 (`en-listen-admin-ui`) | Vue 3 + Element Plus + Vue Router + Vite + Axios |
+
+| 项目                         | 技术栈                                                 |
+| -------------------------- | --------------------------------------------------- |
+| 用户端 (`en-listen-user-ui`)  | Vue 3 + Element Plus + Vue Router + Vue CLI + Axios |
+| 管理端 (`en-listen-admin-ui`) | Vue 3 + Element Plus + Vue Router + Vite + Axios    |
+
 
 ### 基础设施
 
@@ -194,10 +194,8 @@ docker compose up -d
 ## 📄 License
 
 本项目采用 MIT 许可证开源。
-如果你想基于本项目实现自己的二次开发，请务必阅读许可证。另外，我们还准备的有关的文档对各个服务进行详细的说明，方便您快速了解项目
+如果你想基于本项目实现自己的二次开发，请务必阅读许可证。另外，我们还准备的有关的文档对各个服务进行详细的说明，方便您快速了解项目：[点击查看项目文档](/docs/1.1%20项目说明.md)
 
 ---
 
-<p align="center">
-  <sub>Built with ❤️ for English learners everywhere</sub>
-</p>
+Built with ❤️ for English learners everywhere
