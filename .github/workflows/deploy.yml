@@ -1,215 +1,215 @@
-name: Deploy to Production
+# name: Deploy to Production
 
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+# on:
+#   push:
+#     branches: [ main ]
+#   workflow_dispatch:
 
-jobs:
-  # ========== 检测哪些服务有代码变更 ==========
-  detect-changes:
-    runs-on: ubuntu-latest
-    outputs:
-      identity: ${{ steps.filter.outputs.identity }}
-      listen: ${{ steps.filter.outputs.listen }}
-      article: ${{ steps.filter.outputs.article }}
-      word: ${{ steps.filter.outputs.word }}
-      frontend: ${{ steps.filter.outputs.frontend }}
-      any-backend: ${{ steps.filter.outputs.any_backend }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+# jobs:
+#   # ========== 检测哪些服务有代码变更 ==========
+#   detect-changes:
+#     runs-on: ubuntu-latest
+#     outputs:
+#       identity: ${{ steps.filter.outputs.identity }}
+#       listen: ${{ steps.filter.outputs.listen }}
+#       article: ${{ steps.filter.outputs.article }}
+#       word: ${{ steps.filter.outputs.word }}
+#       frontend: ${{ steps.filter.outputs.frontend }}
+#       any-backend: ${{ steps.filter.outputs.any_backend }}
+#     steps:
+#       - uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
 
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            identity:
-              - 'IdentitySerivce/**'
-              - 'deploy/IdentityService.WebAPI/Dockerfile'
-            listen:
-              - 'ListenService/**'
-              - 'deploy/ListenService.WebAPI/Dockerfile'
-            article:
-              - 'ArticleService/**'
-              - 'deploy/ArticleService.WebAPI/Dockerfile'
-            word:
-              - 'WordService/**'
-              - 'deploy/WordService.WebAPI/Dockerfile'
-            any_backend:
-              - 'IdentitySerivce/**'
-              - 'ListenService/**'
-              - 'ArticleService/**'
-              - 'WordService/**'
-              - 'deploy/IdentityService.WebAPI/Dockerfile'
-              - 'deploy/ListenService.WebAPI/Dockerfile'
-              - 'deploy/ArticleService.WebAPI/Dockerfile'
-              - 'deploy/WordService.WebAPI/Dockerfile'
-            frontend:
-              - 'Front end/**'
+#       - uses: dorny/paths-filter@v3
+#         id: filter
+#         with:
+#           filters: |
+#             identity:
+#               - 'IdentitySerivce/**'
+#               - 'deploy/IdentityService.WebAPI/Dockerfile'
+#             listen:
+#               - 'ListenService/**'
+#               - 'deploy/ListenService.WebAPI/Dockerfile'
+#             article:
+#               - 'ArticleService/**'
+#               - 'deploy/ArticleService.WebAPI/Dockerfile'
+#             word:
+#               - 'WordService/**'
+#               - 'deploy/WordService.WebAPI/Dockerfile'
+#             any_backend:
+#               - 'IdentitySerivce/**'
+#               - 'ListenService/**'
+#               - 'ArticleService/**'
+#               - 'WordService/**'
+#               - 'deploy/IdentityService.WebAPI/Dockerfile'
+#               - 'deploy/ListenService.WebAPI/Dockerfile'
+#               - 'deploy/ArticleService.WebAPI/Dockerfile'
+#               - 'deploy/WordService.WebAPI/Dockerfile'
+#             frontend:
+#               - 'Front end/**'
 
-  # ========== 部署（构建镜像 + 推送容器）==========
-  build-and-deploy:
-    needs: [detect-changes]
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
+#   # ========== 部署（构建镜像 + 推送容器）==========
+#   build-and-deploy:
+#     needs: [detect-changes]
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 60
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+#     steps:
+#     - name: Checkout code
+#       uses: actions/checkout@v4
+#       with:
+#         fetch-depth: 0
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
+#     - name: Setup Node.js
+#       uses: actions/setup-node@v4
+#       with:
+#         node-version: '20'
 
-    # ---- 构建前端（始终执行，确保不被 git reset 覆盖）----
-    - name: Build user-ui
-      working-directory: Front end/en-listen-user-ui
-      env:
-        WORKSPACE: ${{ github.workspace }}
-      run: |
-        npm install
-        npm run build
-        cd dist && tar -czf "$WORKSPACE/user-ui-dist.tar.gz" . && cd ..
+#     # ---- 构建前端（始终执行，确保不被 git reset 覆盖）----
+#     - name: Build user-ui
+#       working-directory: Front end/en-listen-user-ui
+#       env:
+#         WORKSPACE: ${{ github.workspace }}
+#       run: |
+#         npm install
+#         npm run build
+#         cd dist && tar -czf "$WORKSPACE/user-ui-dist.tar.gz" . && cd ..
 
-    - name: Build admin-ui
-      working-directory: Front end/en-listen-admin-ui
-      env:
-        WORKSPACE: ${{ github.workspace }}
-      run: |
-        npm install
-        npm run build
-        cd dist && tar -czf "$WORKSPACE/admin-ui-dist.tar.gz" . && cd ..
+#     - name: Build admin-ui
+#       working-directory: Front end/en-listen-admin-ui
+#       env:
+#         WORKSPACE: ${{ github.workspace }}
+#       run: |
+#         npm install
+#         npm run build
+#         cd dist && tar -czf "$WORKSPACE/admin-ui-dist.tar.gz" . && cd ..
 
-    # ---- 同步代码到服务器 ----
-    - name: Sync repository to server
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.SERVER_IP }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        command_timeout: 2m
-        script: |
-          set -e
-          cd /opt/Listen-en-web-production
-          git fetch origin main
-          git reset --hard origin/main
+#     # ---- 同步代码到服务器 ----
+#     - name: Sync repository to server
+#       uses: appleboy/ssh-action@master
+#       with:
+#         host: ${{ secrets.SERVER_IP }}
+#         username: ${{ secrets.SERVER_USER }}
+#         key: ${{ secrets.SSH_PRIVATE_KEY }}
+#         command_timeout: 2m
+#         script: |
+#           set -e
+#           cd /opt/Listen-en-web-production
+#           git fetch origin main
+#           git reset --hard origin/main
 
-    # ---- 上传前端文件（始终执行）----
-    - name: Upload user-ui
-      uses: appleboy/scp-action@master
-      with:
-        host: ${{ secrets.SERVER_IP }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: "user-ui-dist.tar.gz"
-        target: "/opt/Listen-en-web-production/deploy/"
+#     # ---- 上传前端文件（始终执行）----
+#     - name: Upload user-ui
+#       uses: appleboy/scp-action@master
+#       with:
+#         host: ${{ secrets.SERVER_IP }}
+#         username: ${{ secrets.SERVER_USER }}
+#         key: ${{ secrets.SSH_PRIVATE_KEY }}
+#         source: "user-ui-dist.tar.gz"
+#         target: "/opt/Listen-en-web-production/deploy/"
 
-    - name: Upload admin-ui
-      uses: appleboy/scp-action@master
-      with:
-        host: ${{ secrets.SERVER_IP }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: "admin-ui-dist.tar.gz"
-        target: "/opt/Listen-en-web-production/deploy/"
+#     - name: Upload admin-ui
+#       uses: appleboy/scp-action@master
+#       with:
+#         host: ${{ secrets.SERVER_IP }}
+#         username: ${{ secrets.SERVER_USER }}
+#         key: ${{ secrets.SSH_PRIVATE_KEY }}
+#         source: "admin-ui-dist.tar.gz"
+#         target: "/opt/Listen-en-web-production/deploy/"
 
-    # ---- 部署容器（构建镜像 + 重启服务）----
-    - name: Build & deploy containers
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.SERVER_IP }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        command_timeout: 15m
-        script: |
-          set -e
-          cd /opt/Listen-en-web-production/deploy
+#     # ---- 部署容器（构建镜像 + 重启服务）----
+#     - name: Build & deploy containers
+#       uses: appleboy/ssh-action@master
+#       with:
+#         host: ${{ secrets.SERVER_IP }}
+#         username: ${{ secrets.SERVER_USER }}
+#         key: ${{ secrets.SSH_PRIVATE_KEY }}
+#         command_timeout: 15m
+#         script: |
+#           set -e
+#           cd /opt/Listen-en-web-production/deploy
 
-          # 提取前端文件
-          if [ -f user-ui-dist.tar.gz ]; then
-            mkdir -p user-ui admin-ui
-            tar -xzf user-ui-dist.tar.gz -C user-ui/
-            tar -xzf admin-ui-dist.tar.gz -C admin-ui/
-            rm -f user-ui-dist.tar.gz admin-ui-dist.tar.gz
-          fi
+#           # 提取前端文件
+#           if [ -f user-ui-dist.tar.gz ]; then
+#             mkdir -p user-ui admin-ui
+#             tar -xzf user-ui-dist.tar.gz -C user-ui/
+#             tar -xzf admin-ui-dist.tar.gz -C admin-ui/
+#             rm -f user-ui-dist.tar.gz admin-ui-dist.tar.gz
+#           fi
 
-          CHANGED=""
+#           CHANGED=""
 
-          # ---- 按需构建镜像 ----
-          if [ "${{ needs.detect-changes.outputs.identity }}" == "true" ]; then
-            echo ">>> Building identity-service..."
-            docker-compose build identity-service
-            CHANGED="$CHANGED identity-service"
-          fi
+#           # ---- 按需构建镜像 ----
+#           if [ "${{ needs.detect-changes.outputs.identity }}" == "true" ]; then
+#             echo ">>> Building identity-service..."
+#             docker-compose build identity-service
+#             CHANGED="$CHANGED identity-service"
+#           fi
 
-          if [ "${{ needs.detect-changes.outputs.listen }}" == "true" ]; then
-            echo ">>> Building listen-service..."
-            docker-compose build listen-service
-            CHANGED="$CHANGED listen-service"
-          fi
+#           if [ "${{ needs.detect-changes.outputs.listen }}" == "true" ]; then
+#             echo ">>> Building listen-service..."
+#             docker-compose build listen-service
+#             CHANGED="$CHANGED listen-service"
+#           fi
 
-          if [ "${{ needs.detect-changes.outputs.article }}" == "true" ]; then
-            echo ">>> Building article-service..."
-            docker-compose build article-service
-            CHANGED="$CHANGED article-service"
-          fi
+#           if [ "${{ needs.detect-changes.outputs.article }}" == "true" ]; then
+#             echo ">>> Building article-service..."
+#             docker-compose build article-service
+#             CHANGED="$CHANGED article-service"
+#           fi
 
-          if [ "${{ needs.detect-changes.outputs.word }}" == "true" ]; then
-            echo ">>> Building word-service..."
-            docker-compose build word-service
-            CHANGED="$CHANGED word-service"
-          fi
+#           if [ "${{ needs.detect-changes.outputs.word }}" == "true" ]; then
+#             echo ">>> Building word-service..."
+#             docker-compose build word-service
+#             CHANGED="$CHANGED word-service"
+#           fi
 
-          # ---- 删除旧容器 & 启动新容器 ----
-          if [ -n "$CHANGED" ]; then
-            echo ">>> Recreating containers:$CHANGED"
-            for svc in $CHANGED; do
-              case "$svc" in
-                identity-service) cname="listen_identity" ;;
-                listen-service)   cname="listen_service" ;;
-                article-service)  cname="listen_article" ;;
-                word-service)     cname="listen_word" ;;
-              esac
-              docker rm -f "$cname" 2>/dev/null || true
-              docker-compose up -d "$svc"
-            done
-          fi
+#           # ---- 删除旧容器 & 启动新容器 ----
+#           if [ -n "$CHANGED" ]; then
+#             echo ">>> Recreating containers:$CHANGED"
+#             for svc in $CHANGED; do
+#               case "$svc" in
+#                 identity-service) cname="listen_identity" ;;
+#                 listen-service)   cname="listen_service" ;;
+#                 article-service)  cname="listen_article" ;;
+#                 word-service)     cname="listen_word" ;;
+#               esac
+#               docker rm -f "$cname" 2>/dev/null || true
+#               docker-compose up -d "$svc"
+#             done
+#           fi
 
-          # ---- 始终重启 nginx ----
-          echo ">>> Restarting nginx..."
-          docker-compose up -d nginx
+#           # ---- 始终重启 nginx ----
+#           echo ">>> Restarting nginx..."
+#           docker-compose up -d nginx
 
-          echo ">>> Container status:"
-          docker-compose ps
+#           echo ">>> Container status:"
+#           docker-compose ps
 
-          echo ">>> Deploy completed at $(date)"
+#           echo ">>> Deploy completed at $(date)"
 
-          # ========== 清理构建产物 ==========
-          echo ">>> Cleaning up build artifacts..."
+#           # ========== 清理构建产物 ==========
+#           echo ">>> Cleaning up build artifacts..."
 
-          # 清理 Docker 未使用的镜像和缓存
-          echo ">>> Pruning Docker images..."
-          docker image prune -a -f
+#           # 清理 Docker 未使用的镜像和缓存
+#           echo ">>> Pruning Docker images..."
+#           docker image prune -a -f
 
-          echo ">>> Pruning Docker build cache..."
-          docker builder prune -a -f
+#           echo ">>> Pruning Docker build cache..."
+#           docker builder prune -a -f
 
-          echo ">>> Pruning Docker system (containers, networks, caches)..."
-          docker system prune -f
+#           echo ">>> Pruning Docker system (containers, networks, caches)..."
+#           docker system prune -f
 
-          # 清理服务器上的前端构建缓存（保留 user-ui 和 admin-ui）
-          echo ">>> Cleaning frontend build cache..."
-          cd /opt/Listen-en-web-production/deploy
-          rm -f user-ui-dist.tar.gz admin-ui-dist.tar.gz
-          # 清理旧的 chunk-vendors.*.map 和 assets 缓存文件
-          find user-ui -name "*.map" -type f -delete 2>/dev/null || true
-          find admin-ui -name "*.map" -type f -delete 2>/dev/null || true
+#           # 清理服务器上的前端构建缓存（保留 user-ui 和 admin-ui）
+#           echo ">>> Cleaning frontend build cache..."
+#           cd /opt/Listen-en-web-production/deploy
+#           rm -f user-ui-dist.tar.gz admin-ui-dist.tar.gz
+#           # 清理旧的 chunk-vendors.*.map 和 assets 缓存文件
+#           find user-ui -name "*.map" -type f -delete 2>/dev/null || true
+#           find admin-ui -name "*.map" -type f -delete 2>/dev/null || true
 
-          echo ">>> Cleanup completed at $(date)"
-          echo ">>> Disk usage after cleanup:"
-          df -h /
+#           echo ">>> Cleanup completed at $(date)"
+#           echo ">>> Disk usage after cleanup:"
+#           df -h /
