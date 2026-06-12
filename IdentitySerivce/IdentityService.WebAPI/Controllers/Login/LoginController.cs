@@ -5,6 +5,7 @@ using IdentitySerivce.Domain;
 using IdentitySerivce.Domain.Entity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MyEventController;
 
 namespace IdentityService.WebAPI.Controllers;
 
@@ -14,12 +15,14 @@ namespace IdentityService.WebAPI.Controllers;
 public class LoginController : ControllerBase
 {
     private readonly IIdentityRepo repo;
-    private readonly IdentityDomainService  domainService;
+    private readonly IdentityDomainService domainService;
+    private readonly IEventBus eventBus;
 
-    public LoginController(IIdentityRepo repo, IdentityDomainService domainService)
+    public LoginController(IIdentityRepo repo, IdentityDomainService domainService, IEventBus eventBus)
     {
         this.repo = repo;
         this.domainService = domainService;
+        this.eventBus = eventBus;
     }
 
     /// <summary>
@@ -173,6 +176,14 @@ public class LoginController : ControllerBase
         await repo.ConfirmEmailAsync(user.Id);
         
         await repo.AddToRoleAsync(user, "User");
+
+        eventBus.Publish(IntegrationEventNames.IdentityUserCreated, new
+        {
+            UserId = user.Id,
+            UserName = user.UserName,
+            Email = req.Email
+        });
+
         return Ok();
     }
 }

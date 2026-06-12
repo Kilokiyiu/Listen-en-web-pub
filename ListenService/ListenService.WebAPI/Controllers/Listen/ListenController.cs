@@ -7,6 +7,7 @@ namespace ListenService.WebAPI.Controllers.Listen;
 
 [ApiController]
 [Route("[controller]/[action]")]
+[Route("/api/listen/[controller]/[action]")]
 public class ListenController : ControllerBase
 {
     private readonly IListenRepo repo;
@@ -48,8 +49,33 @@ public class ListenController : ControllerBase
             Id = e.Id,
             Name = e.Name,
             CategoryId = e.CategoryId,
-            SequenceNumber = e.SequenceNumber
+            SequenceNumber = e.SequenceNumber,
+            PaperFileUrl = e.PaperFileUrl,
+            AnswerFileUrl = e.AnswerFileUrl
         }).ToArray();
+    }
+
+    /// <summary>
+    /// 获取试卷详情（含试卷/答案下载地址）
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<AlbumResponse>> GetAlbumById([Required] Guid albumId)
+    {
+        var album = await repo.GetAlbumByIdAsync(albumId);
+        if (album == null)
+        {
+            return NotFound("试卷不存在");
+        }
+
+        return new AlbumResponse
+        {
+            Id = album.Id,
+            Name = album.Name,
+            CategoryId = album.CategoryId,
+            SequenceNumber = album.SequenceNumber,
+            PaperFileUrl = album.PaperFileUrl,
+            AnswerFileUrl = album.AnswerFileUrl
+        };
     }
 
     /// <summary>

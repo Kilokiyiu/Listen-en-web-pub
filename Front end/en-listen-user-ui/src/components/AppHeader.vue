@@ -1,31 +1,43 @@
 <template>
   <header class="app-header">
-    <div class="header-container">
+    <div class="header-inner">
       <div class="logo" @click="router.push('/')">
-        <el-icon :size="28" color="#409eff"><Headset /></el-icon>
+        <div class="logo-icon">
+          <el-icon :size="24"><Headset /></el-icon>
+        </div>
         <span class="logo-text">ListenEase</span>
       </div>
 
-      <!-- 未登录 -->
-      <div v-if="!isLoggedIn" class="header-right">
-        <el-button size="small" @click="announcementVisible = true">
-          <el-icon style="margin-right:4px"><BellFilled /></el-icon>公告
-        </el-button>
-        <el-button type="primary" plain size="small" @click="router.push('/login')">登录</el-button>
-        <el-button type="primary" size="small" @click="router.push('/login?mode=register')">注册</el-button>
-      </div>
+      <!-- Desktop nav -->
+      <nav class="desktop-nav" aria-label="站点导航">
+        <button
+          v-for="link in navLinks"
+          :key="link.path"
+          type="button"
+          class="nav-link"
+          :class="{ active: isNavActive(link) }"
+          @click="router.push(link.path)"
+        >
+          {{ link.label }}
+        </button>
+      </nav>
 
-      <!-- 已登录 -->
-      <div v-else class="header-right">
-        <el-button size="small" @click="announcementVisible = true">
-          <el-icon style="margin-right:4px"><BellFilled /></el-icon>公告
+      <div class="header-actions">
+        <el-button circle size="small" class="icon-btn" @click="announcementVisible = true">
+          <el-icon><BellFilled /></el-icon>
         </el-button>
-        <el-dropdown @command="handleCommand">
-          <span class="user-info">
-            <el-avatar :size="28" :icon="UserFilled" />
-            <span class="username">{{ username }}</span>
-            <el-icon><ArrowDown /></el-icon>
-          </span>
+
+        <template v-if="!isLoggedIn">
+          <el-button class="hide-mobile" size="small" @click="router.push('/login')">登录</el-button>
+          <el-button type="primary" size="small" class="le-btn-gradient" @click="router.push('/login?mode=register')">注册</el-button>
+        </template>
+
+        <el-dropdown v-else trigger="click" @command="handleCommand">
+          <button type="button" class="user-btn">
+            <el-avatar :size="32" :icon="UserFilled" />
+            <span class="username hide-mobile">{{ username }}</span>
+            <el-icon class="hide-mobile"><ArrowDown /></el-icon>
+          </button>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="profile">个人中心</el-dropdown-item>
@@ -39,45 +51,29 @@
       </div>
     </div>
 
-    <!-- 公告对话框 -->
-    <el-dialog v-model="announcementVisible" title="平台公告" width="560px" :close-on-click-modal="true" append-to-body @close="handleCloseAnnouncement" class="announcement-dialog">
-      <!-- 常驻：管理员信息 -->
+    <el-dialog
+      v-model="announcementVisible"
+      title="平台公告"
+      width="560px"
+      append-to-body
+      class="announcement-dialog"
+      @close="handleCloseAnnouncement"
+    >
       <div class="admin-info-card">
-        <div class="admin-info-title">&#x2699;&#xFE0F; 管理员信息</div>
-        <div class="admin-info-row">
-          <span class="admin-info-label">管理员：</span>
-          <span>Kilo</span>
-        </div>
-        <div class="admin-info-row">
-          <span class="admin-info-label">联系邮箱：</span>
-          <span>Kilokiyiu@outlook.com</span>
-        </div>
-        <div class="admin-info-row">
-          <span class="admin-info-label">我的github</span>
-          <span><a href="https://github.com/Kilokiyiu">github</a></span>
-        </div>
-          <div class="admin-info-row">
-          <span class="admin-info-label">关于我:</span>
-          <span><a href="https://mywebpage-f2u.pages.dev/">我的主页</a></span>
-        </div>
-        <div class="admin-info-row">
-          <span class="admin-info-label">平台状态：</span>
-          <span class="status-badge">正常运行</span>
-        </div>
-        <div class="admin-info-tip">如有问题或建议，请通过邮箱联系管理员</div>
+        <div class="admin-info-title">管理员信息</div>
+        <div class="admin-info-row"><span class="label">管理员</span><span>Kilo</span></div>
+        <div class="admin-info-row"><span class="label">邮箱</span><span>Kilokiyiu@outlook.com</span></div>
+        <div class="admin-info-row"><span class="label">GitHub</span><a href="https://github.com/Kilokiyiu" target="_blank" rel="noopener">github.com/Kilokiyiu</a></div>
+        <div class="admin-info-row"><span class="label">状态</span><span class="status-badge">正常运行</span></div>
       </div>
-
-      <!-- 动态公告 -->
-      <div class="announcement-section-title">最新公告</div>
+      <h3 class="ann-section-title">最新公告</h3>
       <div class="announcement-list">
-        <div class="announcement-item" v-for="(item, index) in announcements" :key="index">
-          <div class="announcement-date">{{ item.date }}</div>
-          <div class="announcement-title">{{ item.title }}</div>
-          <div class="announcement-desc">{{ item.content }}</div>
-        </div>
+        <article v-for="(item, i) in announcements" :key="i" class="announcement-item">
+          <time>{{ item.date }}</time>
+          <h4>{{ item.title }}</h4>
+          <p>{{ item.content }}</p>
+        </article>
       </div>
-
-      <!-- 底部：一天内不再弹出 -->
       <div class="announcement-footer">
         <el-checkbox v-model="noShowToday">今日不再显示</el-checkbox>
       </div>
@@ -89,104 +85,86 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { BellFilled } from '@element-plus/icons-vue'
+import { BellFilled, UserFilled, ArrowDown } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
 
-// 公告
+const navLinks = [
+  { path: '/', label: '首页', names: ['home'] },
+  { path: '/daily', label: '每日阅读', names: ['dailyArticle'] },
+  { path: '/bbc-news', label: 'BBC', names: ['bbcNews'] },
+  { path: '/word-roots', label: '词根', names: ['wordRoots', 'wordRootDetail'] },
+  { path: '/my-words', label: '单词本', names: ['myWords', 'wordReview'] },
+]
+
+const isNavActive = (link) => {
+  if (link.path === '/' && route.path === '/') return true
+  return link.names.includes(route.name) || route.path.startsWith(link.path)
+}
+
 const announcementVisible = ref(false)
 const noShowToday = ref(false)
 const announcements = [
-  { date: '2026-05-13', title: '平台上线公告', content: 'ListenEase 英语听力学习平台正式上线！提供四六级真题听力、BBC外刊阅读、单词即点即查与智能复习功能。' },
-  { date: '2026-05-13', title: '部分音频原文缺失', content: '音频原文正在加紧整理中，后续会上线，资源整理不易，敬请期待。' },
-  { date: '2026-05-13', title: '后续更新计划', content: '开放更多的学习功能' },
+  { date: '2026-05-13', title: '平台上线', content: 'ListenEase 正式上线！提供四六级真题听力、BBC 外刊、单词复习与每日一句。' },
+  { date: '2026-05-13', title: '音频原文', content: '部分音频原文正在整理中，后续会持续更新。' },
+  { date: '2026-05-13', title: '更新计划', content: '更多学习功能开发中，欢迎通过邮箱反馈建议。' },
 ]
 
-// 检查是否应该自动弹出公告
-const checkAutoShowAnnouncement = () => {
-  const hideUntil = localStorage.getItem('announcement_hide_until')
-  if (hideUntil && Date.now() < Number(hideUntil)) {
-    return // 还在免打扰期内
-  }
-  announcementVisible.value = true
-}
-
-// 监听弹窗关闭，处理“今日不再显示”
-const handleCloseAnnouncement = () => {
-  if (noShowToday.value) {
-    const tomorrow = Date.now() + 24 * 60 * 60 * 1000
-    localStorage.setItem('announcement_hide_until', tomorrow.toString())
-  }
-}
-
-// 登录状态
 const isLoggedIn = ref(false)
 const username = ref('')
 
-// 检查登录状态
 const checkLogin = () => {
   const token = localStorage.getItem('token')
   const savedUser = localStorage.getItem('username')
-  if (token && savedUser) {
-    isLoggedIn.value = true
-    username.value = savedUser
-  } else {
-    isLoggedIn.value = false
-    username.value = ''
+  isLoggedIn.value = !!(token && savedUser)
+  username.value = savedUser || ''
+}
+
+onMounted(checkLogin)
+watch(() => route.path, checkLogin)
+
+const handleCloseAnnouncement = () => {
+  if (noShowToday.value) {
+    localStorage.setItem('announcement_hide_until', String(Date.now() + 86400000))
   }
 }
 
-onMounted(() => {
-  checkLogin()
-})
-
-// 每次路由变化都重新检查
-watch(() => route.path, checkLogin)
-
-// 下拉菜单操作
-const handleCommand = (command) => {
-  if (command === 'logout') {
+const handleCommand = (cmd) => {
+  if (cmd === 'logout') {
     localStorage.removeItem('token')
     localStorage.removeItem('username')
     localStorage.removeItem('userId')
     isLoggedIn.value = false
-    username.value = ''
     ElMessage.success('已退出登录')
     router.push('/')
-  } else if (command === 'profile') {
-    router.push('/profile')
-  } else if (command === 'history') {
-    router.push('/history')
-  } else if (command === 'wordRoots') {
-    router.push('/word-roots')
-  } else if (command === 'myWords') {
-    router.push('/my-words')
+    return
   }
+  const map = { profile: '/profile', history: '/history', wordRoots: '/word-roots', myWords: '/my-words' }
+  if (map[cmd]) router.push(map[cmd])
 }
 </script>
 
 <style scoped>
 .app-header {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border-glass);
   position: sticky;
   top: 0;
   z-index: 100;
-  border-radius: 0;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--le-border);
+  box-shadow: var(--le-shadow-sm);
 }
 
-.header-container {
-  max-width: 1400px;
+.header-inner {
+  max-width: var(--le-max-w);
   margin: 0 auto;
-  padding: 0 24px;
-  height: 60px;
+  padding: 0 20px;
+  height: var(--le-header-h);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 16px;
 }
 
 .logo {
@@ -194,288 +172,188 @@ const handleCommand = (command) => {
   align-items: center;
   gap: 10px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
-.logo :deep(.el-icon) {
-  filter: drop-shadow(0 0 6px rgba(64, 158, 255, 0.4));
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--le-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 .logo-text {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--le-text);
+  letter-spacing: -0.02em;
 }
 
-.header-right {
+.desktop-nav {
   display: flex;
-  gap: 12px;
-  align-items: center;
+  gap: 4px;
+  flex: 1;
+  justify-content: center;
 }
 
-.header-right :deep(.el-button--primary) {
-  background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-cyan) 100%);
+.nav-link {
   border: none;
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
-  transition: all 0.3s;
-}
-
-.header-right :deep(.el-button--primary:hover) {
-  box-shadow: 0 6px 20px rgba(64, 158, 255, 0.4);
-  transform: translateY(-1px);
-}
-
-.header-right :deep(.el-button--primary.is-plain) {
   background: transparent;
-  border: 1px solid var(--accent-blue);
-  color: var(--accent-blue);
-  box-shadow: none;
+  padding: 8px 14px;
+  border-radius: 99px;
+  font-size: 14px;
+  color: var(--le-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.header-right :deep(.el-button--primary.is-plain:hover) {
-  background: rgba(64, 158, 255, 0.08);
-  border-color: var(--accent-blue);
-  color: var(--accent-blue);
+.nav-link:hover {
+  color: var(--le-primary);
+  background: var(--le-gradient-soft);
 }
 
-.user-info {
+.nav-link.active {
+  color: var(--le-primary);
+  background: var(--le-gradient-soft);
+  font-weight: 600;
+}
+
+.header-actions {
   display: flex;
   align-items: center;
   gap: 8px;
-  cursor: pointer;
-  padding: 4px 12px;
-  border-radius: 20px;
-  transition: all 0.3s;
-  border: 1px solid transparent;
+  flex-shrink: 0;
 }
 
-.user-info:hover {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: var(--border-glass);
+.icon-btn {
+  border: 1px solid var(--le-border) !important;
+}
+
+.user-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--le-border);
+  background: var(--le-bg-elevated);
+  border-radius: 99px;
+  padding: 4px 12px 4px 4px;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+
+.user-btn:hover {
+  box-shadow: var(--le-shadow-sm);
 }
 
 .username {
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-
-/* 下拉菜单 */
-:deep(.el-dropdown__popper) {
-  background: rgba(255, 255, 255, 0.95) !important;
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border-glass) !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-}
-
-:deep(.el-dropdown-menu) {
-  background: transparent !important;
-}
-
-:deep(.el-dropdown-menu__item) {
-  color: var(--text-secondary);
-}
-
-:deep(.el-dropdown-menu__item:hover) {
-  background: rgba(64, 158, 255, 0.08) !important;
-  color: var(--accent-blue);
-}
-
-/* 管理员信息卡 */
-.admin-info-card {
-  background: linear-gradient(135deg, #1a2a4a 0%, #2a5298 50%, #1e3a6f 100%);
-  border-radius: 14px;
-  padding: 22px 24px;
-  margin-bottom: 22px;
-  color: #ffffff;
-  box-shadow: 0 4px 16px rgba(26, 42, 74, 0.3);
-  position: relative;
+  font-size: 13px;
+  color: var(--le-text-secondary);
+  max-width: 100px;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.admin-info-card::before {
-  content: '';
-  position: absolute;
-  top: -30px;
-  right: -30px;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.admin-info-card::after {
-  content: '';
-  position: absolute;
-  bottom: -20px;
-  left: -20px;
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.03);
+.admin-info-card {
+  background: var(--le-gradient);
+  border-radius: var(--le-radius);
+  padding: 20px;
+  color: #fff;
+  margin-bottom: 20px;
 }
 
 .admin-info-title {
-  font-size: 17px;
   font-weight: 700;
-  margin-bottom: 16px;
-  letter-spacing: 0.5px;
+  margin-bottom: 12px;
 }
 
 .admin-info-row {
   display: flex;
-  align-items: center;
   gap: 8px;
-  margin-bottom: 10px;
   font-size: 14px;
-  position: relative;
-  z-index: 1;
+  margin-bottom: 8px;
 }
 
-.admin-info-label {
-  color: rgba(255, 255, 255, 0.6);
-  min-width: 90px;
+.admin-info-row .label {
+  opacity: 0.75;
+  min-width: 72px;
 }
 
 .admin-info-row a {
-  color: #7dd3fc;
-  text-decoration: none;
-  transition: all 0.2s;
-  border-bottom: 1px solid transparent;
-}
-
-.admin-info-row a:hover {
   color: #bae6fd;
-  border-bottom-color: #bae6fd;
-}
-
-.admin-info-tip {
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
-  position: relative;
-  z-index: 1;
 }
 
 .status-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(74, 222, 128, 0.15);
+  background: rgba(255,255,255,0.2);
   padding: 2px 10px;
-  border-radius: 20px;
+  border-radius: 99px;
   font-size: 13px;
 }
 
 .status-badge::before {
   content: '';
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: #4ade80;
-  box-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
 }
 
-/* 公告分区标题 */
-.announcement-section-title {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 16px;
-  padding-left: 4px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.announcement-section-title::before {
-  content: '';
-  width: 4px;
-  height: 18px;
-  border-radius: 2px;
-  background: linear-gradient(180deg, var(--accent-blue), var(--accent-cyan));
-}
-
-/* 公告列表 */
-.announcement-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+.ann-section-title {
+  font-size: 16px;
+  margin: 0 0 12px;
 }
 
 .announcement-item {
-  padding: 18px 20px;
-  background: #f6f8fc;
-  border-radius: 12px;
-  border-left: 4px solid transparent;
-  border-image: linear-gradient(180deg, #409eff, #00d4ff) 1;
-  transition: all 0.2s;
+  padding: 14px 16px;
+  background: var(--le-bg-muted);
+  border-radius: var(--le-radius-sm);
+  margin-bottom: 10px;
+  border-left: 3px solid var(--le-primary);
 }
 
-.announcement-item:hover {
-  background: #eef2fa;
-  transform: translateX(3px);
+.announcement-item time {
+  font-size: 12px;
+  color: var(--le-text-muted);
 }
 
-.announcement-date {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-}
-
-.announcement-title {
-  font-size: 17px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-.announcement-desc {
+.announcement-item h4 {
+  margin: 6px 0 4px;
   font-size: 15px;
-  color: var(--text-secondary);
-  line-height: 1.7;
 }
 
-/* 底部不再显示 */
+.announcement-item p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--le-text-secondary);
+  line-height: 1.6;
+}
+
 .announcement-footer {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px dashed #dde3ee;
-  display: flex;
-  justify-content: center;
-}
-
-.announcement-footer :deep(.el-checkbox__label) {
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-.announcement-footer :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
-  background-color: var(--accent-blue);
-  border-color: var(--accent-blue);
+  margin-top: 16px;
+  text-align: center;
 }
 
 @media (max-width: 768px) {
-  .app-header {
-    border-radius: 0;
+  .header-inner {
+    padding: 0 12px;
+    gap: 8px;
   }
-}
-</style>
-
-<style>
-/* 公告弹窗手机端适配 - 需要 unscoped 因为 append-to-body */
-@media (max-width: 768px) {
-  .announcement-dialog {
-    --el-dialog-width: 92% !important;
-    width: 92% !important;
-    margin: 0 auto !important;
+  .desktop-nav {
+    display: none;
   }
-  .announcement-dialog .el-dialog {
-    width: 92% !important;
-    margin: 0 auto !important;
+  .hide-mobile {
+    display: none !important;
   }
-  .announcement-dialog .el-dialog__body {
-    padding: 16px !important;
-    }
+  .logo-text {
+    font-size: 16px;
+  }
 }
 </style>

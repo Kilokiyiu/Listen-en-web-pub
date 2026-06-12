@@ -6,6 +6,11 @@ COPY ["ListenService/ListenService.WebAPI/ListenService.WebAPI.csproj", "ListenS
 COPY ["ListenService/ListenService.Domain/ListenService.Domain.csproj", "ListenService/ListenService.Domain/"]
 COPY ["ListenService/ListenService.Infrastrucure/ListenService.Infrastrucure.csproj", "ListenService/ListenService.Infrastrucure/"]
 COPY ["Commons/MyJWT/MyJWT.csproj", "Commons/MyJWT/"]
+COPY ["Commons/MyEventController/MyEventController.csproj", "Commons/MyEventController/"]
+COPY ["Commons/MyCache/MyCache.csproj", "Commons/MyCache/"]
+COPY ["Commons/CommonInit/CommonInit.csproj", "Commons/CommonInit/"]
+COPY ["Commons/Infrastructure/Infrastructure.csproj", "Commons/Infrastructure/"]
+COPY ["Commons/DomainCommonInterface/DomainCommonInterface.csproj", "Commons/DomainCommonInterface/"]
 
 RUN dotnet restore "ListenService/ListenService.WebAPI/ListenService.WebAPI.csproj"
 

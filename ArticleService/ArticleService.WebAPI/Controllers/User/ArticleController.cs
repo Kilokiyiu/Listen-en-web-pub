@@ -10,8 +10,6 @@ namespace ArticleService.WebAPI.Controllers;
 
 [ApiController]
 [Route("[controller]/[action]")]
-[Authorize]
-
 public class ArticleController : ControllerBase
 {
     private readonly IArticleRepo repo;
@@ -27,6 +25,7 @@ public class ArticleController : ControllerBase
     /// <param name="date"></param>
     /// <returns></returns>
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<DailyArticle>> GetArticleByDate(DateTime date)
     {
         var article = await repo.GetByDateAsync(date);
@@ -35,9 +34,15 @@ public class ArticleController : ControllerBase
             return BadRequest("文章不存在");
         }
 
-        // 查询当前用户对该文章的已读/收藏状态
-        var userId = await GetCurrentUserId();
-        var userStatus = await repo.GetUserStatusAsync(userId, article.Id);
+        var isRead = false;
+        var isFavorite = false;
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            var userId = await GetCurrentUserId();
+            var userStatus = await repo.GetUserStatusAsync(userId, article.Id);
+            isRead = userStatus?.IsRead ?? false;
+            isFavorite = userStatus?.IsFavorited ?? false;
+        }
 
         var dto = new DailyArticleRespons
         {
@@ -48,8 +53,8 @@ public class ArticleController : ControllerBase
             EnglishText = article.EnglishText,
             ChineseText = article.ChineseText,
             AudioUrl = article.ArticleUrl,
-            IsRead = userStatus?.IsRead ?? false,
-            IsFavorite = userStatus?.IsFavorited ?? false
+            IsRead = isRead,
+            IsFavorite = isFavorite
         };
         return Ok(dto);
     }
@@ -60,6 +65,7 @@ public class ArticleController : ControllerBase
     /// <param name="request"></param>
     /// <returns></returns>
     [HttpPost]
+    [Authorize]
     public async Task<ActionResult> MarkIsRead([FromBody] ArticleRequest request)
     {
         var userId = await GetCurrentUserId();
@@ -73,6 +79,7 @@ public class ArticleController : ControllerBase
     /// <param name="request"></param>
     /// <returns></returns>
     [HttpPost]
+    [Authorize]
     public async Task<ActionResult> ToggleFavoriteAsync([FromBody] ArticleRequest request)
     {
         var userId = await GetCurrentUserId();
@@ -88,6 +95,7 @@ public class ArticleController : ControllerBase
     /// <param name="pageSize"></param>
     /// <returns></returns>
     [HttpGet]
+    [Authorize]
     public async Task<ActionResult<ReadHistoryResponse[]>> GetReadHistoryAsync(int page = 1, int pageSize = 20)
     {
         var userId = await GetCurrentUserId();

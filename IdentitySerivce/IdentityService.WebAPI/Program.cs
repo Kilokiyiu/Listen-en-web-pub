@@ -1,4 +1,6 @@
+using MyEventController;
 using MyJWT;
+using MyCache;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using IdentitySerivce.Domain.Entity;
@@ -31,6 +33,7 @@ builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 builder.ConfigureInfrastructureServices();
+builder.Services.AddMemoryCacheService(builder.Configuration);
 
 builder.Services.AddDbContext<IdentityDbContext>(options =>
 {
@@ -56,6 +59,7 @@ idBuilder.AddEntityFrameworkStores<IdentityDbContext>()
     .AddUserManager<IdentityUserManager>();
 
 builder.Services.ServiceInit();
+builder.Services.AddEventBus(builder.Configuration, "identity-service", typeof(Program).Assembly);
 
 var app = builder.Build();
 

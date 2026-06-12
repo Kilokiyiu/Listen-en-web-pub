@@ -31,8 +31,8 @@ module.exports = defineConfig({
       },
       '/api/word': {
         target: 'http://localhost:5215',
-        changeOrigin: true
-        // 不重写路径，保持 /api/word 前缀
+        changeOrigin: true,
+        pathRewrite: { '^/api/word': '' }
       }
     }
   }

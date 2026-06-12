@@ -11,18 +11,25 @@ namespace ListenService.WebAPI.Controllers.Admin;
 
 [ApiController]
 [Route("[controller]/[action]")]
+[Route("/api/listen/[controller]/[action]")]
 [Authorize(Roles = "Admin")]
 public class AdminController : ControllerBase
 {
     private readonly IListenRepo repo;
     private readonly ListenDbContext dbContext;
     private readonly IWebHostEnvironment env;
+    private readonly ListenCacheInvalidator cacheInvalidator;
     
-    public AdminController(IListenRepo repo, ListenDbContext dbContext, IWebHostEnvironment env)
+    public AdminController(
+        IListenRepo repo,
+        ListenDbContext dbContext,
+        IWebHostEnvironment env,
+        ListenCacheInvalidator cacheInvalidator)
     {
         this.repo = repo;
         this.dbContext = dbContext;
         this.env = env;
+        this.cacheInvalidator = cacheInvalidator;
     }
     
     [HttpPost]
@@ -98,8 +105,65 @@ public class AdminController : ControllerBase
         dbContext.Episodes.Add(episode);
         
         await dbContext.SaveChangesAsync();
+
+        await cacheInvalidator.InvalidateAlbumAsync(album.Id, category.Id);
+        await cacheInvalidator.InvalidateCategoriesAsync();
         
         return Ok(new { episode.Id, audioUrl });
+    }
+
+    /// <summary>
+    /// 上传试卷 PDF 或答案 PDF（按 Album 维度，一套听力一份）
+    /// </summary>
+    [HttpPost]
+    [Consumes("multipart/form-data")]
+    [ApiExplorerSettings(IgnoreApi = true)]
+    public async Task<ActionResult> UploadAlbumDocument(
+        [FromForm] Guid albumId,
+        [FromForm] string documentType,
+        [FromForm] IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("请选择 PDF 文件");
+
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (ext != ".pdf")
+            return BadRequest("只支持 PDF 格式");
+
+        var type = documentType?.Trim().ToLowerInvariant();
+        if (type is not ("paper" or "answer"))
+            return BadRequest("documentType 须为 paper（试卷）或 answer（答案）");
+
+        var album = await dbContext.Albums.FindAsync(albumId);
+        if (album == null)
+            return NotFound("试卷不存在");
+
+        var category = await dbContext.Categories.FindAsync(album.CategoryId);
+        var categoryDir = (category?.Code ?? "misc").ToUpperInvariant();
+        var fileName = type == "paper" ? $"{albumId}.paper.pdf" : $"{albumId}.answer.pdf";
+        var dirPath = Path.Combine(env.WebRootPath, "papers", categoryDir);
+        Directory.CreateDirectory(dirPath);
+        var filePath = Path.Combine(dirPath, fileName);
+        var relativeUrl = $"/papers/{categoryDir}/{fileName}";
+
+        if (type == "paper")
+            TryDeleteWebFile(album.PaperFileUrl);
+        else
+            TryDeleteWebFile(album.AnswerFileUrl);
+
+        await using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        if (type == "paper")
+            album.SetPaperFileUrl(relativeUrl);
+        else
+            album.SetAnswerFileUrl(relativeUrl);
+
+        await dbContext.SaveChangesAsync();
+        await cacheInvalidator.InvalidateAlbumAsync(album.Id, album.CategoryId);
+        return Ok(new { url = relativeUrl, documentType = type });
     }
 
     /// <summary>
@@ -117,6 +181,12 @@ public class AdminController : ControllerBase
 
         episode.ChangeSubtitle(request.Subtitle, request.SubtitleType ?? "json");
         await dbContext.SaveChangesAsync();
+
+        var album = await dbContext.Albums.FindAsync(episode.AlbumId);
+        if (album != null)
+        {
+            await cacheInvalidator.InvalidateEpisodeAsync(episode.Id, album.Id, album.CategoryId);
+        }
         
         return Ok(new { message = "原文更新成功" });
     }
@@ -171,6 +241,13 @@ public class AdminController : ControllerBase
             episode.Show();
 
         await dbContext.SaveChangesAsync();
+
+        var album = await dbContext.Albums.FindAsync(episode.AlbumId);
+        if (album != null)
+        {
+            await cacheInvalidator.InvalidateEpisodeAsync(episode.Id, album.Id, album.CategoryId);
+        }
+
         return Ok(new { message = episode.IsVisible ? "已显示" : "已隐藏" });
     }
 
@@ -198,7 +275,11 @@ public class AdminController : ControllerBase
                 EpisodeCount = dbContext.Episodes.Count(e => e.AlbumId == a.Id),
                 FirstEpisodeId = firstEpisode != null ? firstEpisode.Id : Guid.Empty,
                 Subtitle = firstEpisode != null ? firstEpisode.Subtitle : null,
-                HasSubtitle = firstEpisode != null && !string.IsNullOrWhiteSpace(firstEpisode.Subtitle)
+                HasSubtitle = firstEpisode != null && !string.IsNullOrWhiteSpace(firstEpisode.Subtitle),
+                a.PaperFileUrl,
+                a.AnswerFileUrl,
+                HasPaper = !string.IsNullOrWhiteSpace(a.PaperFileUrl),
+                HasAnswer = !string.IsNullOrWhiteSpace(a.AnswerFileUrl)
             }
         ).ToListAsync();
         return Ok(albums);
@@ -221,6 +302,7 @@ public class AdminController : ControllerBase
             album.Show();
 
         await dbContext.SaveChangesAsync();
+        await cacheInvalidator.InvalidateAlbumAsync(album.Id, album.CategoryId);
         return Ok(new { message = album.IsVisible ? "已显示" : "已隐藏" });
     }
 
@@ -242,9 +324,27 @@ public class AdminController : ControllerBase
                 System.IO.File.Delete(filePath);
         }
 
+        var albumId = episode.AlbumId;
+        var album = await dbContext.Albums.FindAsync(albumId);
+
         dbContext.Episodes.Remove(episode);
         await dbContext.SaveChangesAsync();
+
+        if (album != null)
+        {
+            await cacheInvalidator.InvalidateEpisodeAsync(request.EpisodeId, albumId, album.CategoryId);
+        }
+
         return Ok(new { message = "删除成功" });
+    }
+
+    private void TryDeleteWebFile(string? relativeUrl)
+    {
+        if (string.IsNullOrWhiteSpace(relativeUrl))
+            return;
+        var filePath = Path.Combine(env.WebRootPath, relativeUrl.TrimStart('/'));
+        if (System.IO.File.Exists(filePath))
+            System.IO.File.Delete(filePath);
     }
 }
 

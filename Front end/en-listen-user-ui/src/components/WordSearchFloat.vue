@@ -24,7 +24,7 @@
       <div class="search-input-wrapper">
         <el-input
           v-model="searchWord"
-          placeholder="输入英语单词，查询释义、例句、同根词..."
+          placeholder="输入英语单词、短语或句子，查询释义与例句..."
           size="large"
           class="search-input"
           @keyup.enter="doSearch"
@@ -176,7 +176,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { queryEnglishWord, addUserWord } from '../api/Word.js'
+import { queryEnglishWord, addUserWord, isValidEnglishQuery } from '../api/Word.js'
 
 const router = useRouter()
 
@@ -302,9 +302,8 @@ const doSearch = async () => {
   const word = searchWord.value.trim()
   if (!word) return
 
-  // 只允许输入英文单词
-  if (!/^[a-zA-Z\s-]+$/.test(word)) {
-    ElMessage.warning('请输入有效的英语单词')
+  if (!isValidEnglishQuery(word)) {
+    ElMessage.warning('请输入有效的英语单词、短语或句子')
     return
   }
 
@@ -316,7 +315,7 @@ const doSearch = async () => {
       wordDetail.value = res.data
     } else {
       wordDetail.value = null
-      ElMessage.warning('未找到该单词的详细信息')
+      ElMessage.warning('未找到相关释义')
     }
   } catch (e) {
     wordDetail.value = null

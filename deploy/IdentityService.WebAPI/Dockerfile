@@ -6,6 +6,7 @@ COPY ["IdentitySerivce/IdentityService.WebAPI/IdentityService.WebAPI.csproj", "I
 COPY ["IdentitySerivce/IdentitySerivce.Domain/IdentitySerivce.Domain.csproj", "IdentitySerivce/IdentitySerivce.Domain/"]
 COPY ["IdentitySerivce/IdentitySerivce.Infrastructure/IdentitySerivce.Infrastructure.csproj", "IdentitySerivce/IdentitySerivce.Infrastructure/"]
 COPY ["Commons/MyJWT/MyJWT.csproj", "Commons/MyJWT/"]
+COPY ["Commons/MyEventController/MyEventController.csproj", "Commons/MyEventController/"]
 
 RUN dotnet restore "IdentitySerivce/IdentityService.WebAPI/IdentityService.WebAPI.csproj"
 

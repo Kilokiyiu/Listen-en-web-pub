@@ -1,10 +1,21 @@
 import { identityRequest } from './Request'
 import listenRequest from './Request'
-import { articleRequest } from './Request'
+import { articleRequest, wordRequest } from './Request'
 
 // ========== IdentityService 登录相关 ==========
 export const loginByUserName = (userName, password) =>
   identityRequest.post('/Login/LoginByUserNameAndPwd', { userName, password })
+
+// ========== 数据概览 ==========
+export const getStatsOverview = () => identityRequest.get('/Admin/Overview')
+export const getRegistrationTrend = (days = 30) =>
+  identityRequest.get('/Admin/Registrations', { params: { days } })
+export const getTrafficTrend = (days = 7) =>
+  identityRequest.get('/Admin/Traffic', { params: { days } })
+export const getTopPages = (days = 7, limit = 10) =>
+  identityRequest.get('/Admin/TopPages', { params: { days, limit } })
+export const getArticleReadingStats = () => articleRequest.get('/Admin/GetReadingStats')
+export const getWordLearningStats = () => wordRequest.get('/Admin/GetLearningStats')
 
 // ========== ListenService 管理相关 ==========
 export const uploadAudio = (formData) =>
@@ -21,6 +32,15 @@ export const getAllAlbums = () =>
 // 切换试卷显示/隐藏状态
 export const toggleAlbumVisibility = (albumId) =>
   listenRequest.post('/Admin/ToggleAlbumVisibility', { episodeId: albumId })
+
+// 上传试卷 PDF 或答案 PDF（documentType: paper | answer）
+export const uploadAlbumDocument = (albumId, documentType, file) => {
+  const formData = new FormData()
+  formData.append('albumId', albumId)
+  formData.append('documentType', documentType)
+  formData.append('file', file)
+  return listenRequest.post('/Admin/UploadAlbumDocument', formData)
+}
 
 // ========== 题目管理 ==========
 // 获取所有题目（管理列表）

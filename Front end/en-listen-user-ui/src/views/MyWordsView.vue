@@ -1,5 +1,5 @@
 <template>
-  <div class="my-words-page">
+  <div class="my-words-page le-page">
     <div class="page-header">
       <h1>
         <el-icon :size="28" color="#409eff"><Notebook /></el-icon>

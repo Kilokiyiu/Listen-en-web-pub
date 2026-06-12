@@ -1,147 +1,113 @@
-<template>
-  <div class="home-page">
-    <!-- 左侧触发条 -->
-    <div class="sidebar-trigger"></div>
+﻿<template>
+  <div class="home-page le-page">
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-content">
+        <p class="hero-tag">英语听力 · 智能学习</p>
+        <h1 class="hero-title">ListenEase</h1>
+        <p class="hero-desc">四六级真题听力、BBC 外刊阅读、词根单词与每日一句，一站提升听力水平</p>
+        <div class="hero-search">
+          <el-input
+            v-model="searchWord"
+            placeholder="输入单词，即点即查释义与例句"
+            size="large"
+            class="search-input"
+            @keyup.enter="doSearch"
+          >
+            <template #append>
+              <el-button type="primary" class="le-btn-gradient" @click="doSearch" :loading="searchLoading">
+                <el-icon><Search /></el-icon>
+              </el-button>
+            </template>
+          </el-input>
+        </div>
+      </div>
+    </section>
 
-    <!-- 左侧导航栏 -->
-    <aside class="sidebar">
-      <div class="sidebar-title">听力分类</div>
-      <el-menu
-        :default-active="activeCategory"
-        class="category-menu"
-        @select="handleSelect"
-      >
-        <el-menu-item
+    <!-- 分类 Tab -->
+    <div class="category-tabs-wrap">
+      <div class="category-tabs" role="tablist">
+        <button
           v-for="cat in categories"
           :key="cat.code"
-          :index="cat.code"
+          type="button"
+          role="tab"
+          class="category-tab"
+          :class="{ active: activeCategory === cat.code }"
+          @click="handleSelect(cat.code)"
         >
-          <el-icon><Document /></el-icon>
-          <span>{{ cat.name?.chinese || cat.name }}</span>
-        </el-menu-item>
-      </el-menu>
-    </aside>
+          {{ cat.name?.chinese || cat.name }}
+        </button>
+      </div>
+    </div>
 
-    <!-- 右侧内容区 -->
-    <main class="main-content">
-      <!-- 首页公告 -->
-      <div class="home-announcement">
-        <span class="home-announcement-text">🎧 ListenEase — 专注英语听力学习，提供四六级真题听力、BBC外刊阅读、智能单词复习与每日一句。<br>本站接入BBC新闻资源，所有听力素材均配备原文，即点即查，助你高效提升英语听力水平。</span>
+    <!-- 每日一句 -->
+    <div v-if="dailyQuote" class="quote-card le-card">
+      <div class="quote-header">
+        <span class="quote-label">每日一句</span>
+        <span class="quote-date">{{ dailyQuote.date }}</span>
+      </div>
+      <p class="quote-en">{{ dailyQuote.content }}</p>
+      <p class="quote-cn">{{ dailyQuote.note }}</p>
+    </div>
+
+    <!-- 当前分类标题 -->
+    <div class="category-intro">
+      <h2>{{ currentCategory.title }}</h2>
+      <p>{{ currentCategory.subtitle }}</p>
+    </div>
+
+    <!-- 试卷列表 -->
+    <section class="le-section">
+      <div class="le-section-header">
+        <h2>
+          <el-icon :color="currentCategory.color"><Document /></el-icon>
+          {{ currentCategory.listTitle }}
+        </h2>
+        <el-link type="primary" @click="goExamList()">查看全部</el-link>
       </div>
 
-      <!-- 每日一句卡片 -->
-      <div class="daily-quote-card" v-if="dailyQuote">
-        <div class="quote-card-inner">
-          <div class="quote-card-header">
-            <span class="quote-card-label">每日一句</span>
-            <span class="quote-card-date">{{ dailyQuote.date }}</span>
-          </div>
-          <div class="quote-card-body">
-            <el-icon class="quote-card-icon"><Quote /></el-icon>
-            <div class="quote-card-text">
-              <p class="quote-card-en">{{ dailyQuote.content }}</p>
-              <p class="quote-card-cn">{{ dailyQuote.note }}</p>
+      <div v-if="albumsLoading" class="le-loading-wrap">
+        <el-icon class="is-loading" :size="28"><Loading /></el-icon>
+        <span>加载试卷中...</span>
+      </div>
+
+      <el-row v-else :gutter="16">
+        <el-col v-for="item in currentList" :key="item.id" :xs="12" :sm="8" :md="6">
+          <div class="exam-card le-card le-card-interactive" @click="goAlbum(item.id)">
+            <span class="exam-tag" :class="activeCategory">{{ item.tag }}</span>
+            <h3 class="exam-title">{{ item.title }}</h3>
+            <div class="exam-meta">
+              <el-icon><Headset /></el-icon>
+              <span>开始练习</span>
             </div>
           </div>
-        </div>
-      </div>
+        </el-col>
+      </el-row>
 
-      <!-- 搜索区域 -->
-      <div class="search-section">
-        <el-input
-          v-model="searchWord"
-          placeholder="输入英语单词，查询释义、例句、同根词..."
-          size="large"
-          class="search-input word-search"
-          @keyup.enter="doSearch"
-        >
-          <template #append>
-            <el-button type="primary" @click="doSearch" :loading="searchLoading">
-              <el-icon><Search /></el-icon>
-            </el-button>
-          </template>
-        </el-input>
-        <h2 class="category-heading">{{ currentCategory.title }}</h2>
-        <p class="subtitle">{{ currentCategory.subtitle }}</p>
-      </div>
+      <el-empty v-if="!albumsLoading && currentList.length === 0" description="暂无试卷" />
+    </section>
 
-      <!-- 试卷列表 -->
-      <div class="section">
-        <div class="section-header">
-          <h2>
-            <el-icon :color="currentCategory.color"><Document /></el-icon>
-            {{ currentCategory.listTitle }}
-          </h2>
-          <el-link type="primary" @click="goExamList()">查看全部</el-link>
-        </div>
-        <el-row :gutter="20">
-          <el-col
-            v-for="item in currentList"
-            :key="item.id"
-            :xs="12" :sm="8" :md="6"
-          >
-            <el-card shadow="hover" class="exam-card" @click="goAlbum(item.id)">
-              <div class="exam-tag" :class="activeCategory">{{ item.tag }}</div>
-              <div class="exam-title">{{ item.title }}</div>
-              <div class="exam-info">
-                <el-icon><Headset /></el-icon>
-                <span>{{ item.count }} 道题</span>
-              </div>
-            </el-card>
-          </el-col>
-        </el-row>
+    <!-- 快捷入口 -->
+    <section class="le-section">
+      <div class="le-section-header">
+        <h2><el-icon color="#f59e0b"><Star /></el-icon> 快捷入口</h2>
       </div>
-
-      <!-- 快捷入口 -->
-      <div class="section">
-        <div class="section-header">
-          <h2>
-            <el-icon color="#e6a23c"><Star /></el-icon>
-            快捷练习(部分功能暂未开放)
-          </h2>
-        </div>
-        <el-row :gutter="20">
-          <el-col :xs="12" :sm="8" :md="6">
-            <el-card shadow="hover" class="quick-card" @click="goDailyArticle">
-              <el-icon :size="32" color="#409eff"><Microphone /></el-icon>
-              <div class="quick-title">每日一篇短文</div>
-              <div class="quick-desc">每天10分钟，保持状态！</div>
-            </el-card>
-          </el-col>
-          <el-col :xs="12" :sm="8" :md="6">
-            <el-card shadow="hover" class="quick-card" @click="goWordRoots">
-              <el-icon :size="32" color="#67c23a"><Collection /></el-icon>
-              <div class="quick-title">词根学习</div>
-              <div class="quick-desc">提高你的词汇量</div>
-            </el-card>
-          </el-col>
-          <el-col :xs="12" :sm="8" :md="6">
-            <el-card shadow="hover" class="quick-card">
-              <el-icon :size="32" color="#e6a23c"><Trophy /></el-icon>
-              <div class="quick-title">考研英语(开发中)</div>
-              <div class="quick-desc">进一步提高水平</div>
-            </el-card>
-          </el-col>
-          <el-col :xs="12" :sm="8" :md="6">
-            <el-card shadow="hover" class="quick-card" @click="goBBCNews">
-              <el-icon :size="32" color="#f56c6c"><Document /></el-icon>
-              <div class="quick-title">BBC外刊</div>
-              <div class="quick-desc">精选BBC新闻阅读</div>
-            </el-card>
-          </el-col>
-        </el-row>
-      </div>
-    </main>
+      <el-row :gutter="16">
+        <el-col v-for="item in quickLinks" :key="item.title" :xs="12" :sm="6">
+          <div class="quick-card le-card le-card-interactive" @click="item.action?.()">
+            <div class="quick-icon" :style="{ background: item.bg }">
+              <el-icon :size="24" color="#fff"><component :is="item.icon" /></el-icon>
+            </div>
+            <h3>{{ item.title }}</h3>
+            <p>{{ item.desc }}</p>
+          </div>
+        </el-col>
+      </el-row>
+    </section>
 
     <!-- 单词详情弹窗 -->
-    <el-dialog
-      v-model="wordDialogVisible"
-      :title="wordDetail?.word || '单词详情'"
-      width="90%"
-      :max-width="700"
-      class="word-detail-dialog"
-      :style="{ maxWidth: '700px' }"
-    >
+    <el-dialog v-model="wordDialogVisible" :title="wordDetail?.word || '单词详情'" width="90%" class="word-detail-dialog">
       <div v-if="wordDetail" class="word-detail-content">
         <!-- 音标和发音 -->
         <div class="phonetic-section">
@@ -274,7 +240,7 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getCategories, getAlbumsByCategoryId } from '../api/Listen.js'
-import { queryEnglishWord, addUserWord, getDailyEnglish } from '../api/Word.js'
+import { queryEnglishWord, addUserWord, getDailyEnglish, isValidEnglishQuery } from '../api/Word.js'
 
 const router = useRouter()
 const searchWord = ref('')
@@ -398,9 +364,8 @@ const doSearch = async () => {
   const word = searchWord.value.trim()
   if (!word) return
 
-  // 只允许输入英文单词
-  if (!/^[a-zA-Z\s-]+$/.test(word)) {
-    ElMessage.warning('请输入有效的英语单词')
+  if (!isValidEnglishQuery(word)) {
+    ElMessage.warning('请输入有效的英语单词、短语或句子')
     return
   }
 
@@ -411,7 +376,7 @@ const doSearch = async () => {
       wordDetail.value = res.data
       wordDialogVisible.value = true
     } else {
-      ElMessage.warning('未找到该单词的详细信息')
+      ElMessage.warning('未找到相关释义')
     }
   } catch (e) {
     ElMessage.error('查询失败，请稍后重试')
@@ -483,404 +448,248 @@ const goExamList = () => {
     router.push({ name: 'exams', query: { categoryId: cat.id } })
   }
 }
+
+const quickLinks = [
+  { title: '每日短文', desc: '10 分钟保持语感', icon: 'Microphone', bg: 'linear-gradient(135deg,#2563eb,#3b82f6)', action: goDailyArticle },
+  { title: '词根学习', desc: '系统扩展词汇', icon: 'Collection', bg: 'linear-gradient(135deg,#10b981,#34d399)', action: goWordRoots },
+  { title: 'BBC 外刊', desc: '精选新闻阅读', icon: 'Document', bg: 'linear-gradient(135deg,#ef4444,#f87171)', action: goBBCNews },
+  { title: '单词复习', desc: '智能间隔复习', icon: 'Reading', bg: 'linear-gradient(135deg,#7c3aed,#a78bfa)', action: () => router.push('/word-review') },
+]
 </script>
 
 <style scoped>
 .home-page {
-  position: relative;
-  min-height: calc(100vh - 60px);
+  padding-top: 8px;
 }
 
-/* 左侧导航栏 - 默认完全隐藏在屏幕外 */
-.sidebar {
-  position: fixed;
-  left: -260px;
-  top: 76px;
-  bottom: 16px;
-  width: 260px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  padding: 16px 0;
-  z-index: 50;
-  transition: left 0.3s ease;
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
-  border-radius: 0 12px 12px 0;
-}
-
-/* 触发条 */
-.sidebar-trigger {
-  position: fixed;
-  left: 0;
-  top: 76px;
-  bottom: 16px;
-  width: 56px;
-  z-index: 51;
-  cursor: pointer;
-  background: transparent;
-}
-
-/* 触发条上的指示箭头 */
-.sidebar-trigger::before {
-  content: '›';
-  position: absolute;
-  left: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 40px;
-  font-weight: 900;
-  color: var(--accent-blue);
-  text-shadow: 0 2px 8px rgba(64, 158, 255, 0.4);
-  z-index: 1;
-  transition: all 0.3s;
-}
-
-.sidebar-trigger:hover::before {
-  color: var(--accent-cyan);
-  text-shadow: 0 2px 16px rgba(64, 158, 255, 0.6);
-  transform: translateY(-50%) scale(1.2);
-}
-
-.sidebar-trigger:hover + .sidebar,
-.sidebar:hover {
-  left: 0;
-}
-
-.sidebar-title {
-  padding: 0 20px 12px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-:deep(.category-menu) {
-  background: transparent !important;
-  border-right: none;
-}
-
-:deep(.category-menu .el-menu-item) {
-  color: var(--text-secondary);
-}
-
-:deep(.category-menu .el-menu-item:hover) {
-  background: rgba(64, 158, 255, 0.08) !important;
-  color: var(--accent-blue);
-}
-
-:deep(.category-menu .el-menu-item.is-active) {
-  background: rgba(64, 158, 255, 0.12) !important;
-  color: var(--accent-blue);
-}
-
-/* 右侧内容区 */
-.main-content {
-  width: 100%;
-  padding: 0 24px 32px;
-  box-sizing: border-box;
-}
-
-/* 每日一句卡片 */
-.daily-quote-card {
-  max-width: 800px;
-  margin: 0 auto 24px;
-}
-
-.quote-card-inner {
-  background: var(--bg-card, #fff);
-  border: 1px solid var(--border-glass, #e2e2e2);
-  border-radius: 12px;
-  padding: 20px 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  transition: box-shadow 0.3s ease;
-}
-
-.daily-quote-card:hover .quote-card-inner {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.quote-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
-}
-
-.quote-card-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--accent-blue);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.quote-card-date {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.quote-card-body {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-}
-
-.quote-card-icon {
-  font-size: 22px;
-  color: var(--accent-blue);
-  margin-top: 2px;
-  flex-shrink: 0;
-  opacity: 0.6;
-}
-
-.quote-card-text {
-  flex: 1;
-}
-
-.quote-card-en {
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--text-primary);
-  line-height: 1.6;
-  margin-bottom: 8px;
-  font-style: italic;
-}
-
-.quote-card-cn {
-  font-size: 14px;
-  color: var(--text-secondary);
-  line-height: 1.5;
-}
-
-.search-section {
-  text-align: center;
-  padding: 24px 20px 40px;
-}
-
-.search-section .category-heading {
-  font-size: 34px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 10px;
-  margin-top: 24px;
-}
-
-.subtitle {
-  color: var(--text-secondary);
-  margin-bottom: 0;
-  font-size: 16px;
-}
-
-.search-input {
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.word-search {
-  margin-bottom: 28px;
-}
-
-.search-input :deep(.el-input__wrapper) {
-  background: #ffffff !important;
-  box-shadow: 0 0 0 1px var(--border-glass) inset, 0 4px 16px rgba(0,0,0,0.06) !important;
-  border-radius: 28px;
-  padding: 4px 8px 4px 20px;
-}
-
-.search-input :deep(.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px rgba(64, 158, 255, 0.3) inset, 0 6px 20px rgba(0,0,0,0.08) !important;
-}
-
-.search-input :deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px var(--accent-blue) inset, 0 0 12px rgba(64, 158, 255, 0.15) !important;
-}
-
-.search-input :deep(.el-input__inner) {
-  color: var(--text-primary);
-  font-size: 15px;
-}
-
-.search-input :deep(.el-input__inner::placeholder) {
-  color: var(--text-muted);
-}
-
-.search-input :deep(.el-input-group__append) {
-  background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-cyan) 100%);
-  border: none;
-  border-radius: 0 24px 24px 0;
-}
-
-.section {
-  margin-bottom: 48px;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.hero {
+  background: var(--le-gradient);
+  border-radius: var(--le-radius);
+  padding: 32px 28px;
   margin-bottom: 20px;
-}
-
-.section-header h2 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.section-header :deep(.el-link) {
-  color: var(--accent-blue);
-  font-size: 14px;
-}
-
-/* 试卷卡片 */
-.exam-card {
-  margin-bottom: 16px;
-  cursor: pointer;
-  transition: all 0.25s ease;
+  color: #fff;
   position: relative;
-  background: var(--bg-card) !important;
-  border: 1px solid var(--border-glass) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   overflow: hidden;
 }
 
-.exam-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  border-color: rgba(64, 158, 255, 0.2) !important;
+.hero::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
+}
+
+.hero-tag {
+  font-size: 13px;
+  opacity: 0.9;
+  margin: 0 0 8px;
+  letter-spacing: 0.05em;
+}
+
+.hero-title {
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  font-weight: 800;
+  margin: 0 0 8px;
+  letter-spacing: -0.03em;
+}
+
+.hero-desc {
+  font-size: 14px;
+  opacity: 0.92;
+  margin: 0 0 20px;
+  line-height: 1.6;
+}
+
+.hero-search :deep(.el-input__wrapper) {
+  border-radius: 99px 0 0 99px;
+  box-shadow: none;
+}
+
+.hero-search :deep(.el-input-group__append) {
+  border-radius: 0 99px 99px 0;
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.category-tabs-wrap {
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.category-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.category-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.category-tab {
+  flex-shrink: 0;
+  border: 1px solid var(--le-border);
+  background: var(--le-bg-elevated);
+  color: var(--le-text-secondary);
+  padding: 10px 18px;
+  border-radius: 99px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.category-tab.active {
+  background: var(--le-gradient);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.quote-card {
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+
+.quote-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.quote-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--le-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.quote-date {
+  font-size: 12px;
+  color: var(--le-text-muted);
+}
+
+.quote-en {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0 0 8px;
+  color: var(--le-text);
+  line-height: 1.6;
+}
+
+.quote-cn {
+  font-size: 14px;
+  color: var(--le-text-secondary);
+  margin: 0;
+}
+
+.category-intro {
+  margin-bottom: 20px;
+}
+
+.category-intro h2 {
+  font-size: 20px;
+  margin: 0 0 4px;
+}
+
+.category-intro p {
+  font-size: 14px;
+  color: var(--le-text-muted);
+  margin: 0;
+}
+
+.exam-card {
+  padding: 18px;
+  margin-bottom: 16px;
+  height: calc(100% - 16px);
 }
 
 .exam-tag {
   display: inline-block;
   padding: 3px 10px;
-  border-radius: 6px;
+  border-radius: 99px;
   font-size: 11px;
   font-weight: 600;
   margin-bottom: 10px;
-  letter-spacing: 0.3px;
 }
 
-.exam-tag.cet4,
-.exam-tag.cet6 {
-  background: rgba(64, 158, 255, 0.08);
-  color: var(--accent-blue);
-}
-
-.exam-tag.ielts {
-  background: rgba(103, 194, 58, 0.08);
-  color: #67c23a;
-}
-
-.exam-tag.toefl {
-  background: rgba(230, 162, 60, 0.08);
-  color: #e6a23c;
-}
+.exam-tag.cet4 { background: rgba(37,99,235,0.1); color: var(--le-primary); }
+.exam-tag.cet6 { background: rgba(124,58,237,0.1); color: var(--le-purple); }
+.exam-tag.ielts { background: rgba(16,185,129,0.1); color: var(--le-success); }
+.exam-tag.toefl { background: rgba(245,158,11,0.1); color: var(--le-warning); }
 
 .exam-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 12px;
   line-height: 1.5;
-  margin-bottom: 10px;
-  min-height: 42px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  min-height: 44px;
 }
 
-.exam-info {
+.exam-meta {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
-/* 快捷练习卡片 */
-.quick-card {
-  text-align: center;
-  padding: 24px 0;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  margin-bottom: 16px;
-  background: var(--bg-card) !important;
-  border: 1px solid var(--border-glass) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-.quick-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  border-color: rgba(64, 158, 255, 0.2) !important;
-}
-
-.quick-title {
-  margin-top: 14px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.quick-desc {
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-/* 首页公告 */
-.home-announcement {
-  max-width: 800px;
-  margin: 0 auto 20px;
-  padding: 14px 24px;
-  background: var(--bg-card, #fff);
-  border: 1px solid var(--border-glass, #e2e2e2);
-  border-radius: 10px;
-  text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-}
-
-.home-announcement-text {
   font-size: 13px;
-  color: var(--text-secondary);
-  letter-spacing: 0.3px;
-  line-height: 1.6;
+  color: var(--le-text-muted);
+  padding-top: 12px;
+  border-top: 1px solid var(--le-border);
 }
 
-/* 单词详情弹窗样式 */
-.word-detail-dialog :deep(.el-dialog) {
-  width: 90% !important;
-  max-width: 700px !important;
-  margin: 5vh auto !important;
-  max-height: 90vh;
+.quick-card {
+  padding: 20px;
+  margin-bottom: 16px;
+  text-align: center;
+  height: calc(100% - 16px);
+}
+
+.quick-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
 }
 
-.word-detail-dialog :deep(.el-dialog__body) {
-  flex: 1;
-  overflow: hidden;
-  padding: 16px 20px;
+.quick-card h3 {
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+
+.quick-card p {
+  font-size: 12px;
+  color: var(--le-text-muted);
+  margin: 0;
 }
 
 .word-detail-content {
-  max-height: calc(90vh - 120px);
+  max-height: 60vh;
   overflow-y: auto;
-  padding-right: 8px;
 }
 
 .phonetic-section {
   display: flex;
-  gap: 24px;
-  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--le-border);
 }
 
 .phonetic-item {
@@ -890,177 +699,56 @@ const goExamList = () => {
 }
 
 .phonetic-label {
-  font-size: 12px;
+  font-size: 11px;
   color: #fff;
-  background: #409eff;
+  background: var(--le-primary);
   padding: 2px 6px;
   border-radius: 4px;
 }
 
-.phonetic-text {
-  font-size: 16px;
-  color: var(--text-primary);
-  font-family: 'Times New Roman', serif;
-}
-
 .detail-section {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .detail-section h4 {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 15px;
-  color: var(--text-primary);
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+  margin: 0 0 10px;
 }
 
-.translation-list {
+.translation-list, .phrase-list {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.translation-tag {
-  font-size: 14px;
 }
 
 .sentence-item {
-  margin-bottom: 12px;
   padding: 12px;
-  background: #f8f9fa;
-  border-radius: 8px;
-}
-
-.sentence-en {
-  font-size: 14px;
-  color: var(--text-primary);
-  margin-bottom: 4px;
-}
-
-.sentence-cn {
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-.phrase-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.phrase-tag {
-  font-size: 13px;
-}
-
-.relword-group,
-.synonym-group {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
+  background: var(--le-bg-muted);
+  border-radius: var(--le-radius-sm);
   margin-bottom: 8px;
 }
 
-.relword-item,
-.synonym-item {
-  font-size: 14px;
-  color: var(--text-primary);
+.sentence-en { font-size: 14px; margin: 0 0 4px; }
+.sentence-cn { font-size: 13px; color: var(--le-text-muted); margin: 0; }
+
+.relword-group, .synonym-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
 }
 
-.relword-tran {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-/* 手机端适配 */
 @media (max-width: 768px) {
-  .daily-quote-card {
-    margin: 0 12px 16px;
+  .hero {
+    padding: 24px 18px;
+    border-radius: var(--le-radius-sm);
   }
-
-  .quote-card-inner {
+  .quote-card {
     padding: 16px;
-  }
-
-  .quote-card-en {
-    font-size: 14px;
-  }
-
-  .quote-card-cn {
-    font-size: 13px;
-  }
-
-  .home-announcement {
-    margin: 0 12px 16px;
-    padding: 12px 16px;
-  }
-
-  .word-detail-dialog :deep(.el-dialog) {
-    width: 95% !important;
-    max-width: 95% !important;
-    margin: 2vh auto !important;
-    max-height: 96vh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .word-detail-dialog :deep(.el-dialog__body) {
-    padding: 12px 16px;
-    flex: 1;
-    overflow: hidden;
-  }
-
-  .word-detail-content {
-    max-height: calc(96vh - 120px);
-    overflow-y: auto;
-  }
-
-  .phonetic-section {
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 12px;
-    padding-bottom: 12px;
-  }
-
-  .phonetic-text {
-    font-size: 14px;
-  }
-
-  .detail-section {
-    margin-bottom: 12px;
-  }
-
-  .detail-section h4 {
-    font-size: 14px;
-    margin-bottom: 8px;
-    padding-bottom: 6px;
-  }
-
-  .sentence-item {
-    padding: 8px;
-    margin-bottom: 8px;
-  }
-
-  .sentence-en {
-    font-size: 13px;
-  }
-
-  .sentence-cn {
-    font-size: 12px;
-  }
-
-  .translation-tag,
-  .phrase-tag {
-    font-size: 12px;
-  }
-
-  .relword-item,
-  .synonym-item {
-    font-size: 13px;
   }
 }
 </style>

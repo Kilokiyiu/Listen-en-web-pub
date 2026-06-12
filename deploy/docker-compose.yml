@@ -1,4 +1,26 @@
 services:
+  # RabbitMQ 消息队列
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: listen_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_USER:-guest}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASSWORD:-guest}"
+      RABBITMQ_VM_MEMORY_HIGH_WATERMARK: "0.4"
+    mem_limit: 256m
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: always
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   # SQL Server 数据库
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -6,6 +28,7 @@ services:
     environment:
       SA_PASSWORD: "${SA_PASSWORD}"
       ACCEPT_EULA: "Y"
+      MSSQL_MEMORY_LIMIT_MB: "1536"
     ports:
       - "1433:1433"
     volumes:
@@ -30,8 +53,11 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - DatabaseConnStr=Server=sqlserver;Database=Listen_En_Web_identity;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True
       - JWT_KEY=${JWT_KEY}
-      - CorsOrigins__0=https://listenease.online
-      - CorsOrigins__1=https://www.listenease.online
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__UserName=${RABBITMQ_USER:-guest}
+      - RabbitMQ__Password=${RABBITMQ_PASSWORD:-guest}
+      - CorsOrigins__0=${CORS_ORIGIN_0:-https://your-domain.com}
+      - CorsOrigins__1=${CORS_ORIGIN_1:-https://www.your-domain.com}
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -47,10 +73,14 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - DatabaseConnStr=Server=sqlserver;Database=Listen_En_Web_listen;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True
       - JWT_KEY=${JWT_KEY}
-      - CorsOrigins__0=https://listenease.online
-      - CorsOrigins__1=https://www.listenease.online
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__UserName=${RABBITMQ_USER:-guest}
+      - RabbitMQ__Password=${RABBITMQ_PASSWORD:-guest}
+      - CorsOrigins__0=${CORS_ORIGIN_0:-https://your-domain.com}
+      - CorsOrigins__1=${CORS_ORIGIN_1:-https://www.your-domain.com}
     volumes:
       - ./audios:/app/wwwroot/audios  # 音频文件挂载（本地目录 deploy/audios/）
+      - ./papers:/app/wwwroot/papers  # 试卷/答案 PDF
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -66,8 +96,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - DatabaseConnStr=Server=sqlserver;Database=Listen_En_Web_article;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True
       - JWT_KEY=${JWT_KEY}
-      - CorsOrigins__0=https://listenease.online
-      - CorsOrigins__1=https://www.listenease.online
+      - CorsOrigins__0=${CORS_ORIGIN_0:-https://your-domain.com}
+      - CorsOrigins__1=${CORS_ORIGIN_1:-https://www.your-domain.com}
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -83,8 +113,9 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - DatabaseConnStr=Server=sqlserver;Database=Listen_En_Web_word;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True
       - JWT_KEY=${JWT_KEY}
-      - CorsOrigins__0=https://listenease.online
-      - CorsOrigins__1=https://www.listenease.online
+      - CorsOrigins__0=${CORS_ORIGIN_0:-https://your-domain.com}
+      - CorsOrigins__1=${CORS_ORIGIN_1:-https://www.your-domain.com}
+      - XxApi__ApiKey=${XXAPI_API_KEY:-}
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -122,3 +153,4 @@ services:
 
 volumes:
   sqlserver_data:
+  rabbitmq_data:

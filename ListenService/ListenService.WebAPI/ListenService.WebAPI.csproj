@@ -14,6 +14,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\Commons\CommonInit\CommonInit.csproj" />
+      <ProjectReference Include="..\..\Commons\MyEventController\MyEventController.csproj" />
       <ProjectReference Include="..\..\Commons\MyJWT\MyJWT.csproj" />
       <ProjectReference Include="..\ListenService.Domain\ListenService.Domain.csproj" />
       <ProjectReference Include="..\ListenService.Infrastrucure\ListenService.Infrastrucure.csproj" />

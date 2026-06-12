@@ -1,6 +1,6 @@
 # Commons 使用说明
 
-> Commons 是 Listen-en-web 项目的公共基础类库，为所有业务服务提供通用能力。  
+> Commons 是 Listen-en-web 项目的公共基础设施层，为所有业务服务提供通用能力。
 > 采用"公共能力下沉"原则，将跨服务复用的代码提取为独立类库，避免重复实现。
 
 ---
@@ -9,13 +9,11 @@
 
 ### 1.1 设计原则
 
-
-| 原则         | 说明                             |
-| ---------- | ------------------------------ |
+| 原则 | 说明                             |
+|------|--------------------------------|
 | **公共能力下沉** | 主要用于将多个服务都需要的功能提取到Commons中统一维护 |
-| **零业务依赖**  | Commons 不依赖任何业务层，只依赖框架和基础库     |
-| **可独立引用**  | 各业务服务按需引用，不需要全部引用              |
-
+| **零业务依赖** | Commons 不依赖任何业务层，只依赖框架和基础库     |
+| **可独立引用** | 各业务服务按需引用，不需要全部引用              |
 
 ### 1.2 项目结构
 
@@ -51,7 +49,7 @@ MyCommons ──→ System.Text.Json
 
 ### WebAppBuilderExtensions
 
-`**ConfigureDbConfiguration**`
+**`ConfigureDbConfiguration`**
 
 ```csharp
 待补充
@@ -59,19 +57,18 @@ MyCommons ──→ System.Text.Json
 
 **作用**：配置数据库的连接字符串，并将配置存储在数据库中，支持运行时热启动
 
-`**ConfigureExtraServices`**
+
+**`ConfigureExtraServices`**
 
 **作用**：一键注册所有通用服务
 
-
-| 注册项               | 说明                                                                   |
-| ----------------- | -------------------------------------------------------------------- |
-| 模块初始化器            | 通过反射扫描所有程序集，自动执行 `IModuleInitializer`                                |
-| EF Core DbContext | 自动注册所有 DbContext，统一使用 SQL Server                                     |
-| JWT 认证授权          | 注册 `AddAuthorization` + `AddAuthentication` + `AddJWTAuthentication` |
-| CORS              | 从配置文件读取允许的源                                                          |
-| FluentValidation  | 自动扫描程序集注册验证器                                                         |
-
+| 注册项 | 说明 |
+|--------|------|
+| 模块初始化器 | 通过反射扫描所有程序集，自动执行 `IModuleInitializer` |
+| EF Core DbContext | 自动注册所有 DbContext，统一使用 SQL Server |
+| JWT 认证授权 | 注册 `AddAuthorization` + `AddAuthentication` + `AddJWTAuthentication` |
+| CORS | 从配置文件读取允许的源 |
+| FluentValidation | 自动扫描程序集注册验证器 |
 
 ---
 
@@ -105,7 +102,6 @@ public interface ISoftDelete
 ```
 
 **说明**：
-
 - 实现此接口的实体不会被物理删除
 - `SoftDelete()` 方法将 `IsDeleted` 设为 `true`
 - EF Core 全局过滤器会自动排除 `IsDeleted = true` 的数据
@@ -138,7 +134,6 @@ public static void EnableSoftDeletionGlobalFilter(this ModelBuilder builder)
 **作用**：扫描所有实现 `ISoftDelete` 的实体，自动添加 `WHERE IsDeleted = false` 查询条件。
 
 **使用方式**：在 `OnModelCreating` 中调用：
-
 ```csharp
 protected override void OnModelCreating(ModelBuilder builder)
 {
@@ -155,7 +150,6 @@ public static IQueryable<T> Query<T>(this DbContext ctx) where T : class, IEntit
 **作用**：返回禁用变更跟踪的查询，提升查询性能。
 
 **使用方式**：
-
 ```csharp
 var users = dbContext.Query<User>().Where(u => u.UserName == "admin").ToList();
 ```
@@ -214,7 +208,6 @@ public interface IIntegrationEventHandler
 ```
 
 **说明**：
-
 - 所有事件处理器必须实现此接口
 - 实现必须是**幂等的**（同一事件重复消费不能产生副作用）
 
@@ -236,7 +229,6 @@ public abstract class JsonIntegrationEventHandler<T> : IIntegrationEventHandler
 **作用**：自动完成 JSON 反序列化，子类只需关心业务逻辑。
 
 **使用方式**：
-
 ```csharp
 public class UserCreatedEventHandler : JsonIntegrationEventHandler<UserCreatedEvent>
 {
@@ -275,7 +267,6 @@ public class JWTOptions
 ```
 
 **配置示例**（appsettings.json）：
-
 ```json
 {
   "JWT": {
@@ -308,14 +299,12 @@ public static class WebApplicationBuilderExtensions
 ```
 
 **作用**：
-
 - 从 `appsettings.json` 读取 JWT 配置
 - 注册 `JWTOptions` 到 DI 容器
 - 配置 JWT Bearer 认证中间件
 - 注册 `IGenerateToken` 服务
 
 **使用方式**（Program.cs）：
-
 ```csharp
 builder.ConfigureInfrastructureServices();
 ```
@@ -363,13 +352,10 @@ app.UseAuthorization();
 
 ## 九、后续扩展内容
 
-
-| 扩展方向        | 说明                                                     |
-| ----------- | ------------------------------------------------------ |
+| 扩展方向 | 说明 |
+|----------|------|
 | 统一 API 响应包装 | 添加 `ApiResponse<T>` 和中间件，统一 `{code, message, data}` 格式 |
-| 全局异常处理      | 添加 `ExceptionHandlingMiddleware`，统一错误响应                |
-| 缓存抽象        | 添加 `ICacheService` 接口，支持 MemoryCache / Redis 切换        |
-| 日志扩展        | 添加结构化日志配置，统一日志格式                                       |
-| 健康检查        | 添加 `HealthChecks` 基类配置                                 |
-
-
+| 全局异常处理 | 添加 `ExceptionHandlingMiddleware`，统一错误响应 |
+| 缓存抽象 | 添加 `ICacheService` 接口，支持 MemoryCache / Redis 切换 |
+| 日志扩展 | 添加结构化日志配置，统一日志格式 |
+| 健康检查 | 添加 `HealthChecks` 基类配置 |

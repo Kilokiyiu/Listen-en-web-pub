@@ -12,5 +12,7 @@ public class AlbumConfig : IEntityTypeConfiguration<Album>
         builder.ToTable("T_Album");
         builder.HasKey(e => e.Id).IsClustered(false);
         builder.OwnsOneMultilingualString(e => e.Name);
+        builder.Property(e => e.PaperFileUrl).HasMaxLength(1000).IsRequired(false);
+        builder.Property(e => e.AnswerFileUrl).HasMaxLength(1000).IsRequired(false);
     }
 }

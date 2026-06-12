@@ -40,6 +40,14 @@ namespace ListenService.Infrastrucure.Migrations
                     b.Property<int>("SequenceNumber")
                         .HasColumnType("int");
 
+                    b.Property<string>("AnswerFileUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("PaperFileUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.HasKey("Id");
 
                     SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("Id"), false);

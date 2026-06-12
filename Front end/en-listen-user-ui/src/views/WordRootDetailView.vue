@@ -1,5 +1,5 @@
 <template>
-  <div class="word-root-detail-page">
+  <div class="word-root-detail-page le-page">
     <el-page-header @back="goBack" title="词根详情" />
 
     <div v-if="wordRoot" class="detail-content">

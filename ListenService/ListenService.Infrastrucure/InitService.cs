@@ -7,7 +7,9 @@ public static class InitService
 {
     public static IServiceCollection ServiceInit(this IServiceCollection services)
     {
-        services.AddScoped<IListenRepo, ListenRepo>();
+        services.AddScoped<ListenRepo>();
+        services.AddScoped<IListenRepo, CachedListenRepo>();
+        services.AddSingleton<ListenCacheInvalidator>();
         return services;
     }
 }

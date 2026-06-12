@@ -1,5 +1,5 @@
 <template>
-  <div class="study-page">
+  <div class="study-page le-page">
     <!-- 顶部导航 -->
     <div class="page-header">
       <el-button text @click="$router.back()" class="back-btn">

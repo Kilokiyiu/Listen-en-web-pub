@@ -64,20 +64,19 @@ export const getRandomWords = (params) => wordRequest.get('/user-words/random', 
 export const reviewWord = (id, quality) => wordRequest.post(`/user-words/${id}/review`, { quality })
 export const getWordStats = () => wordRequest.get('/user-words/stats')
 
-// 查询外部单词 API（xxapi.cn）
+// 查询单词、短语或句子（xxapi 词典，句子自动翻译）
 export const queryEnglishWord = async (word) => {
-    try {
-        const res = await axios.get('https://v2.xxapi.cn/api/englishwords', {
-            params: { word },
-            timeout: 10000
-        })
-        return res.data
-    } catch (error) {
-        console.error('查询单词失败', error)
-        throw error
-    }
+    return wordRequest.get('/dictionary', { params: { word: word.trim() } })
 }
 
+/** 校验英语单词、短语或句子输入 */
+export const isValidEnglishQuery = (text) => {
+    const query = text?.trim()
+    if (!query || query.length > 500) return false
+    if (!/[a-zA-Z]/.test(query)) return false
+    if (/[\u4e00-\u9fff]/.test(query)) return false
+    return /^[a-zA-Z0-9\s\-'.,!?;:()"\/]+$/.test(query)
+}
 // 获取每日一句（Timeless API - 支持 CORS）
 export const getDailyEnglish = async () => {
     try {

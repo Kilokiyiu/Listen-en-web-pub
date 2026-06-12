@@ -1,5 +1,5 @@
 <template>
-  <div class="daily-page">
+  <div class="daily-page le-page">
     <!-- 顶部导航 -->
     <div class="page-header">
       <el-button text @click="router.back()" class="back-btn">
@@ -29,7 +29,15 @@
     <div v-else-if="article" class="article-content">
       <!-- 音频播放器 -->
       <div v-if="article.audioUrl" class="audio-player">
-        <audio controls :src="getAudioUrl(article.AudioUrl)" class="audio-control">
+        <audio
+          ref="audioRef"
+          controls
+          playsinline
+          webkit-playsinline
+          preload="auto"
+          :src="getAudioUrl(article.audioUrl)"
+          class="audio-control"
+        >
           您的浏览器不支持音频播放
         </audio>
       </div>
@@ -71,17 +79,20 @@
         </div>
       </div>
 
-      <!-- 操作按钮 -->
+      <!-- 操作按钮（收藏/已读需登录） -->
       <div class="article-actions">
-        <el-button :type="article.isFavorite ? 'warning' : 'default'" @click="toggleFavorite">
-          <el-icon><Star /></el-icon>
-          {{ article.isFavorite ? '已收藏' : '收藏' }}
-        </el-button>
-        <el-button type="primary" @click="markAsRead" v-if="!article.isRead">
-          <el-icon><Check /></el-icon>
-          标记为已读
-        </el-button>
-        <el-tag v-else type="success" size="large">已完成今日阅读</el-tag>
+        <template v-if="isLoggedIn">
+          <el-button :type="article.isFavorite ? 'warning' : 'default'" @click="toggleFavorite">
+            <el-icon><Star /></el-icon>
+            {{ article.isFavorite ? '已收藏' : '收藏' }}
+          </el-button>
+          <el-button type="primary" @click="markAsRead" v-if="!article.isRead">
+            <el-icon><Check /></el-icon>
+            标记为已读
+          </el-button>
+          <el-tag v-else type="success" size="large">已完成今日阅读</el-tag>
+        </template>
+        <p v-else class="login-hint">登录后可收藏短文、记录阅读进度</p>
       </div>
     </div>
 
@@ -97,6 +108,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getDailyArticle, markArticleRead, toggleFavorite as toggleFavoriteApi } from '../api/DailyArticle.js'
+import { useAudioPlayer } from '../composables/useAudioPlayer.js'
 import dayjs from 'dayjs'
 
 const router = useRouter()
@@ -105,6 +117,20 @@ const route = useRoute()
 const loading = ref(false)
 const article = ref(null)
 const showTranslation = ref(false)
+const audioRef = ref(null)
+
+const audioStorageKey = computed(() => {
+  if (!article.value?.audioUrl) return ''
+  return `daily:audio:${currentDate.value.format('YYYY-MM-DD')}`
+})
+
+useAudioPlayer(audioRef, {
+  storageKey: audioStorageKey,
+  title: computed(() => article.value?.titleChinese || '每日一篇短文'),
+  album: '每日短文',
+})
+
+const isLoggedIn = computed(() => !!(localStorage.getItem('token') && localStorage.getItem('userId')))
 
 // 将文本按换行分割为段落数组
 const englishParagraphs = computed(() => {
@@ -187,6 +213,11 @@ const getAudioUrl = (url) => {
 }
 
 const markAsRead = async () => {
+  if (!isLoggedIn.value) {
+    ElMessage.warning('请先登录')
+    router.push({ name: 'login', query: { redirect: route.fullPath } })
+    return
+  }
   try {
     await markArticleRead(article.value.id)
     article.value.isRead = true
@@ -197,6 +228,11 @@ const markAsRead = async () => {
 }
 
 const toggleFavorite = async () => {
+  if (!isLoggedIn.value) {
+    ElMessage.warning('请先登录')
+    router.push({ name: 'login', query: { redirect: route.fullPath } })
+    return
+  }
   try {
     await toggleFavoriteApi(article.value.id)
     article.value.isFavorite = !article.value.isFavorite
@@ -206,12 +242,18 @@ const toggleFavorite = async () => {
   }
 }
 
+const scrollPageTop = () => {
+  window.scrollTo(0, 0)
+}
+
 onMounted(() => {
+  scrollPageTop()
   loadArticle()
 })
 
 // 监听路由变化，重新加载
 watch(() => route.query.date, () => {
+  scrollPageTop()
   loadArticle()
 })
 </script>
@@ -348,5 +390,12 @@ watch(() => route.query.date, () => {
 
 .empty-wrapper {
   padding: 60px 0;
+}
+
+.login-hint {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+  text-align: center;
 }
 </style>

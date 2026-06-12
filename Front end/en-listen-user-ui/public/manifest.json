@@ -1,0 +1,24 @@
+{
+  "name": "ListenEase - 英语听力练习平台",
+  "short_name": "ListenEase",
+  "description": "四六级、雅思、托福历年真题听力练习，支持试卷与答案下载",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a5fb4",
+  "theme_color": "#1a5fb4",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "/LE.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon",
+      "purpose": "any"
+    },
+    {
+      "src": "/og-cover.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

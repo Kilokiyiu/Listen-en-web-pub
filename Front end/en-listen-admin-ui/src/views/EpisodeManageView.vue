@@ -1,66 +1,130 @@
 <template>
-  <div class="manage-container">
-    <div class="manage-header">
-      <h2>内容管理</h2>
-      <el-button type="primary" @click="router.push('/')">
-        去上传音频
-      </el-button>
+  <div class="admin-page">
+    <PageHeader
+      title="内容管理"
+      description="管理听力试卷、原文、PDF 文档及可见性"
+    >
+      <template #extra>
+        <el-button type="primary" @click="router.push('/upload')">
+          <el-icon><Upload /></el-icon>
+          去上传音频
+        </el-button>
+      </template>
+    </PageHeader>
+
+    <div class="admin-stat-grid">
+      <div class="admin-stat-card">
+        <div>
+          <div class="admin-stat-card__label">试卷总数</div>
+          <div class="admin-stat-card__value">{{ stats.total }}</div>
+        </div>
+        <div class="admin-stat-card__icon admin-stat-card__icon--blue">
+          <el-icon><FolderOpened /></el-icon>
+        </div>
+      </div>
+      <div class="admin-stat-card">
+        <div>
+          <div class="admin-stat-card__label">已有原文</div>
+          <div class="admin-stat-card__value">{{ stats.withSubtitle }}</div>
+        </div>
+        <div class="admin-stat-card__icon admin-stat-card__icon--green">
+          <el-icon><Document /></el-icon>
+        </div>
+      </div>
+      <div class="admin-stat-card">
+        <div>
+          <div class="admin-stat-card__label">已上传 PDF</div>
+          <div class="admin-stat-card__value">{{ stats.withPaper }}</div>
+        </div>
+        <div class="admin-stat-card__icon admin-stat-card__icon--orange">
+          <el-icon><Files /></el-icon>
+        </div>
+      </div>
+      <div class="admin-stat-card">
+        <div>
+          <div class="admin-stat-card__label">已隐藏</div>
+          <div class="admin-stat-card__value">{{ stats.hidden }}</div>
+        </div>
+        <div class="admin-stat-card__icon admin-stat-card__icon--purple">
+          <el-icon><Hide /></el-icon>
+        </div>
+      </div>
     </div>
 
-    <!-- ========== 试卷管理 ========== -->
-    <el-card class="manage-card" shadow="never">
-      <template #header>
-        <div class="card-header">
-          <span class="card-title">试卷管理</span>
-        </div>
-      </template>
-      <el-table
-        v-loading="loading"
-        :data="albums"
-        style="width: 100%"
-        row-key="id"
-        border
-      >
-        <el-table-column prop="nameChinese" label="试卷名称" min-width="280" show-overflow-tooltip />
-        <el-table-column prop="categoryNameChinese" label="分类" width="120" />
-        <el-table-column prop="episodeCount" label="题目数量" width="90" align="center" />
-        <el-table-column label="是否有原文" width="100" align="center">
-          <template #default="{ row }">
-            <el-tag :type="row.hasSubtitle ? 'success' : 'info'" size="small">
-              {{ row.hasSubtitle ? '有' : '无' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="隐藏" width="70" align="center">
-          <template #default="{ row }">
-            <el-switch
-              :model-value="!row.isVisible"
-              active-text=""
-              inactive-text=""
-              @change="handleToggle(row)"
-              :loading="row.toggling"
-            />
-          </template>
-        </el-table-column>
-        <el-table-column label="创建时间" width="170">
-          <template #default="{ row }">
-            {{ formatDate(row.creationTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="200" align="center" fixed="right">
-          <template #default="{ row }">
-            <el-button type="primary" link size="small" @click="openEdit(row)">
-              {{ row.hasSubtitle ? '编辑原文' : '添加原文' }}
-            </el-button>
-            <el-button type="danger" link size="small" @click="handleDelete(row)">
-              删除
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+    <div class="admin-card admin-table-card">
+      <div class="admin-card__header">
+        <span class="admin-card__title">试卷管理</span>
+        <el-button text type="primary" @click="loadAlbums" :loading="loading">
+          <el-icon><Refresh /></el-icon>
+          刷新
+        </el-button>
+      </div>
+      <div class="admin-card__body table-body">
+        <el-table
+          v-loading="loading"
+          :data="albums"
+          style="width: 100%"
+          row-key="id"
+          stripe
+        >
+          <el-table-column prop="nameChinese" label="试卷名称" min-width="280" show-overflow-tooltip />
+          <el-table-column prop="categoryNameChinese" label="分类" width="120" />
+          <el-table-column prop="episodeCount" label="题目数量" width="90" align="center" />
+          <el-table-column label="是否有原文" width="100" align="center">
+            <template #default="{ row }">
+              <el-tag :type="row.hasSubtitle ? 'success' : 'info'" size="small" effect="light">
+                {{ row.hasSubtitle ? '有' : '无' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="试卷 PDF" width="110" align="center">
+            <template #default="{ row }">
+              <el-tag :type="row.hasPaper ? 'success' : 'info'" size="small" effect="light">
+                {{ row.hasPaper ? '已上传' : '未上传' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="答案 PDF" width="110" align="center">
+            <template #default="{ row }">
+              <el-tag :type="row.hasAnswer ? 'success' : 'info'" size="small" effect="light">
+                {{ row.hasAnswer ? '已上传' : '未上传' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="隐藏" width="70" align="center">
+            <template #default="{ row }">
+              <el-switch
+                :model-value="!row.isVisible"
+                @change="handleToggle(row)"
+                :loading="row.toggling"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column label="创建时间" width="170">
+            <template #default="{ row }">
+              {{ formatDate(row.creationTime) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="320" align="center" fixed="right">
+            <template #default="{ row }">
+              <el-button type="primary" link size="small" @click="openEdit(row)">
+                {{ row.hasSubtitle ? '编辑原文' : '添加原文' }}
+              </el-button>
+              <el-button type="primary" link size="small" @click="triggerUpload(row, 'paper')">
+                上传试卷
+              </el-button>
+              <el-button type="success" link size="small" @click="triggerUpload(row, 'answer')">
+                上传答案
+              </el-button>
+              <el-button type="danger" link size="small" @click="handleDelete(row)">
+                删除
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </div>
 
-    <!-- 编辑原文弹窗 -->
     <el-dialog
       v-model="dialogVisible"
       :title="currentAlbum?.hasSubtitle ? '编辑原文' : '添加原文'"
@@ -69,6 +133,7 @@
     >
       <div class="dialog-subtitle">
         <p class="dialog-info">
+          <el-icon><InfoFilled /></el-icon>
           <span>{{ currentAlbum?.nameChinese || '' }}</span>
         </p>
       </div>
@@ -87,24 +152,72 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <input
+      ref="pdfInputRef"
+      type="file"
+      accept=".pdf,application/pdf"
+      class="hidden-file-input"
+      @change="handlePdfSelected"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getAllAlbums, updateEpisodeSubtitle, toggleAlbumVisibility, deleteEpisode } from '../api/Admin'
+import {
+  getAllAlbums,
+  updateEpisodeSubtitle,
+  toggleAlbumVisibility,
+  deleteEpisode,
+  uploadAlbumDocument
+} from '../api/Admin'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import PageHeader from '../components/PageHeader.vue'
 
 const router = useRouter()
 
-// ========== 数据 ==========
 const loading = ref(false)
 const albums = ref([])
 const dialogVisible = ref(false)
 const currentAlbum = ref(null)
 const subtitleContent = ref('')
 const saving = ref(false)
+const pdfInputRef = ref(null)
+const pendingUpload = ref({ albumId: null, documentType: null })
+
+const stats = computed(() => ({
+  total: albums.value.length,
+  withSubtitle: albums.value.filter(a => a.hasSubtitle).length,
+  withPaper: albums.value.filter(a => a.hasPaper).length,
+  hidden: albums.value.filter(a => !a.isVisible).length,
+}))
+
+const triggerUpload = (row, documentType) => {
+  pendingUpload.value = { albumId: row.id, documentType }
+  pdfInputRef.value?.click()
+}
+
+const handlePdfSelected = async (event) => {
+  const file = event.target.files?.[0]
+  event.target.value = ''
+  const { albumId, documentType } = pendingUpload.value
+  if (!file || !albumId || !documentType) return
+
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    ElMessage.warning('请选择 PDF 文件')
+    return
+  }
+
+  try {
+    await uploadAlbumDocument(albumId, documentType, file)
+    ElMessage.success(documentType === 'paper' ? '试卷上传成功' : '答案上传成功')
+    await loadAlbums()
+  } catch (e) {
+    // 错误已在拦截器中处理
+  }
+}
 
 const loadAlbums = async () => {
   loading.value = true
@@ -139,7 +252,6 @@ const saveSubtitle = async () => {
 
   saving.value = true
   try {
-    // 通过 albumId 找到第一个 episode 来更新原文
     await updateEpisodeSubtitle({
       episodeId: currentAlbum.value.firstEpisodeId,
       subtitle: subtitleContent.value.trim(),
@@ -205,40 +317,12 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.manage-container {
-  padding: 32px;
-  max-width: 1200px;
-  margin: 0 auto;
+.table-body {
+  padding: 0;
 }
 
-.manage-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.manage-header h2 {
-  margin: 0;
-  color: #1a1a2e;
-  font-size: 22px;
-}
-
-.manage-card {
-  border-radius: 12px;
-  margin-bottom: 24px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.card-title {
-  font-weight: 600;
-  font-size: 15px;
-  color: #303133;
+.table-body :deep(.el-table) {
+  border-radius: 0 0 var(--admin-radius) var(--admin-radius);
 }
 
 .dialog-subtitle {
@@ -258,6 +342,10 @@ onMounted(() => {
 }
 
 .dialog-info .el-icon {
-  color: #409eff;
+  color: var(--admin-primary);
+}
+
+.hidden-file-input {
+  display: none;
 }
 </style>

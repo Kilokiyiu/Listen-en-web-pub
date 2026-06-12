@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://listenease.online/sitemap.xml
+Sitemap: https://your-domain.com/sitemap.xml

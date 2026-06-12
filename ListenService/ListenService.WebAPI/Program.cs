@@ -1,6 +1,8 @@
 using ListenService.Infrastrucure;
 using ListenService.WebAPI;
 using Microsoft.EntityFrameworkCore;
+using MyCache;
+using MyEventController;
 using MyJWT;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,8 +35,10 @@ builder.Services.AddDbContext<ListenDbContext>(options =>
     options.UseSqlServer(connStr);
 });
 
+builder.Services.AddMemoryCacheService(builder.Configuration);
 builder.Services.ServiceInit();
 builder.ConfigureInfrastructureServices(); //注册 JWT 认证
+builder.Services.AddEventBus(builder.Configuration, "listen-service", typeof(Program).Assembly);
 
 builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
 {
@@ -60,12 +64,24 @@ app.UseAuthentication(); // JWT 认证
 app.UseAuthorization();  // 角色授权
 app.UseStaticFiles();
 app.MapControllers();
+app.MapGet("/health", () => Results.Ok(new { service = "listen-service", status = "ok" }));
+app.MapGet("/api/listen/health", () => Results.Ok(new { service = "listen-service", status = "ok" }));
 
 // 自动执行 EF Core 数据库迁移
 using (var scope = app.Services.CreateScope())
 {
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     var dbContext = scope.ServiceProvider.GetRequiredService<ListenDbContext>();
-    await dbContext.Database.MigrateAsync();
+    try
+    {
+        await dbContext.Database.MigrateAsync();
+        logger.LogInformation("ListenService database migrations applied.");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "ListenService database migration failed.");
+        throw;
+    }
 }
 
 app.Run();

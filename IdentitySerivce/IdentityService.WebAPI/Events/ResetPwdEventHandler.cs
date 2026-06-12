@@ -3,7 +3,7 @@ using MyEventController;
 
 namespace IdentityService.WebAPI.Events;
 
-[EventName("IdentityService.User.PasswordReset")]
+[EventName(IntegrationEventNames.IdentityPasswordReset)]
 public class ResetPwdEventHandler : JsonIntegrationEventHandler<ResetPwdEvent>
 {
     private readonly ILogger<ResetPwdEventHandler> logger;

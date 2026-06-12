@@ -3,7 +3,7 @@ using MyEventController;
 
 namespace IdentityService.WebAPI.Events;
 
-[EventName("IdentityService.User.Created")]
+[EventName(IntegrationEventNames.IdentityAdminUserCreated)]
 public class UserCreateEventHandler : JsonIntegrationEventHandler<UserCreateEvent>
 {
     private readonly IEmailSender emailSender;

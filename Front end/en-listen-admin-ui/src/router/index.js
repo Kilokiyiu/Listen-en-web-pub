@@ -4,42 +4,53 @@ const routes = [
   {
     path: '/login',
     name: 'login',
-    component: () => import('../views/LoginView.vue')
+    component: () => import('../views/LoginView.vue'),
+    meta: { title: '登录' },
   },
   {
     path: '/',
-    name: 'upload',
-    component: () => import('../views/UploadView.vue'),
-    meta: { requiresAuth: true }
+    component: () => import('../layouts/AdminLayout.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        name: 'dashboard',
+        component: () => import('../views/DashboardView.vue'),
+        meta: { title: '数据概览' },
+      },
+      {
+        path: 'upload',
+        name: 'upload',
+        component: () => import('../views/UploadView.vue'),
+        meta: { title: '音频上传' },
+      },
+      {
+        path: 'manage',
+        name: 'manage',
+        component: () => import('../views/EpisodeManageView.vue'),
+        meta: { title: '音频管理' },
+      },
+      {
+        path: 'article',
+        name: 'article',
+        component: () => import('../views/ArticleManageView.vue'),
+        meta: { title: '每日一篇' },
+      },
+    ],
   },
-  {
-    path: '/manage',
-    name: 'manage',
-    component: () => import('../views/EpisodeManageView.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/article',
-    name: 'article',
-    component: () => import('../views/ArticleManageView.vue'),
-    meta: { requiresAuth: true }
-  }
 ]
 
 const router = createRouter({
   history: createWebHashHistory(),
-  routes
+  routes,
 })
 
-// 路由守卫：未登录跳转到登录页
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('admin_token')
-  // 如果是登录页，直接通过
   if (to.path === '/login') {
     next()
     return
   }
-  // 其他页面需要登录
   if (to.meta.requiresAuth && !token) {
     next('/login')
   } else {

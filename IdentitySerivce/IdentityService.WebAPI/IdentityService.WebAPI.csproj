@@ -19,6 +19,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\Commons\CommonInit\CommonInit.csproj" />
+      <ProjectReference Include="..\..\Commons\MyCache\MyCache.csproj" />
       <ProjectReference Include="..\..\Commons\MyEventController\MyEventController.csproj" />
       <ProjectReference Include="..\..\Commons\MyJWT\MyJWT.csproj" />
       <ProjectReference Include="..\IdentitySerivce.Domain\IdentitySerivce.Domain.csproj" />

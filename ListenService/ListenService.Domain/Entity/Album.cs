@@ -28,6 +28,16 @@ public class Album : IEntity, ICreationTime
     /// 是否可见
     /// </summary>
     public bool IsVisible { get; private set; }
+
+    /// <summary>
+    /// 试卷 PDF 相对路径，如 /papers/CET6/{albumId}.paper.pdf
+    /// </summary>
+    public string? PaperFileUrl { get; private set; }
+
+    /// <summary>
+    /// 答案 PDF 相对路径，如 /papers/CET6/{albumId}.answer.pdf
+    /// </summary>
+    public string? AnswerFileUrl { get; private set; }
     
     /// <summary>
     /// 创建时间
@@ -70,6 +80,18 @@ public class Album : IEntity, ICreationTime
     public Album Hide()
     {
         IsVisible = false;
+        return this;
+    }
+
+    public Album SetPaperFileUrl(string? url)
+    {
+        PaperFileUrl = url;
+        return this;
+    }
+
+    public Album SetAnswerFileUrl(string? url)
+    {
+        AnswerFileUrl = url;
         return this;
     }
 

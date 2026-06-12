@@ -1,5 +1,5 @@
 <template>
-  <div class="word-roots-page">
+  <div class="word-roots-page le-page">
     <div class="page-header">
       <h1>
         <el-icon :size="28" color="#67c23a"><Collection /></el-icon>

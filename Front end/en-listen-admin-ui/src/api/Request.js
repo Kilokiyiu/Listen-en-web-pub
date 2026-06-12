@@ -23,6 +23,12 @@ const articleRequest = axios.create({
   timeout: 30000,
 })
 
+// 创建 WordService 的 axios 实例
+export const wordRequest = axios.create({
+  baseURL: "/api/word",
+  timeout: 10000,
+})
+
 // 三个实例都添加 token 拦截器
 const addTokenInterceptor = (instance, serviceName) => {
   instance.interceptors.request.use(
@@ -65,6 +71,7 @@ const addTokenInterceptor = (instance, serviceName) => {
 addTokenInterceptor(identityRequest, 'IdentityService')
 addTokenInterceptor(listenRequest, 'ListenService')
 addTokenInterceptor(articleRequest, 'ArticleService')
+addTokenInterceptor(wordRequest, 'WordService')
 
 export default listenRequest
 export { articleRequest }

@@ -54,6 +54,10 @@ export const getAlbumsByCategoryId = (categoryId) => {
   })
 }
 
+// 获取试卷详情（含试卷/答案 PDF 地址）
+export const getAlbumById = (albumId) =>
+  request.get('/Listen/GetAlbumById', { params: { albumId } })
+
 // 获取试卷下的所有题目（音频）
 export const getEpisodesByAlbumId = (albumId) =>
   request.get('/Listen/GetEpisodesByAlbumId', { params: { albumId } })

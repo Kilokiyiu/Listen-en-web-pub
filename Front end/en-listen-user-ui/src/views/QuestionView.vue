@@ -1,134 +1,166 @@
 <template>
-  <div class="exam-detail-page">
-    <!-- 顶部导航 -->
-    <div class="detail-header">
-      <el-button text @click="router.back()" class="back-btn">
-        <el-icon><ArrowLeft /></el-icon> 返回列表
-      </el-button>
-    </div>
-
-    <!-- 标题区 -->
-    <div class="title-section">
+  <PageShell :title="albumTitle" :show-bar="false" back-label="返回列表">
+    <template #header-extra>
       <div class="title-icon">
-        <el-icon :size="28" color="#409eff"><Headset /></el-icon>
+        <el-icon :size="24" color="#2563eb"><Headset /></el-icon>
       </div>
-      <h1 class="page-title">{{ albumTitle }}</h1>
-    </div>
+    </template>
 
-    <!-- 加载中 -->
-    <div v-if="loading" class="loading-wrapper">
+    <div v-if="loading" class="le-loading-wrap">
       <el-icon class="is-loading" :size="32"><Loading /></el-icon>
       <span>加载中...</span>
     </div>
 
-    <!-- 音频播放器 -->
-    <div v-else-if="audioUrl" class="audio-card">
-      <div class="audio-card-inner">
+    <div v-else-if="audioUrl" class="player-section">
+      <div class="audio-card le-card">
         <div class="audio-visual">
-          <div class="audio-wave" v-for="i in 20" :key="i" :style="{ animationDelay: i * 0.1 + 's' }"></div>
+          <div class="audio-wave" v-for="i in 16" :key="i" :style="{ animationDelay: i * 0.08 + 's' }" />
         </div>
-        <div class="audio-wrapper">
-          <audio
-            ref="audioRef"
-            :src="audioUrl"
-            controls
-            class="audio-player"
-          ></audio>
-        </div>
-        <div class="audio-tips">
-          <el-icon><InfoFilled /></el-icon>
-          <span>点击播放按钮，开启听力训练</span>
-        </div>
+        <audio
+          ref="audioRef"
+          :src="audioUrl"
+          controls
+          playsinline
+          webkit-playsinline
+          preload="auto"
+          class="audio-player"
+        />
+        <p class="audio-tip"><el-icon><InfoFilled /></el-icon> 点击播放，开启听力训练</p>
+        <p class="audio-tip audio-tip--sub">锁屏后可从锁屏界面继续播放；回到页面会自动恢复进度</p>
       </div>
 
-      <!-- 显示原文按钮 -->
-      <div class="text-toggle-wrapper">
-        <el-button
-          :type="showText ? 'primary' : 'default'"
-          :icon="showText ? Hide : View"
-          @click="showText = !showText"
-          class="text-toggle-btn"
-          round
-        >
+      <div v-if="paperFileUrl || answerFileUrl" class="pdf-section">
+        <div class="pdf-actions">
+          <el-button
+            v-if="paperFileUrl"
+            :type="activePdf === 'paper' ? 'primary' : 'default'"
+            round
+            class="pdf-action-btn"
+            @click="togglePdf('paper')"
+          >
+            <el-icon><Document /></el-icon>
+            {{ activePdf === 'paper' ? '隐藏试卷' : '查看试卷' }}
+          </el-button>
+          <el-button
+            v-if="answerFileUrl"
+            :type="activePdf === 'answer' ? 'success' : 'default'"
+            round
+            plain
+            class="pdf-action-btn"
+            @click="togglePdf('answer')"
+          >
+            <el-icon><DocumentChecked /></el-icon>
+            {{ activePdf === 'answer' ? '隐藏答案' : '查看答案' }}
+          </el-button>
+        </div>
+
+        <transition name="fade-slide">
+          <div v-if="activePdf && currentPdfUrl" class="pdf-viewer le-card">
+            <div class="pdf-header">
+              <span class="pdf-title">{{ activePdf === 'paper' ? '试卷 PDF' : '答案 PDF' }}</span>
+              <el-button type="primary" link @click="openDownload(currentPdfUrl)">
+                <el-icon><Download /></el-icon>
+                下载
+              </el-button>
+            </div>
+            <PdfViewer :key="currentPdfUrl" :src="currentPdfUrl" />
+            <p class="pdf-fallback-tip">
+              也可
+              <a :href="currentPdfUrl" target="_blank" rel="noopener noreferrer">在新窗口打开</a>
+              或点击上方下载。
+            </p>
+          </div>
+        </transition>
+      </div>
+
+      <div class="toggle-wrap">
+        <el-button :type="showText ? 'primary' : 'default'" round class="le-btn-gradient" @click="showText = !showText">
           {{ showText ? '隐藏原文' : '显示原文' }}
         </el-button>
       </div>
 
-      <!-- 原文内容 -->
       <transition name="fade-slide">
-        <div v-show="showText" class="subtitle-card">
-          <div class="subtitle-header">
-            <el-icon><Document /></el-icon>
-            <span>听力原文</span>
-          </div>
+        <div v-show="showText" class="subtitle-card le-card">
+          <div class="subtitle-header"><el-icon><Document /></el-icon> 听力原文</div>
           <div class="subtitle-content">
-            <template v-if="subtitleLines.length > 0">
-              <p v-for="(line, index) in subtitleLines" :key="index" class="subtitle-line">
-                {{ line }}
-              </p>
-            </template>
-            <template v-else>
-              <el-empty description="暂无原文" :image-size="80" />
-            </template>
+            <p v-for="(line, i) in subtitleLines" :key="i" class="subtitle-line">{{ line }}</p>
+            <el-empty v-if="subtitleLines.length === 0" description="暂无原文" :image-size="64" />
           </div>
         </div>
       </transition>
     </div>
 
-    <!-- 无数据 -->
-    <div v-else class="empty-wrapper">
-      <el-empty description="暂无音频数据" />
-    </div>
-  </div>
+    <el-empty v-else description="暂无音频数据" />
+  </PageShell>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { getEpisodesByAlbumId } from '../api/Listen.js'
-import { View, Hide, Document } from '@element-plus/icons-vue'
+import { useRoute } from 'vue-router'
+import PageShell from '../components/PageShell.vue'
+import PdfViewer from '../components/PdfViewer.vue'
+import { getEpisodesByAlbumId, getAlbumById } from '../api/Listen.js'
+import { useAudioPlayer } from '../composables/useAudioPlayer.js'
 
 const route = useRoute()
-const router = useRouter()
 const albumId = route.query.albumId
+const audioRef = ref(null)
 
 const albumTitle = ref('听力真题')
 const audioUrl = ref('')
+const paperFileUrl = ref('')
+const answerFileUrl = ref('')
 const loading = ref(true)
-const audioRef = ref(null)
 const showText = ref(false)
 const subtitleText = ref('')
+const activePdf = ref('')
 
-// 解析字幕 JSON，提取每行文本
+const toFileUrl = (path) => (path ? `/api/listen${path}` : '')
+
+const currentPdfUrl = computed(() => {
+  if (activePdf.value === 'paper') return paperFileUrl.value
+  if (activePdf.value === 'answer') return answerFileUrl.value
+  return ''
+})
+
+const togglePdf = (type) => {
+  activePdf.value = activePdf.value === type ? '' : type
+}
+
+const openDownload = (url) => {
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+
 const subtitleLines = computed(() => {
   if (!subtitleText.value) return []
   try {
     const parsed = JSON.parse(subtitleText.value)
-    if (Array.isArray(parsed)) {
-      return parsed.map(item => item.text || '').filter(t => t)
-    }
+    if (Array.isArray(parsed)) return parsed.map(item => item.text || '').filter(Boolean)
   } catch {
-    // 如果不是 JSON，按换行分割
     return subtitleText.value.split('\n').filter(t => t.trim())
   }
   return []
 })
 
-// 加载音频数据
 const loadEpisode = async () => {
-  if (!albumId) {
-    loading.value = false
-    return
-  }
+  if (!albumId) { loading.value = false; return }
   try {
-    const data = await getEpisodesByAlbumId(albumId)
-    const episodes = data || []
-    if (episodes.length > 0) {
-      const ep = episodes[0]
-      albumTitle.value = ep.name?.chinese || ep.name || '听力真题'
-      // 拼接完整音频URL
-      audioUrl.value = ep.audioUrl ? `/api/listen${ep.audioUrl}` : ''
-      // 保存原文（兼容 PascalCase 和 camelCase）
+    const [episodes, album] = await Promise.all([
+      getEpisodesByAlbumId(albumId),
+      getAlbumById(albumId).catch(() => null)
+    ])
+    if (album?.name) {
+      albumTitle.value = album.name.chinese || album.name.Chinese || album.name || '听力真题'
+    }
+    paperFileUrl.value = toFileUrl(album?.paperFileUrl || album?.PaperFileUrl)
+    answerFileUrl.value = toFileUrl(album?.answerFileUrl || album?.AnswerFileUrl)
+
+    const ep = (episodes || [])[0]
+    if (ep) {
+      if (!album?.name) {
+        albumTitle.value = ep.name?.chinese || ep.name || '听力真题'
+      }
+      audioUrl.value = toFileUrl(ep.audioUrl || ep.AudioUrl)
       subtitleText.value = ep.Subtitle || ep.subtitle || ''
     }
   } catch (e) {
@@ -138,151 +170,137 @@ const loadEpisode = async () => {
   }
 }
 
-onMounted(() => {
-  loadEpisode()
+onMounted(loadEpisode)
+
+useAudioPlayer(audioRef, {
+  storageKey: albumId ? `listen:audio:${albumId}` : '',
+  title: albumTitle,
+  album: '听力真题',
 })
 </script>
 
 <style scoped>
-.exam-detail-page {
-  padding: 0;
-}
-
-/* 顶部导航 */
-.detail-header {
-  padding: 16px 24px;
-  border-bottom: 1px solid #eef1f6;
-}
-
-.back-btn {
-  color: var(--text-secondary) !important;
-  font-size: 14px;
-}
-
-.back-btn:hover {
-  color: var(--accent-blue) !important;
-}
-
-/* 标题区 */
-.title-section {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 28px 28px 20px;
-}
-
 .title-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.1) 0%, rgba(0, 168, 232, 0.1) 100%);
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--le-gradient-soft);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.page-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--text-primary);
+.player-section {
+  max-width: 720px;
+  margin: 0 auto;
 }
 
-/* 加载中 */
-.loading-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 80px 0;
-  color: var(--text-muted);
-  font-size: 14px;
-}
-
-/* 音频卡片 */
 .audio-card {
-  margin: 0 28px 20px;
-  background: linear-gradient(135deg, #f8faff 0%, #f0f5ff 100%);
-  border: 1px solid #e4ecf7;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-  overflow: hidden;
+  padding: 28px 20px;
+  text-align: center;
+  background: var(--le-gradient-soft);
 }
 
-.audio-card-inner {
-  padding: 32px 28px 24px;
-}
-
-/* 音波动画装饰 */
 .audio-visual {
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 4px;
-  height: 40px;
-  margin-bottom: 20px;
+  gap: 3px;
+  height: 36px;
+  margin-bottom: 16px;
 }
 
 .audio-wave {
   width: 4px;
   border-radius: 2px;
-  background: linear-gradient(180deg, var(--accent-blue), var(--accent-cyan));
+  background: var(--le-gradient);
   animation: wave 1.2s ease-in-out infinite;
-  opacity: 0.4;
 }
 
 @keyframes wave {
-  0%, 100% { height: 8px; opacity: 0.3; }
-  50% { height: 32px; opacity: 0.7; }
-}
-
-.audio-wrapper {
-  display: flex;
-  justify-content: center;
-  padding: 8px 0;
+  0%, 100% { height: 8px; opacity: 0.35; }
+  50% { height: 28px; opacity: 0.85; }
 }
 
 .audio-player {
   width: 100%;
-  max-width: 600px;
-  border-radius: 12px;
-  outline: none;
+  max-width: 100%;
 }
 
-.audio-tips {
+.audio-tip {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  color: var(--text-muted);
+  gap: 6px;
   font-size: 13px;
-  margin-top: 16px;
+  color: var(--le-text-muted);
+  margin: 14px 0 0;
 }
 
-.audio-tips :deep(.el-icon) {
-  color: var(--accent-blue);
+.audio-tip--sub {
+  margin-top: 6px;
+  font-size: 12px;
+  opacity: 0.85;
 }
 
-/* 显示原文按钮 */
-.text-toggle-wrapper {
+.pdf-section {
+  margin-top: 20px;
+}
+
+.pdf-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  margin: 20px 28px 0;
+  gap: 12px;
 }
 
-.text-toggle-btn {
-  padding: 10px 28px;
-  font-size: 14px;
-  font-weight: 500;
+.pdf-action-btn {
+  min-width: 132px;
 }
 
-/* 原文卡片 */
+.pdf-viewer {
+  margin-top: 16px;
+  overflow: hidden;
+}
+
+.pdf-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--le-bg-muted);
+  border-bottom: 1px solid var(--le-border);
+}
+
+.pdf-title {
+  font-weight: 600;
+  color: var(--le-text);
+}
+
+.pdf-fallback-tip {
+  margin: 0;
+  padding: 10px 16px 14px;
+  font-size: 12px;
+  color: var(--le-text-muted);
+  text-align: center;
+  border-top: 1px solid var(--le-border);
+}
+
+.pdf-fallback-tip a {
+  color: var(--le-primary, #2563eb);
+  text-decoration: none;
+}
+
+.pdf-fallback-tip a:hover {
+  text-decoration: underline;
+}
+
+.toggle-wrap {
+  text-align: center;
+  margin: 20px 0;
+}
+
 .subtitle-card {
-  margin: 16px 28px 28px;
-  background: #fff;
-  border: 1px solid #e8ecf4;
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
   overflow: hidden;
 }
 
@@ -290,50 +308,24 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 14px 20px;
-  background: linear-gradient(135deg, #f8faff 0%, #f0f5ff 100%);
-  border-bottom: 1px solid #e8ecf4;
-  font-size: 15px;
+  padding: 14px 18px;
   font-weight: 600;
-  color: var(--text-primary);
-}
-
-.subtitle-header :deep(.el-icon) {
-  color: var(--accent-blue);
+  background: var(--le-bg-muted);
+  border-bottom: 1px solid var(--le-border);
 }
 
 .subtitle-content {
-  padding: 20px 24px;
-  max-height: 500px;
+  padding: 18px;
+  max-height: 50vh;
   overflow-y: auto;
 }
 
 .subtitle-line {
-  margin: 0 0 10px 0;
+  margin: 0 0 10px;
+  line-height: 1.75;
   font-size: 15px;
-  line-height: 1.8;
-  color: var(--text-primary);
-  text-align: justify;
 }
 
-.subtitle-line:last-child {
-  margin-bottom: 0;
-}
-
-/* 动画 */
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition: all 0.3s ease;
-}
-
-.fade-slide-enter-from,
-.fade-slide-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
-
-/* 无数据 */
-.empty-wrapper {
-  padding: 60px 0;
-}
+.fade-slide-enter-active, .fade-slide-leave-active { transition: all 0.25s ease; }
+.fade-slide-enter-from, .fade-slide-leave-to { opacity: 0; transform: translateY(-8px); }
 </style>

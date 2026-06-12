@@ -8,4 +8,6 @@ public class AlbumResponse
     public MultilingualString Name { get; set; }
     public Guid CategoryId { get; set; }
     public int SequenceNumber { get; set; }
+    public string? PaperFileUrl { get; set; }
+    public string? AnswerFileUrl { get; set; }
 }

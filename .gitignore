@@ -7,6 +7,7 @@
 *.cache
 *.user
 *.suo
+*.exe
 
 # =Node =
 **/node_modules/
@@ -19,8 +20,6 @@
 .vs/
 *.docstates
 *.DotSettings.user
-*.lscache
-*.csproj.lscache
 
 # =日志 =
 **/*.log
@@ -44,6 +43,24 @@ appsettings.Production.json
 # =OS =
 .DS_Store
 Thumbs.db
+
+# =媒体文件（不应入库）=
+*.mp3
+*.wav
+*.mp4
+*.avi
+
+# =部署构建产物=
+deploy/audios/
+deploy/admin-ui/
+deploy/user-ui/
+deploy/certbot/
+
+# =搜索引擎验证文件=
+google*.html
+
+# =PowerShell 调试脚本=
+*.ps1
 
 # =WorkBuddy =
 .workbuddy/

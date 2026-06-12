@@ -1,9 +1,11 @@
 using ArticleService.Domain;
 using ArticleService.Domain.Entity;
+using ArticleService.Infrastructure;
 using ArticleService.WebAPI.Controllers.Admin.DTO;
 using DomainCommons;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace ArticleService.WebAPI.Controllers.Admin;
 
@@ -13,10 +15,34 @@ namespace ArticleService.WebAPI.Controllers.Admin;
 public class ArticleAdminController : ControllerBase
 {
     private readonly IArticleRepo repo;
+    private readonly ArticleDbContext dbContext;
 
-    public ArticleAdminController(IArticleRepo repo)
+    public ArticleAdminController(IArticleRepo repo, ArticleDbContext dbContext)
     {
         this.repo = repo;
+        this.dbContext = dbContext;
+    }
+
+    /// <summary>
+    /// 阅读统计（管理后台）
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult> GetReadingStats()
+    {
+        var last7Days = DateTime.Now.Date.AddDays(-7);
+        var totalReads = await dbContext.UserArticleStatuses.CountAsync(x => x.IsRead);
+        var readsLast7Days = await dbContext.UserArticleStatuses.CountAsync(x => x.IsRead && x.CreatedAt >= last7Days);
+        var totalFavorites = await dbContext.UserArticleStatuses.CountAsync(x => x.IsFavorited);
+        return Ok(new
+        {
+            code = 200,
+            data = new
+            {
+                totalReads,
+                readsLast7Days,
+                totalFavorites,
+            },
+        });
     }
 
     /// <summary>

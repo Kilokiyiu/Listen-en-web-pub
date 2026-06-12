@@ -15,6 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\Commons\MyJWT\MyJWT.csproj" />
       <ProjectReference Include="..\WordService.Infrastrucure\WordService.Infrastrucure.csproj" />
     </ItemGroup>
 

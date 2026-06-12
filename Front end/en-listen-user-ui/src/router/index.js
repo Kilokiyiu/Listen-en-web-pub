@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import { setPageMeta, DEFAULT_TITLE } from '../utils/seo'
+import { setPageMeta, DEFAULT_TITLE, DEFAULT_DESCRIPTION } from '../utils/seo'
+import { trackPageView } from '../api/Analytics.js'
 
 const routes = [
   {
@@ -9,7 +10,7 @@ const routes = [
     component: HomeView,
     meta: {
       title: DEFAULT_TITLE,
-      description: 'ListenEase 是专业的英语听力练习平台，提供四六级、雅思、托福历年真题、每日短文与智能学习功能。'
+      description: DEFAULT_DESCRIPTION
     }
   },
   {
@@ -18,13 +19,17 @@ const routes = [
     component: () => import('../views/PaperListView.vue'),
     meta: {
       title: '听力真题列表 - ListenEase',
-      description: '浏览四六级、雅思、托福英语听力历年真题与模拟试卷，在线练习备考。'
+      description: '浏览四六级、雅思、托福英语听力历年真题，在线练习并下载试卷与答案。'
     }
   },
   {
     path: '/exam',
     name: 'examDetail',
-    component: () => import('../views/QuestionView.vue')
+    component: () => import('../views/QuestionView.vue'),
+    meta: {
+      title: '听力练习 - ListenEase',
+      description: '在线播放历年真题听力音频，支持查看原文，并可下载试卷 PDF 与答案 PDF。'
+    }
   },
   {
     path: '/login',
@@ -85,9 +90,19 @@ const routes = [
   }
 ]
 
+const scrollToTop = () => {
+  window.scrollTo(0, 0)
+  document.documentElement.scrollTop = 0
+  document.body.scrollTop = 0
+}
+
 const router = createRouter({
   history: createWebHashHistory(process.env.BASE_URL),
-  routes
+  routes,
+  scrollBehavior (to, from, savedPosition) {
+    if (savedPosition) return savedPosition
+    return { top: 0, left: 0 }
+  }
 })
 
 // 需要登录的路由
@@ -103,12 +118,14 @@ router.beforeEach((to, from, next) => {
 })
 
 router.afterEach((to) => {
+  scrollToTop()
   const hashPath = to.path || '/'
   setPageMeta({
     title: to.meta.title,
     description: to.meta.description,
     path: hashPath === '/' ? '/' : `/#${hashPath}`
   })
+  trackPageView(hashPath)
 })
 
 export default router

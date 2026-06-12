@@ -1,5 +1,5 @@
 <template>
-  <div class="daily-page">
+  <div class="daily-page le-page">
     <!-- 顶部导航 -->
     <div class="page-header">
       <el-button text @click="goBack" class="back-btn">

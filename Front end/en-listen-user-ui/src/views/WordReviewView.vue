@@ -1,5 +1,5 @@
 <template>
-  <div class="word-review-page">
+  <div class="word-review-page le-page">
     <div class="page-header">
       <h1>
         <el-icon :size="28" :color="isFreeReview ? '#409eff' : '#e6a23c'"><Timer /></el-icon>

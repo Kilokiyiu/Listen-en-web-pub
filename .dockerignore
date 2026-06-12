@@ -1,32 +1,43 @@
-# Certbot - 运行时挂载的目录，构建时不需要
+# ===== 部署目录中的运行时数据（体积大，不参与镜像构建）=====
+deploy/audios/
+deploy/papers/
+deploy/user-ui/
+deploy/admin-ui/
 deploy/certbot/
-deploy/certbot/conf/
-deploy/certbot/www/
+deploy/*.tar.gz
 
-# Docker 相关文件不需要参与构建
-deploy/*.yml
-deploy/Dockerfile*
-deploy/docker-compose*
+# ===== 前端源码（独立构建，不进后端镜像）=====
+Front end/
+**/node_modules/
+**/dist/
+**/build/
 
-# Git
+# ===== .NET 构建产物 =====
+**/bin/
+**/obj/
+**/publish/
+**/*.lscache
+
+# ===== 音频 / 文档 / 媒体 =====
+**/*.mp3
+**/*.wav
+**/*.m4a
+**/*.pdf
+**/*.zip
+**/*.tar
+**/*.tar.gz
+
+# ===== Git / CI / 文档 =====
 .git/
-.gitignore
-.gitattributes
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# 日志和临时文件
-*.log
-*.tmp
-*.temp
-
-# 文档（构建不需要）
-*.md
+.github/
 docs/
+**/*.md
+!Commons/**/*.md
 
-# 前端文件（如果有独立的构建流程）
-Front\ end/
+# ===== IDE / 日志 / 环境 =====
+.idea/
+.vs/
+.vscode/
+**/*.log
+.env
+.env.*
