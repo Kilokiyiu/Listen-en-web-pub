@@ -1,0 +1,7 @@
+{
+  "versionName": "0.8.9.2",
+  "versionCode": 11,
+  "apkUrl": "https://your-domain.com/downloads/EaseWord-0.8.9.2.apk",
+  "forceUpdate": false,
+  "changelog": "版本 0.8.9.2：启动时检测新版本并弹窗提醒更新"
+}

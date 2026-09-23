@@ -43,4 +43,11 @@ public class AdminStatsController : ControllerBase
         var data = await analyticsService.GetTopPagesAsync(days, limit, cancellationToken);
         return Ok(new { code = 200, data });
     }
+
+    [HttpGet]
+    public async Task<IActionResult> Funnel([FromQuery] int days = 7, CancellationToken cancellationToken = default)
+    {
+        var data = await analyticsService.GetFunnelAsync(days, cancellationToken);
+        return Ok(new { code = 200, data });
+    }
 }

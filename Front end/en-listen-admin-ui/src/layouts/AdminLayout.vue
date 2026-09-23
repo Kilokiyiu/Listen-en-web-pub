@@ -69,6 +69,7 @@ import {
   Upload,
   FolderOpened,
   Document,
+  User,
   ArrowDown,
   SwitchButton,
 } from '@element-plus/icons-vue'
@@ -81,6 +82,7 @@ const menuItems = [
   { path: '/upload', title: '音频上传', icon: Upload },
   { path: '/manage', title: '音频管理', icon: FolderOpened },
   { path: '/article', title: '每日一篇', icon: Document },
+  { path: '/users', title: '用户管理', icon: User },
 ]
 
 const userName = computed(() => localStorage.getItem('admin_userName') || '管理员')

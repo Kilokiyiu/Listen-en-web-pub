@@ -8,6 +8,7 @@ public class IdentityDbContext : IdentityDbContext<User, Role, Guid>
 {
     public DbSet<AnalyticsEvent> AnalyticsEvents { get; set; } = null!;
     public DbSet<AnalyticsDaily> AnalyticsDailies { get; set; } = null!;
+    public DbSet<StudyActivity> StudyActivities { get; set; } = null!;
 
     public IdentityDbContext(DbContextOptions<IdentityDbContext> options) : base(options)
     {

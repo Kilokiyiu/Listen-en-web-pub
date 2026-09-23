@@ -10,6 +10,7 @@ public class WordDbContext : DbContext
     public DbSet<WordRootQuiz> WordRootQuizzes { get; set; }
     public DbSet<UserWordRootProgress> UserWordRootProgresses { get; set; }
     public DbSet<UserWord> UserWords { get; set; }
+    public DbSet<UserWordBook> UserWordBooks { get; set; }
     public DbSet<WordReviewLog> WordReviewLogs { get; set; }
 
     public WordDbContext(DbContextOptions<WordDbContext> options) : base(options)

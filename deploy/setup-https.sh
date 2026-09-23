@@ -4,8 +4,9 @@
 
 set -e
 
-DOMAIN="listenease.online"
-EMAIL="your-email@example.com"  # 修改为你的邮箱
+# 修改为你自己的域名与邮箱
+DOMAIN="${DOMAIN:-your-domain.com}"
+EMAIL="${EMAIL:-your-email@example.com}"
 DEPLOY_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "========================================"

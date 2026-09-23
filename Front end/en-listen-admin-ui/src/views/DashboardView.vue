@@ -118,6 +118,34 @@
             <span>7 日单词复习</span>
             <strong>{{ wordStats.reviewsLast7Days ?? 0 }}</strong>
           </div>
+          <div class="activity-item">
+            <span>今日听力完成</span>
+            <strong>{{ funnelStats.listenCompleteToday ?? 0 }}</strong>
+          </div>
+          <div class="activity-item">
+            <span>今日文章阅读</span>
+            <strong>{{ funnelStats.articleReadToday ?? 0 }}</strong>
+          </div>
+          <div class="activity-item">
+            <span>今日加词</span>
+            <strong>{{ funnelStats.addWordToday ?? 0 }}</strong>
+          </div>
+          <div class="activity-item">
+            <span>今日进入复习</span>
+            <strong>{{ funnelStats.enterReviewToday ?? 0 }}</strong>
+          </div>
+          <div class="activity-item">
+            <span>今日完成复习</span>
+            <strong>{{ funnelStats.finishReviewToday ?? 0 }}</strong>
+          </div>
+          <div class="activity-item">
+            <span>近 {{ funnelStats.days ?? 7 }} 日听力完成</span>
+            <strong>{{ funnelStats.listenComplete ?? 0 }}</strong>
+          </div>
+          <div class="activity-item">
+            <span>近 {{ funnelStats.days ?? 7 }} 日加词→完成复习</span>
+            <strong>{{ funnelStats.addWord ?? 0 }} → {{ funnelStats.finishReview ?? 0 }}</strong>
+          </div>
         </div>
       </div>
     </div>
@@ -133,6 +161,7 @@ import {
   getRegistrationTrend,
   getTrafficTrend,
   getTopPages,
+  getFunnelStats,
   getArticleReadingStats,
   getWordLearningStats,
 } from '../api/Admin.js'
@@ -141,6 +170,7 @@ const loading = ref(false)
 const overview = reactive({})
 const articleStats = reactive({})
 const wordStats = reactive({})
+const funnelStats = reactive({})
 const topPages = ref([])
 
 const registrationChartRef = ref(null)
@@ -231,18 +261,20 @@ const handleResize = () => {
 const loadAll = async () => {
   loading.value = true
   try {
-    const [overviewRes, regRes, trafficRes, topRes, articleRes, wordRes] = await Promise.all([
+    const [overviewRes, regRes, trafficRes, topRes, articleRes, wordRes, funnelRes] = await Promise.all([
       getStatsOverview(),
       getRegistrationTrend(30),
       getTrafficTrend(7),
       getTopPages(7, 10),
       getArticleReadingStats(),
       getWordLearningStats(),
+      getFunnelStats(7),
     ])
 
     Object.assign(overview, overviewRes.data || {})
     Object.assign(articleStats, articleRes.data || {})
     Object.assign(wordStats, wordRes.data || {})
+    Object.assign(funnelStats, funnelRes.data || {})
     topPages.value = topRes.data || []
 
     await nextTick()

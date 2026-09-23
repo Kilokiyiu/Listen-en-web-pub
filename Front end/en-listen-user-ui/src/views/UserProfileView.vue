@@ -1,25 +1,22 @@
 <template>
   <div class="profile-page le-page">
-    <!-- 顶部导航 -->
     <div class="page-header">
       <el-button text @click="$router.back()" class="back-btn">
         <el-icon><ArrowLeft /></el-icon> 返回
       </el-button>
     </div>
 
-    <!-- 标题区 -->
     <div class="title-section">
       <div class="title-icon">
         <el-icon :size="28" color="#409eff"><UserFilled /></el-icon>
       </div>
       <div class="title-text">
         <h1 class="page-title">个人中心</h1>
-        <p class="page-subtitle">管理你的账号信息与安全设置</p>
+        <p class="page-subtitle">学习记录与账号管理</p>
       </div>
     </div>
 
     <div class="profile-container">
-      <!-- 左侧：用户信息卡片 -->
       <div class="profile-sidebar">
         <div class="user-card">
           <div class="user-card-bg"></div>
@@ -36,36 +33,81 @@
           </div>
         </div>
 
-        <div class="stat-card">
+        <div class="stat-card" role="button" tabindex="0" @click="goHistory" @keydown.enter="goHistory">
           <div class="stat-grid">
             <div class="stat-item">
               <div class="stat-icon-wrap icon-blue">
-                <el-icon :size="18" color="#409eff"><Document /></el-icon>
+                <el-icon :size="18" color="#409eff"><Headset /></el-icon>
               </div>
-              <div class="stat-value">{{ stats.totalExams }}</div>
-              <div class="stat-label">完成试卷</div>
+              <div class="stat-value">{{ stats.totalListen }}</div>
+              <div class="stat-label">完成听力</div>
             </div>
             <div class="stat-item">
               <div class="stat-icon-wrap icon-green">
-                <el-icon :size="18" color="#67c23a"><Timer /></el-icon>
+                <el-icon :size="18" color="#67c23a"><Reading /></el-icon>
               </div>
-              <div class="stat-value">{{ stats.totalMinutes }}</div>
-              <div class="stat-label">学习时长(分)</div>
+              <div class="stat-value">{{ stats.totalArticle }}</div>
+              <div class="stat-label">完成阅读</div>
             </div>
             <div class="stat-item">
               <div class="stat-icon-wrap icon-orange">
                 <el-icon :size="18" color="#e6a23c"><TrendCharts /></el-icon>
               </div>
-              <div class="stat-value">{{ stats.avgScore }}</div>
-              <div class="stat-label">平均分</div>
+              <div class="stat-value">{{ stats.streakDays }}</div>
+              <div class="stat-label">连续(天)</div>
             </div>
           </div>
+          <p class="stat-hint">点击查看完整学习记录 · 共 {{ stats.totalMinutes }} 分钟</p>
         </div>
       </div>
 
-      <!-- 右侧：内容区 -->
       <div class="profile-main">
         <div class="section-card">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <div class="title-bar"></div>
+              <span class="section-title">学习记录</span>
+            </div>
+            <el-button type="primary" link @click="goHistory">
+              查看全部
+              <el-icon><ArrowRight /></el-icon>
+            </el-button>
+          </div>
+
+          <div v-if="recordsLoading" class="records-loading">
+            <el-icon class="is-loading" :size="24"><Loading /></el-icon>
+          </div>
+          <el-empty
+            v-else-if="recentRecords.length === 0"
+            description="还没有学习记录，去听一套真题或读一篇短文吧"
+            :image-size="72"
+          >
+            <el-button type="primary" @click="$router.push('/')">去首页练习</el-button>
+            <el-button @click="$router.push({ name: 'dailyArticle' })">每日一篇</el-button>
+          </el-empty>
+          <div v-else class="record-list">
+            <div
+              v-for="item in recentRecords"
+              :key="item.id"
+              class="record-item"
+              @click="openRecord(item)"
+            >
+              <div class="record-left">
+                <div class="record-name-row">
+                  <span class="record-name">{{ item.title }}</span>
+                  <span class="record-tag" :class="tagClass(item)">{{ tagLabel(item) }}</span>
+                </div>
+                <div class="record-meta">
+                  <span>{{ formatDateTime(item.updatedAt) }}</span>
+                  <span>{{ formatDuration(item.durationSeconds) }}</span>
+                </div>
+              </div>
+              <span class="done-badge">已完成</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card section-card--spaced">
           <div class="section-header">
             <div class="section-title-wrap">
               <div class="title-bar"></div>
@@ -102,15 +144,23 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { UserFilled, ArrowLeft, Lock, Check, Calendar, Document, Timer, TrendCharts } from '@element-plus/icons-vue'
+import {
+  UserFilled, ArrowLeft, ArrowRight, Lock, Check, Calendar,
+  Headset, Reading, TrendCharts, Loading,
+} from '@element-plus/icons-vue'
 import { getUserInfo } from '@/api/Auth'
 import request from '@/api/Request'
+import { getStudySummary, getStudyList } from '@/api/Study'
 
+const router = useRouter()
 const username = ref(localStorage.getItem('username') || '')
 const userInfo = ref({})
 const pwdLoading = ref(false)
 const pwdFormRef = ref()
+const recordsLoading = ref(false)
+const recentRecords = ref([])
 
 const pwdForm = reactive({
   oldPassword: '',
@@ -138,25 +188,93 @@ const pwdRules = {
   ]
 }
 
-// Mock 统计数据
 const stats = ref({
-  totalExams: 12,
-  totalMinutes: 356,
-  avgScore: 78
+  totalListen: 0,
+  totalArticle: 0,
+  totalMinutes: 0,
+  streakDays: 0
 })
+
+const unwrap = (res) => res?.data ?? res
 
 const fetchUserInfo = async () => {
   try {
     const res = await getUserInfo()
     userInfo.value = res
   } catch (err) {
-    // 接口失败时使用本地数据
     userInfo.value = {
       userName: username.value,
       email: '',
       creationTime: new Date().toISOString()
     }
   }
+}
+
+const fetchStudyStats = async () => {
+  try {
+    const data = unwrap(await getStudySummary()) || {}
+    stats.value = {
+      totalListen: data.totalListen ?? 0,
+      totalArticle: data.totalArticle ?? 0,
+      totalMinutes: data.totalMinutes ?? 0,
+      streakDays: data.streakDays ?? 0
+    }
+  } catch {
+    /* keep zeros */
+  }
+}
+
+const fetchRecentRecords = async () => {
+  recordsLoading.value = true
+  try {
+    const data = unwrap(await getStudyList({ page: 1, pageSize: 5 })) || {}
+    recentRecords.value = data.items || []
+  } catch {
+    recentRecords.value = []
+  } finally {
+    recordsLoading.value = false
+  }
+}
+
+const goHistory = () => router.push({ name: 'history' })
+
+const tagLabel = (item) => {
+  if (item.category && item.category !== 'other' && item.category !== 'daily') return item.category
+  return item.activityType === 'article' ? '阅读' : '听力'
+}
+
+const tagClass = (item) => {
+  const cat = (item.category || '').toUpperCase()
+  if (cat.includes('4')) return 'tag-cet4'
+  if (cat.includes('6')) return 'tag-cet6'
+  if (item.activityType === 'article') return 'tag-article'
+  return 'tag-cet4'
+}
+
+const formatDateTime = (dateStr) => {
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  if (Number.isNaN(d.getTime())) return dateStr
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+const formatDuration = (seconds) => {
+  const s = Math.max(0, Number(seconds) || 0)
+  const minutes = Math.round(s / 60)
+  if (minutes < 1) return s > 0 ? `${s}秒` : '-'
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  if (h > 0) return `${h}时${m}分`
+  return `${m}分钟`
+}
+
+const openRecord = (item) => {
+  if (item.activityType === 'article') {
+    router.push({ name: 'dailyArticle' })
+    return
+  }
+  router.push({ name: 'examDetail', query: { albumId: item.contentId } })
 }
 
 const handleChangePwd = async () => {
@@ -186,7 +304,11 @@ const formatDate = (dateStr) => {
   return date.toLocaleDateString('zh-CN')
 }
 
-onMounted(fetchUserInfo)
+onMounted(() => {
+  fetchUserInfo()
+  fetchStudyStats()
+  fetchRecentRecords()
+})
 </script>
 
 <style scoped>
@@ -194,7 +316,6 @@ onMounted(fetchUserInfo)
   padding: 0;
 }
 
-/* 顶部导航 */
 .page-header {
   padding: 16px 24px;
   border-bottom: 1px solid #eef1f6;
@@ -209,7 +330,6 @@ onMounted(fetchUserInfo)
   color: var(--accent-blue) !important;
 }
 
-/* 标题区 */
 .title-section {
   display: flex;
   align-items: center;
@@ -244,7 +364,6 @@ onMounted(fetchUserInfo)
   color: var(--text-muted);
 }
 
-/* 布局 */
 .profile-container {
   max-width: 1000px;
   margin: 0 auto;
@@ -258,7 +377,6 @@ onMounted(fetchUserInfo)
   flex-shrink: 0;
 }
 
-/* 用户卡片 */
 .user-card {
   position: relative;
   border-radius: 14px;
@@ -307,8 +425,9 @@ onMounted(fetchUserInfo)
   display: inline-block;
   border-radius: 50%;
   padding: 3px;
-  background: #fff;
-  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.2);
+  background: var(--le-bg-elevated);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 
 .avatar-wrapper :deep(.el-avatar) {
@@ -339,14 +458,20 @@ onMounted(fetchUserInfo)
   font-size: 12px;
 }
 
-/* 统计卡片 */
 .stat-card {
   margin-top: 16px;
   border-radius: 14px;
   background: var(--bg-card);
   border: 1px solid var(--border-glass);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  padding: 20px 16px;
+  padding: 20px 16px 14px;
+  cursor: pointer;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.stat-card:hover {
+  border-color: rgba(64, 158, 255, 0.35);
+  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.12);
 }
 
 .stat-grid {
@@ -395,9 +520,16 @@ onMounted(fetchUserInfo)
   margin-top: 2px;
 }
 
-/* 右侧主区 */
+.stat-hint {
+  margin: 12px 0 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 .profile-main {
   flex: 1;
+  min-width: 0;
 }
 
 .section-card {
@@ -408,12 +540,16 @@ onMounted(fetchUserInfo)
   overflow: hidden;
 }
 
+.section-card--spaced {
+  margin-top: 16px;
+}
+
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  border-bottom: 1px solid #f0f3f8;
+  border-bottom: 1px solid var(--le-border);
 }
 
 .section-title-wrap {
@@ -446,7 +582,97 @@ onMounted(fetchUserInfo)
   font-size: 12px;
 }
 
-/* 表单 */
+.records-loading {
+  display: flex;
+  justify-content: center;
+  padding: 40px 0;
+  color: var(--text-muted);
+}
+
+.record-list {
+  padding: 4px 0;
+}
+
+.record-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 24px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--le-border);
+  transition: background 0.2s;
+}
+
+.record-item:last-child {
+  border-bottom: none;
+}
+
+.record-item:hover {
+  background: rgba(64, 158, 255, 0.04);
+}
+
+.record-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.record-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.record-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.record-tag {
+  flex-shrink: 0;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.record-tag.tag-cet4 {
+  background: rgba(64, 158, 255, 0.1);
+  color: var(--accent-blue);
+}
+
+.record-tag.tag-cet6 {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+.record-tag.tag-article {
+  background: rgba(103, 194, 58, 0.12);
+  color: #67c23a;
+}
+
+.record-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.done-badge {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #67c23a;
+  background: rgba(103, 194, 58, 0.1);
+}
+
 .pwd-form {
   padding: 24px;
 }
@@ -456,13 +682,13 @@ onMounted(fetchUserInfo)
 }
 
 .profile-main :deep(.el-input__wrapper) {
-  background: #f8f9fc !important;
+  background: rgba(15, 23, 42, 0.65) !important;
   box-shadow: 0 0 0 1px var(--border-glass) inset !important;
   border-radius: 10px !important;
 }
 
 .profile-main :deep(.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px rgba(64, 158, 255, 0.3) inset !important;
+  box-shadow: 0 0 0 1px var(--le-border-strong) inset !important;
 }
 
 .profile-main :deep(.el-input__inner) {

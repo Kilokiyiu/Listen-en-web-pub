@@ -36,6 +36,12 @@ const routes = [
         component: () => import('../views/ArticleManageView.vue'),
         meta: { title: '每日一篇' },
       },
+      {
+        path: 'users',
+        name: 'users',
+        component: () => import('../views/UserManageView.vue'),
+        meta: { title: '用户管理' },
+      },
     ],
   },
 ]

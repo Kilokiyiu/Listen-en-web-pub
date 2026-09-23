@@ -353,7 +353,7 @@ onMounted(async () => {
 
 /* BBC 风格分类导航栏 */
 .bbc-nav-bar {
-  border-bottom: 1px solid #e2e2e2;
+  border-bottom: 1px solid var(--le-border);
   margin-bottom: 24px;
   background: transparent;
 }
@@ -375,7 +375,7 @@ onMounted(async () => {
   padding: 12px 16px;
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: var(--le-text-secondary);
   text-decoration: none;
   white-space: nowrap;
   border-bottom: 3px solid transparent;
@@ -384,14 +384,15 @@ onMounted(async () => {
 }
 
 .bbc-nav-link:hover {
-  color: #000;
-  background: rgba(0, 0, 0, 0.04);
+  color: var(--le-text);
+  background: rgba(37, 99, 235, 0.1);
 }
 
 .bbc-nav-link.active {
-  color: #000;
-  border-bottom-color: #000;
+  color: var(--le-accent);
+  border-bottom-color: var(--le-accent);
   font-weight: 600;
+  text-shadow: none;
 }
 
 /* 新闻列表 */
@@ -404,16 +405,16 @@ onMounted(async () => {
 .news-card {
   cursor: pointer;
   transition: all 0.25s ease;
-  background: var(--bg-card, #fff);
-  border: 1px solid var(--border-glass, #e2e2e2);
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
   border-radius: 10px;
   padding: 16px 20px;
 }
 
 .news-card:hover {
-  background: var(--bg-card, #fff);
-  border-color: rgba(64, 158, 255, 0.3);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  background: var(--bg-card);
+  border-color: rgba(34, 211, 238, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   transform: translateY(-2px);
 }
 
@@ -431,7 +432,7 @@ onMounted(async () => {
   font-family: "Helvetica Neue", Arial, sans-serif;
   font-size: 18px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--le-text);
   margin-bottom: 8px;
   line-height: 1.3;
   display: -webkit-box;
@@ -443,7 +444,7 @@ onMounted(async () => {
 .news-description {
   font-family: "Helvetica Neue", Arial, sans-serif;
   font-size: 15px;
-  color: #5a5a5a;
+  color: var(--le-text-secondary);
   line-height: 1.5;
   margin-bottom: 10px;
   display: -webkit-box;
@@ -461,18 +462,18 @@ onMounted(async () => {
 }
 
 .news-category {
-  color: #8b0000;
+  color: #f87171;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
 
 .news-time {
-  color: #6b6b6b;
+  color: var(--le-text-muted);
 }
 
 .news-arrow {
-  color: #b0b0b0;
+  color: var(--le-text-muted);
   font-size: 18px;
   margin-left: 16px;
   margin-top: 4px;
@@ -482,7 +483,7 @@ onMounted(async () => {
 
 .news-card:hover .news-arrow {
   transform: translateX(3px);
-  color: #333;
+  color: var(--le-accent);
 }
 
 /* 文章详情 - BBC 风格 */
@@ -504,8 +505,8 @@ onMounted(async () => {
 
 /* 正文内容卡片 */
 .article-body-wrapper {
-  background: var(--bg-card, #fff);
-  border: 1px solid var(--border-glass, #e2e2e2);
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
   border-radius: 12px;
   padding: 28px 32px;
   margin-bottom: 32px;
@@ -515,7 +516,7 @@ onMounted(async () => {
   font-family: "Georgia", "Times New Roman", serif;
   font-size: 32px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--le-text);
   line-height: 1.2;
   margin-bottom: 20px;
   letter-spacing: -0.5px;
@@ -527,7 +528,7 @@ onMounted(async () => {
   justify-content: space-between;
   align-items: center;
   padding-bottom: 20px;
-  border-bottom: 1px solid #e2e2e2;
+  border-bottom: 1px solid var(--le-border);
 }
 
 .byline-main {
@@ -538,7 +539,7 @@ onMounted(async () => {
 
 .byline-time {
   font-size: 14px;
-  color: #6b6b6b;
+  color: var(--le-text-muted);
   font-weight: 400;
 }
 
@@ -552,10 +553,10 @@ onMounted(async () => {
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  border: 1px solid #d0d0d0;
+  border: 1px solid var(--le-border);
   border-radius: 4px;
-  background: #fff;
-  color: #333;
+  background: var(--le-bg-muted);
+  color: var(--le-text-secondary);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -563,8 +564,9 @@ onMounted(async () => {
 }
 
 .action-btn:hover {
-  background: #f5f5f5;
-  border-color: #b0b0b0;
+  background: rgba(37, 99, 235, 0.15);
+  border-color: rgba(34, 211, 238, 0.4);
+  color: var(--le-accent);
 }
 
 .action-btn .el-icon {
@@ -576,7 +578,7 @@ onMounted(async () => {
   font-family: "Georgia", "Times New Roman", serif;
   font-size: 18px;
   line-height: 1.75;
-  color: #333;
+  color: var(--le-text-secondary);
 }
 
 .article-body :deep(p) {
@@ -588,7 +590,7 @@ onMounted(async () => {
   font-family: "Helvetica Neue", Arial, sans-serif;
   font-size: 24px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--le-text);
   margin: 32px 0 16px;
   line-height: 1.3;
 }
@@ -597,7 +599,7 @@ onMounted(async () => {
   font-family: "Helvetica Neue", Arial, sans-serif;
   font-size: 20px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--le-text);
   margin: 24px 0 12px;
 }
 
@@ -610,19 +612,19 @@ onMounted(async () => {
 
 .article-body :deep(figcaption) {
   font-size: 14px;
-  color: #6b6b6b;
+  color: var(--le-text-muted);
   margin-top: -16px;
   margin-bottom: 24px;
   font-style: italic;
 }
 
 .article-body :deep(a) {
-  color: #0066cc;
+  color: var(--le-accent);
   text-decoration: underline;
 }
 
 .article-body :deep(a:hover) {
-  color: #004499;
+  color: var(--le-primary-light);
 }
 
 .article-body :deep(ul),
@@ -636,11 +638,11 @@ onMounted(async () => {
 }
 
 .article-body :deep(blockquote) {
-  border-left: 3px solid #333;
+  border-left: 3px solid var(--le-accent);
   padding-left: 20px;
   margin: 24px 0;
   font-style: italic;
-  color: #555;
+  color: var(--le-text-secondary);
 }
 
 /* 文章底部 */

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ListenEase 宣传海报</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #f0f0f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    }
+    
+    .poster {
+      width: 1080px;
+      height: 1080px;
+      background: linear-gradient(180deg, #1a5fb4 0%, #3584e4 50%, #62a0ea 100%);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 80px 60px;
+    }
+    
+    /* 装饰圆 */
+    .circle-1 {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.03);
+      top: -200px;
+      right: -200px;
+    }
+    
+    .circle-2 {
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+      bottom: 200px;
+      left: -100px;
+    }
+    
+    /* 顶部标题区 */
+    .header {
+      text-align: center;
+      margin-bottom: 60px;
+      z-index: 1;
+    }
+    
+    .logo-icon {
+      width: 80px;
+      height: 80px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 30px;
+      font-size: 40px;
+    }
+    
+    .title {
+      font-size: 72px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 2px;
+      margin-bottom: 20px;
+    }
+    
+    .subtitle {
+      font-size: 32px;
+      color: rgba(255,255,255,0.9);
+      font-weight: 400;
+    }
+    
+    /* 功能卡片区 */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 40px;
+      width: 100%;
+      max-width: 900px;
+      margin-bottom: 60px;
+      z-index: 1;
+    }
+    
+    .feature-card {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      padding: 40px 30px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.2);
+      transition: transform 0.3s;
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .feature-icon {
+      width: 80px;
+      height: 80px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 36px;
+    }
+    
+    .feature-title {
+      font-size: 32px;
+      color: #fff;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    
+    .feature-desc {
+      font-size: 22px;
+      color: rgba(255,255,255,0.8);
+    }
+    
+    /* 底部网址区 */
+    .footer {
+      background: #fff;
+      border-radius: 20px;
+      padding: 30px 60px;
+      text-align: center;
+      z-index: 1;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    
+    .url-label {
+      font-size: 20px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+    
+    .url {
+      font-size: 36px;
+      color: #1a5fb4;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+    
+    /* 二维码占位 */
+    .qr-section {
+      display: flex;
+      align-items: center;
+      gap: 30px;
+      margin-top: 20px;
+    }
+    
+    .qr-placeholder {
+      width: 120px;
+      height: 120px;
+      background: #f5f5f5;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #999;
+    }
+    
+    .qr-text {
+      font-size: 18px;
+      color: #666;
+    }
+    
+    /* 截图提示 */
+    .screenshot-tip {
+      position: absolute;
+      bottom: 20px;
+      font-size: 16px;
+      color: rgba(255,255,255,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="poster">
+    <div class="circle-1"></div>
+    <div class="circle-2"></div>
+    
+    <div class="header">
+      <div class="logo-icon">🎧</div>
+      <h1 class="title">ListenEase</h1>
+      <p class="subtitle">听力学英语 · 让每一次聆听都成为进步的阶梯</p>
+    </div>
+    
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon">🎵</div>
+        <div class="feature-title">精选听力</div>
+        <div class="feature-desc">新闻科技商业文化</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📖</div>
+        <div class="feature-title">即点查词</div>
+        <div class="feature-desc">生词一键收藏复习</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔄</div>
+        <div class="feature-title">智能复习</div>
+        <div class="feature-desc">科学间隔记忆曲线</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">学习记录</div>
+        <div class="feature-desc">数据可视化追踪</div>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <div class="url-label">立即访问</div>
+      <div class="url">listen.example.com</div>
+      <div class="qr-section">
+        <div class="qr-placeholder">二维码<br>占位</div>
+        <div class="qr-text">扫码访问<br>或分享好友</div>
+      </div>
+    </div>
+    
+    <div class="screenshot-tip">长按识别 · 免费使用</div>
+  </div>
+</body>
+</html>

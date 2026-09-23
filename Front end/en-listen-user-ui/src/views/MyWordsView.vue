@@ -5,10 +5,50 @@
         <el-icon :size="28" color="#409eff"><Notebook /></el-icon>
         我的单词本
       </h1>
-      <el-button type="primary" @click="showAddDialog = true">
+      <el-button type="primary" @click="showAddDialog = true" :disabled="!currentBookId">
         <el-icon><Plus /></el-icon>
         添加单词
       </el-button>
+    </div>
+
+    <!-- 单词本切换 -->
+    <div class="book-bar">
+      <div class="book-select-wrap">
+        <span class="book-label">当前单词本</span>
+        <el-select
+          v-model="currentBookId"
+          placeholder="选择单词本"
+          filterable
+          style="width: 220px"
+          @change="onBookChange"
+        >
+          <el-option
+            v-for="book in wordBooks"
+            :key="book.id"
+            :label="`${book.name} (${book.wordCount})`"
+            :value="book.id"
+          />
+        </el-select>
+      </div>
+      <div class="book-actions">
+        <el-button @click="openCreateBook">
+          <el-icon><FolderAdd /></el-icon>
+          新建
+        </el-button>
+        <el-button @click="openRenameBook" :disabled="!currentBook">
+          <el-icon><Edit /></el-icon>
+          重命名
+        </el-button>
+        <el-button
+          type="danger"
+          plain
+          @click="handleDeleteBook"
+          :disabled="!currentBook || currentBook.isDefault"
+        >
+          <el-icon><Delete /></el-icon>
+          删除
+        </el-button>
+      </div>
     </div>
 
     <!-- 统计信息 -->
@@ -127,6 +167,16 @@
       class="add-word-dialog"
     >
       <el-form :model="newWord" label-width="80px">
+        <el-form-item label="单词本">
+          <el-select v-model="newWord.wordBookId" style="width: 100%">
+            <el-option
+              v-for="book in wordBooks"
+              :key="book.id"
+              :label="book.name"
+              :value="book.id"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="单词" required>
           <el-input v-model="newWord.word" placeholder="输入单词" />
         </el-form-item>
@@ -152,18 +202,63 @@
         <el-button type="primary" @click="addWord">添加</el-button>
       </template>
     </el-dialog>
+
+    <!-- 新建 / 重命名单词本 -->
+    <el-dialog
+      v-model="showBookDialog"
+      :title="bookDialogMode === 'create' ? '新建单词本' : '重命名单词本'"
+      width="420px"
+    >
+      <el-form label-width="80px">
+        <el-form-item label="名称" required>
+          <el-input
+            v-model="bookForm.name"
+            maxlength="50"
+            show-word-limit
+            placeholder="例如：四级词汇"
+          />
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input
+            v-model="bookForm.description"
+            type="textarea"
+            rows="2"
+            maxlength="200"
+            placeholder="可选"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showBookDialog = false">取消</el-button>
+        <el-button type="primary" @click="submitBookForm">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getUserWords, addUserWord, deleteUserWord, getWordStats } from '../api/Word.js'
+import { promptGoReviewAfterAdd } from '../utils/promptGoReview.js'
+import {
+  getUserWords,
+  addUserWord,
+  deleteUserWord,
+  getWordStats,
+  getWordBooks,
+  createWordBook,
+  updateWordBook,
+  deleteWordBook,
+  getCurrentWordBookId,
+  setCurrentWordBookId
+} from '../api/Word.js'
 
 const router = useRouter()
 
 const wordList = ref([])
+const wordBooks = ref([])
+const currentBookId = ref(null)
 const page = ref(1)
 const pageSize = ref(20)
 const total = ref(0)
@@ -171,15 +266,37 @@ const searchKeyword = ref('')
 const loading = ref(false)
 const stats = ref(null)
 const showAddDialog = ref(false)
-const newWord = ref({ word: '', definition: '', example: '' })
+const newWord = ref({ word: '', definition: '', example: '', wordBookId: null })
+
+const showBookDialog = ref(false)
+const bookDialogMode = ref('create')
+const bookForm = ref({ name: '', description: '' })
+
+const currentBook = computed(() =>
+  wordBooks.value.find(b => b.id === currentBookId.value) || null
+)
+
+const loadBooks = async () => {
+  const books = await getWordBooks()
+  wordBooks.value = books || []
+  if (!wordBooks.value.length) return
+
+  const saved = getCurrentWordBookId()
+  const match = wordBooks.value.find(b => b.id === saved)
+  currentBookId.value = match?.id || wordBooks.value.find(b => b.isDefault)?.id || wordBooks.value[0].id
+  setCurrentWordBookId(currentBookId.value)
+  newWord.value.wordBookId = currentBookId.value
+}
 
 const loadWords = async () => {
+  if (!currentBookId.value) return
   loading.value = true
   try {
     const res = await getUserWords({
       page: page.value,
       pageSize: pageSize.value,
-      search: searchKeyword.value
+      search: searchKeyword.value,
+      wordBookId: currentBookId.value
     })
     wordList.value = res.items || []
     total.value = res.total || 0
@@ -191,12 +308,29 @@ const loadWords = async () => {
 }
 
 const loadStats = async () => {
+  if (!currentBookId.value) return
   try {
-    const res = await getWordStats()
-    stats.value = res
+    stats.value = await getWordStats({ wordBookId: currentBookId.value })
   } catch (e) {
     console.error('获取统计失败', e)
   }
+}
+
+const refreshBookWordCounts = async () => {
+  try {
+    const books = await getWordBooks()
+    wordBooks.value = books || []
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+const onBookChange = (id) => {
+  setCurrentWordBookId(id)
+  newWord.value.wordBookId = id
+  page.value = 1
+  loadWords()
+  loadStats()
 }
 
 const getReviewStatus = (word) => {
@@ -220,12 +354,22 @@ const addWord = async () => {
     return
   }
   try {
-    await addUserWord(newWord.value)
-    ElMessage.success('添加成功')
+    await addUserWord({
+      ...newWord.value,
+      wordBookId: newWord.value.wordBookId || currentBookId.value
+    })
+    const addedWord = newWord.value.word.trim()
     showAddDialog.value = false
-    newWord.value = { word: '', definition: '', example: '' }
+    newWord.value = {
+      word: '',
+      definition: '',
+      example: '',
+      wordBookId: currentBookId.value
+    }
+    await refreshBookWordCounts()
     loadWords()
     loadStats()
+    await promptGoReviewAfterAdd(router, addedWord, '/my-words')
   } catch (e) {
     console.error(e)
   }
@@ -240,6 +384,7 @@ const deleteWord = async (id) => {
     })
     await deleteUserWord(id)
     ElMessage.success('删除成功')
+    await refreshBookWordCounts()
     loadWords()
     loadStats()
   } catch (e) {
@@ -249,12 +394,82 @@ const deleteWord = async (id) => {
   }
 }
 
+const openCreateBook = () => {
+  bookDialogMode.value = 'create'
+  bookForm.value = { name: '', description: '' }
+  showBookDialog.value = true
+}
+
+const openRenameBook = () => {
+  if (!currentBook.value) return
+  bookDialogMode.value = 'rename'
+  bookForm.value = {
+    name: currentBook.value.name,
+    description: currentBook.value.description || ''
+  }
+  showBookDialog.value = true
+}
+
+const submitBookForm = async () => {
+  const name = bookForm.value.name?.trim()
+  if (!name) {
+    ElMessage.warning('请输入单词本名称')
+    return
+  }
+  try {
+    if (bookDialogMode.value === 'create') {
+      const book = await createWordBook({
+        name,
+        description: bookForm.value.description
+      })
+      ElMessage.success('单词本已创建')
+      await loadBooks()
+      currentBookId.value = book.id
+      onBookChange(book.id)
+    } else {
+      await updateWordBook(currentBookId.value, {
+        name,
+        description: bookForm.value.description
+      })
+      ElMessage.success('已更新')
+      await refreshBookWordCounts()
+    }
+    showBookDialog.value = false
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+const handleDeleteBook = async () => {
+  if (!currentBook.value || currentBook.value.isDefault) return
+  try {
+    await ElMessageBox.confirm(
+      `确定删除「${currentBook.value.name}」吗？其中的单词会自动移到默认单词本。`,
+      '删除单词本',
+      {
+        confirmButtonText: '删除并迁移',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    await deleteWordBook(currentBook.value.id, { moveWordsToDefault: true })
+    ElMessage.success('已删除')
+    await loadBooks()
+    onBookChange(currentBookId.value)
+  } catch (e) {
+    if (e !== 'cancel') console.error(e)
+  }
+}
+
 const goToReview = () => {
-  router.push({ name: 'wordReview' })
+  router.push({ name: 'wordReview', query: { wordBookId: currentBookId.value } })
 }
 
 const goToFreeReview = () => {
-  router.push({ name: 'wordReview', query: { mode: 'free' } })
+  router.push({
+    name: 'wordReview',
+    query: { mode: 'free', wordBookId: currentBookId.value }
+  })
 }
 
 const handleSearch = () => {
@@ -271,9 +486,17 @@ const handlePageChange = () => {
   loadWords()
 }
 
-onMounted(() => {
-  loadWords()
-  loadStats()
+watch(showAddDialog, (open) => {
+  if (open) newWord.value.wordBookId = currentBookId.value
+})
+
+onMounted(async () => {
+  try {
+    await loadBooks()
+    await Promise.all([loadWords(), loadStats()])
+  } catch (e) {
+    console.error(e)
+  }
 })
 </script>
 
@@ -288,7 +511,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .page-header h1 {
@@ -298,6 +521,36 @@ onMounted(() => {
   font-size: 24px;
   color: var(--text-primary);
   margin: 0;
+}
+
+.book-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background: var(--bg-elevated);
+  border-radius: 8px;
+}
+
+.book-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.book-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.book-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .stats-row {
@@ -347,7 +600,6 @@ onMounted(() => {
   margin-top: 24px;
 }
 
-/* 操作列样式 */
 :deep(.action-column) {
   text-align: center;
 }
@@ -363,7 +615,6 @@ onMounted(() => {
   justify-content: center;
 }
 
-/* 手机端适配 */
 @media (max-width: 768px) {
   .my-words-page {
     padding: 12px;
@@ -388,6 +639,28 @@ onMounted(() => {
 
   .page-header h1 :deep(.el-icon) {
     font-size: 22px !important;
+  }
+
+  .book-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .book-select-wrap {
+    width: 100%;
+  }
+
+  .book-select-wrap .el-select {
+    flex: 1;
+    width: auto !important;
+  }
+
+  .book-actions {
+    width: 100%;
+  }
+
+  .book-actions .el-button {
+    flex: 1;
   }
 
   .stats-row {
@@ -426,7 +699,6 @@ onMounted(() => {
     display: none;
   }
 
-  /* 操作列缩小 - 只显示图标 */
   .el-table :deep(.action-column) {
     width: 50px !important;
     min-width: 50px !important;
@@ -457,53 +729,6 @@ onMounted(() => {
     padding: 12px 16px;
     max-height: calc(80vh - 120px);
     overflow-y: auto;
-  }
-
-  .el-dialog :deep(.el-form) {
-    width: 100%;
-  }
-
-  .el-dialog :deep(.el-form-item) {
-    margin-bottom: 12px;
-  }
-
-  .el-dialog :deep(.el-form-item__label) {
-    width: 50px !important;
-    padding-right: 6px;
-    font-size: 13px;
-  }
-
-  .el-dialog :deep(.el-form-item__content) {
-    margin-left: 50px !important;
-    width: calc(100% - 50px);
-  }
-
-  .el-dialog :deep(.el-input),
-  .el-dialog :deep(.el-textarea) {
-    width: 100%;
-  }
-
-  .el-dialog :deep(.el-input__inner),
-  .el-dialog :deep(.el-textarea__inner) {
-    font-size: 14px;
-  }
-
-  /* 添加单词弹窗特殊处理 */
-  .add-word-dialog :deep(.el-dialog) {
-    width: 95% !important;
-    max-width: 400px;
-  }
-
-  .add-word-dialog :deep(.el-dialog__body) {
-    padding: 16px;
-  }
-
-  .add-word-dialog :deep(.el-form-item__label) {
-    width: 50px !important;
-  }
-
-  .add-word-dialog :deep(.el-form-item__content) {
-    margin-left: 50px !important;
   }
 
   .pagination :deep(.el-pagination) {

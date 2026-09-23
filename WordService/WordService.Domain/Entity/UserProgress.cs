@@ -3,7 +3,6 @@ using DomainCommons;
 namespace WordService.Domain.Entity;
 
 public class UserWordRootProgress : ICreationTime
-
 {
     public Guid Id { get; private set; }
     public Guid UserId { get; private set; }
@@ -32,12 +31,63 @@ public class UserWordRootProgress : ICreationTime
 }
 
 /// <summary>
+/// 用户单词本（可创建多个，如四级词本、六级词本）
+/// </summary>
+public class UserWordBook : ICreationTime
+{
+    public Guid Id { get; private set; }
+    public Guid UserId { get; private set; }
+    public string Name { get; private set; } = string.Empty;
+    public string? Description { get; private set; }
+    public bool IsDefault { get; private set; }
+    public int SortOrder { get; private set; }
+    public DateTime CreationTime { get; private set; }
+
+    private UserWordBook() { }
+
+    public UserWordBook(Guid userId, string name, bool isDefault = false, string? description = null)
+    {
+        Id = Guid.NewGuid();
+        UserId = userId;
+        Name = name.Trim();
+        Description = description?.Trim();
+        IsDefault = isDefault;
+        SortOrder = 0;
+        CreationTime = DateTime.Now;
+    }
+
+    public void Rename(string name)
+    {
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            Name = name.Trim();
+        }
+    }
+
+    public void UpdateDescription(string? description)
+    {
+        Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+    }
+
+    public void SetSortOrder(int sortOrder)
+    {
+        SortOrder = sortOrder;
+    }
+
+    public void SetDefault(bool isDefault)
+    {
+        IsDefault = isDefault;
+    }
+}
+
+/// <summary>
 /// 用户自定义单词
 /// </summary>
 public class UserWord : ICreationTime
 {
     public Guid Id { get; private set; }
     public Guid UserId { get; private set; }
+    public Guid WordBookId { get; private set; }
     public string Word { get; private set; }
     public string? Definition { get; private set; }
     public string? Example { get; private set; }
@@ -51,10 +101,11 @@ public class UserWord : ICreationTime
 
     private UserWord() { }
 
-    public UserWord(Guid userId, string word, string? definition = null, string? example = null)
+    public UserWord(Guid userId, Guid wordBookId, string word, string? definition = null, string? example = null)
     {
         Id = Guid.NewGuid();
         UserId = userId;
+        WordBookId = wordBookId;
         Word = word;
         Definition = definition;
         Example = example;
@@ -63,6 +114,11 @@ public class UserWord : ICreationTime
         EaseFactor = 2.5;
         Interval = 0;
         NextReview = null;
+    }
+
+    public void MoveToBook(Guid wordBookId)
+    {
+        WordBookId = wordBookId;
     }
 
     /// <summary>

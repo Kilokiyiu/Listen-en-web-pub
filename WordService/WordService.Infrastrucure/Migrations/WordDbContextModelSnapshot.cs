@@ -61,11 +61,52 @@ namespace WordService.Infrastrucure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<Guid>("WordBookId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "Word");
+                    b.HasIndex("WordBookId");
+
+                    b.HasIndex("UserId", "WordBookId", "Word");
 
                     b.ToTable("T_UserWord", (string)null);
+                });
+
+            modelBuilder.Entity("WordService.Domain.Entity.UserWordBook", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "IsDefault");
+
+                    b.HasIndex("UserId", "Name");
+
+                    b.ToTable("T_UserWordBook", (string)null);
                 });
 
             modelBuilder.Entity("WordService.Domain.Entity.UserWordRootProgress", b =>
@@ -237,6 +278,15 @@ namespace WordService.Infrastrucure.Migrations
                     b.HasIndex("WordRootId");
 
                     b.ToTable("T_WordRootQuiz", (string)null);
+                });
+
+            modelBuilder.Entity("WordService.Domain.Entity.UserWord", b =>
+                {
+                    b.HasOne("WordService.Domain.Entity.UserWordBook", null)
+                        .WithMany()
+                        .HasForeignKey("WordBookId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("WordService.Domain.Entity.UserWordRootProgress", b =>

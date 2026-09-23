@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">EaseWord</string>
+    <string name="title_activity_main">EaseWord</string>
+    <string name="package_name">online.listenease.wordbook</string>
+    <string name="custom_url_scheme">online.listenease.wordbook</string>
+</resources>

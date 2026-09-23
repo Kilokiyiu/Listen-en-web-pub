@@ -208,7 +208,7 @@ onUnmounted(() => {
   position: relative;
   width: 100%;
   min-height: 200px;
-  background: #eef2f7;
+  background: var(--le-bg-muted);
 }
 
 .pdf-scroll {
@@ -224,7 +224,8 @@ onUnmounted(() => {
   height: auto;
   margin: 0 auto 8px;
   background: #fff;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
 }
 
 .pdf-state {
@@ -243,7 +244,7 @@ onUnmounted(() => {
   position: absolute;
   inset: 0;
   z-index: 2;
-  background: rgba(238, 242, 247, 0.92);
+  background: rgba(7, 11, 20, 0.88);
 }
 
 .pdf-state--error {

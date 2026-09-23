@@ -176,7 +176,8 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { queryEnglishWord, addUserWord, isValidEnglishQuery } from '../api/Word.js'
+import { queryEnglishWord, addUserWordToCurrentBook, isValidEnglishQuery } from '../api/Word.js'
+import { promptGoReviewAfterAdd } from '../utils/promptGoReview.js'
 
 const router = useRouter()
 
@@ -353,9 +354,9 @@ const addToWordBook = async () => {
 
   addingWord.value = true
   try {
-    await addUserWord({ word, definition, example })
-    ElMessage.success(`"${word}" 已加入单词本`)
+    await addUserWordToCurrentBook({ word, definition, example })
     dialogVisible.value = false
+    await promptGoReviewAfterAdd(router, word, '/word-search')
   } catch (e) {
     if (e.response?.status === 409) {
       ElMessage.warning('该单词已在单词本中')
@@ -401,45 +402,29 @@ onUnmounted(() => {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-cyan) 100%);
+  background: var(--le-bg-elevated);
+  border: 1px solid var(--le-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.4), 0 0 0 4px rgba(64, 158, 255, 0.1);
+  color: var(--le-primary);
+  box-shadow: var(--le-shadow);
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.2s ease, border-color 0.2s ease;
   position: relative;
 }
 
 .float-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 24px rgba(64, 158, 255, 0.5), 0 0 0 6px rgba(64, 158, 255, 0.15);
+  transform: scale(1.06);
+  border-color: var(--le-border-strong);
 }
 
 .float-btn:active {
   transform: scale(0.95);
 }
 
-/* 脉冲动画 */
 .float-btn::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  border: 2px solid rgba(64, 158, 255, 0.3);
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.15);
-    opacity: 0;
-  }
+  display: none;
 }
 
 /* 搜索输入框 */
@@ -448,18 +433,18 @@ onUnmounted(() => {
 }
 
 .search-input :deep(.el-input__wrapper) {
-  background: #ffffff !important;
-  box-shadow: 0 0 0 1px var(--border-glass) inset, 0 4px 16px rgba(0,0,0,0.06) !important;
+  background: var(--le-bg-elev) !important;
+  box-shadow: 0 0 0 1px var(--border-glass) inset, 0 4px 16px rgba(0,0,0,0.25) !important;
   border-radius: 28px;
   padding: 4px 8px 4px 20px;
 }
 
 .search-input :deep(.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px rgba(64, 158, 255, 0.3) inset, 0 6px 20px rgba(0,0,0,0.08) !important;
+  box-shadow: 0 0 0 1px var(--le-border-strong) inset, 0 6px 20px rgba(0,0,0,0.3) !important;
 }
 
 .search-input :deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px var(--accent-blue) inset, 0 0 12px rgba(64, 158, 255, 0.15) !important;
+  box-shadow: 0 0 0 1px var(--le-primary) inset !important;
 }
 
 .search-input :deep(.el-input__inner) {
@@ -501,7 +486,7 @@ onUnmounted(() => {
   gap: 24px;
   margin-bottom: 20px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--le-border);
 }
 
 .phonetic-item {
@@ -536,7 +521,7 @@ onUnmounted(() => {
   color: var(--text-primary);
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--le-border);
 }
 
 .translation-list {
@@ -552,7 +537,8 @@ onUnmounted(() => {
 .sentence-item {
   margin-bottom: 12px;
   padding: 12px;
-  background: #f8f9fa;
+  background: var(--le-bg-muted);
+  border: 1px solid var(--le-border);
   border-radius: 8px;
 }
 

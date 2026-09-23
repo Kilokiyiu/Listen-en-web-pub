@@ -135,7 +135,8 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getWordRootDetail, getWordRootQuiz, markWordRootMastered, addUserWord, getWordRoots } from '../api/Word.js'
+import { getWordRootDetail, getWordRootQuiz, markWordRootMastered, addUserWordToCurrentBook, getWordRoots } from '../api/Word.js'
+import { promptGoReviewAfterAdd } from '../utils/promptGoReview.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -230,12 +231,12 @@ const addToWordbook = async (example) => {
     return
   }
   try {
-    await addUserWord({
+    await addUserWordToCurrentBook({
       word: example.word,
       definition: example.meaning,
       example: example.explanation || ''
     })
-    ElMessage.success('已添加到单词本')
+    await promptGoReviewAfterAdd(router, example.word, '/word-roots')
   } catch (e) {
     console.error(e)
   }

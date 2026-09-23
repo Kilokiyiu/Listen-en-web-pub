@@ -87,6 +87,15 @@ const routes = [
       title: 'BBC 每日新闻 - ListenEase',
       description: '精选 BBC 英语新闻阅读与听力材料，提升语感与阅读理解能力。'
     }
+  },
+  {
+    path: '/feedback',
+    name: 'feedback',
+    component: () => import('../views/FeedbackView.vue'),
+    meta: {
+      title: '意见反馈 - ListenEase',
+      description: '向 ListenEase 提交功能建议、问题反馈或改进意见。'
+    }
   }
 ]
 

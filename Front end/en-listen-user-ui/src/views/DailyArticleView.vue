@@ -109,6 +109,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getDailyArticle, markArticleRead, toggleFavorite as toggleFavoriteApi } from '../api/DailyArticle.js'
 import { useAudioPlayer } from '../composables/useAudioPlayer.js'
+import { recordStudyActivity } from '../api/Study.js'
+import { trackEvent } from '../api/Analytics.js'
 import dayjs from 'dayjs'
 
 const router = useRouter()
@@ -221,6 +223,18 @@ const markAsRead = async () => {
   try {
     await markArticleRead(article.value.id)
     article.value.isRead = true
+    trackEvent('article_read', `/daily?id=${article.value.id}`)
+    try {
+      await recordStudyActivity({
+        activityType: 'article',
+        contentId: String(article.value.id),
+        title: article.value.titleChinese || article.value.titleEnglish || '每日短文',
+        category: 'daily',
+        durationSeconds: 0,
+      })
+    } catch {
+      /* study record is best-effort */
+    }
     ElMessage.success('已标记为已读')
   } catch (e) {
     // 错误已在拦截器中处理
@@ -341,7 +355,7 @@ watch(() => route.query.date, () => {
   color: var(--text-primary);
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #f0f3f8;
+  border-bottom: 1px solid var(--le-border);
 }
 
 .toggle-btn {

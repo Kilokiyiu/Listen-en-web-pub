@@ -40,15 +40,17 @@ appsettings.Production.json
 .env.*
 !.env.example
 
-# =OS =
-.DS_Store
-Thumbs.db
-
 # =媒体文件（不应入库）=
 *.mp3
 *.wav
 *.mp4
 *.avi
+
+# =Android 安装包=
+*.apk
+*.aab
+*.jks
+*.keystore
 
 # =部署构建产物=
 deploy/audios/
@@ -58,9 +60,29 @@ deploy/certbot/
 
 # =搜索引擎验证文件=
 google*.html
+*百度*.txt
+baidu*.txt
+21a35796e1ac741f8ed5b7dddb30bd80.txt
 
 # =PowerShell 调试脚本=
 *.ps1
+
+# =个人笔记/求职准备（不入库）=
+docs/广电*.md
+docs/*HR*.md
+docs/*技术面*.md
+docs/*端到端*.md
+
+# =SQL 调试脚本=
+check_*.sql
+query_*.sql
+delete_*.sql
+fix_*.sql
+list_*.sql
+
+# =OS =
+.DS_Store
+Thumbs.db
 
 # =WorkBuddy =
 .workbuddy/

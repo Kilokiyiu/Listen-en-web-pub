@@ -9,8 +9,7 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: "${RABBITMQ_USER:-guest}"
       RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASSWORD:-guest}"
-      RABBITMQ_VM_MEMORY_HIGH_WATERMARK: "0.4"
-    mem_limit: 256m
+    mem_limit: 512m
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     restart: always
@@ -58,6 +57,17 @@ services:
       - RabbitMQ__Password=${RABBITMQ_PASSWORD:-guest}
       - CorsOrigins__0=${CORS_ORIGIN_0:-https://your-domain.com}
       - CorsOrigins__1=${CORS_ORIGIN_1:-https://www.your-domain.com}
+      - CloudEmail__ApiUser=${SENDCLOUD_API_USER:-}
+      - CloudEmail__ApiKey=${SENDCLOUD_API_KEY:-}
+      - CloudEmail__From=${SENDCLOUD_FROM:-}
+      - SmtpEmail__Host=${SMTP_HOST:-}
+      - SmtpEmail__Port=${SMTP_PORT:-587}
+      - SmtpEmail__EnableSsl=${SMTP_ENABLE_SSL:-true}
+      - SmtpEmail__UserName=${SMTP_USERNAME:-}
+      - SmtpEmail__Password=${SMTP_PASSWORD:-}
+      - SmtpEmail__From=${SMTP_FROM:-}
+      - SmtpEmail__FromName=${SMTP_FROM_NAME:-ListenEase}
+      - Feedback__RecipientEmail=${FEEDBACK_RECIPIENT_EMAIL:-}
     depends_on:
       sqlserver:
         condition: service_healthy

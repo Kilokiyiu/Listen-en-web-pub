@@ -1,42 +1,56 @@
-/* ListenEase Design System */
+/* ListenEase Design System — Study-first dark UI */
 
 :root {
-  --le-header-h: 64px;
+  --le-header-h: 68px;
   --le-mobile-nav-h: 62px;
   --le-max-w: 1200px;
   --le-radius: 14px;
   --le-radius-sm: 10px;
 
-  --le-bg: #f4f7fb;
-  --le-bg-elevated: #ffffff;
-  --le-bg-muted: #eef2f8;
-  --le-bg-dark: #0f172a;
+  --le-bg: #0c1222;
+  --le-bg-elevated: #151d32;
+  --le-bg-muted: #1a243a;
+  --le-bg-dark: #080c18;
+  --le-bg-surface: #131a2c;
+  --le-bg-elev: #111827;
+  --le-bg-elevated-hover: #1a243c;
 
-  --le-text: #0f172a;
-  --le-text-secondary: #475569;
-  --le-text-muted: #94a3b8;
+  --le-text: #e8eef9;
+  --le-text-secondary: #a4b0c8;
+  --le-text-muted: #73819a;
 
-  --le-primary: #2563eb;
-  --le-primary-light: #3b82f6;
-  --le-accent: #06b6d4;
-  --le-purple: #7c3aed;
-  --le-success: #10b981;
-  --le-warning: #f59e0b;
-  --le-danger: #ef4444;
+  --le-primary: #60a5fa;
+  --le-primary-light: #93c5fd;
+  --le-accent: #818cf8;
+  --le-purple: #a78bfa;
+  --le-success: #34d399;
+  --le-warning: #fbbf24;
+  --le-danger: #f87171;
 
-  --le-border: rgba(15, 23, 42, 0.08);
-  --le-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
-  --le-shadow: 0 8px 30px rgba(15, 23, 42, 0.08);
-  --le-shadow-lg: 0 16px 48px rgba(15, 23, 42, 0.12);
+  --le-border: rgba(148, 163, 210, 0.14);
+  --le-border-strong: rgba(148, 163, 210, 0.26);
+  --le-shadow-sm: 0 1px 2px rgba(8, 12, 24, 0.22);
+  --le-shadow: 0 8px 24px rgba(8, 12, 24, 0.28);
+  --le-shadow-lg: 0 16px 40px rgba(8, 12, 24, 0.34);
+  --le-glow: none;
 
-  --le-gradient: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%);
-  --le-gradient-soft: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(6, 182, 212, 0.08) 100%);
+  --le-gradient: linear-gradient(135deg, #3b82f6 0%, #6366f1 55%, #7c6bf0 100%);
+  --le-gradient-soft: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(99, 102, 241, 0.1) 100%);
+  --le-ambient:
+    radial-gradient(ellipse 70% 40% at 8% -8%, rgba(59, 130, 246, 0.1), transparent 58%),
+    radial-gradient(ellipse 50% 35% at 96% 0%, rgba(99, 102, 241, 0.06), transparent 52%),
+    linear-gradient(180deg, #0d1320 0%, #0c1222 50%, #0a101c 100%);
 
-  /* legacy aliases used in views */
+  --le-font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --le-font-body: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --le-font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+  /* legacy aliases */
   --bg-primary: var(--le-bg-dark);
   --bg-secondary: #1e293b;
   --bg-content: var(--le-bg);
   --bg-card: var(--le-bg-elevated);
+  --bg-elevated: var(--le-bg-elevated);
   --border-glass: var(--le-border);
   --text-primary: var(--le-text);
   --text-secondary: var(--le-text-secondary);
@@ -45,6 +59,27 @@
   --accent-cyan: var(--le-accent);
   --accent-purple: var(--le-purple);
   --shadow-glow: var(--le-shadow);
+
+  /* Element Plus dark bridge */
+  --el-bg-color: #161e34;
+  --el-bg-color-overlay: #161e34;
+  --el-bg-color-page: transparent;
+  --el-text-color-primary: var(--le-text);
+  --el-text-color-regular: var(--le-text-secondary);
+  --el-text-color-secondary: var(--le-text-muted);
+  --el-text-color-placeholder: var(--le-text-muted);
+  --el-border-color: rgba(148, 163, 210, 0.2);
+  --el-border-color-light: rgba(148, 163, 210, 0.14);
+  --el-border-color-lighter: rgba(148, 163, 210, 0.1);
+  --el-border-color-extra-light: rgba(148, 163, 210, 0.08);
+  --el-fill-color: #1a243a;
+  --el-fill-color-light: rgba(148, 163, 210, 0.08);
+  --el-fill-color-lighter: rgba(148, 163, 210, 0.05);
+  --el-fill-color-blank: #161e34;
+  --el-mask-color: rgba(8, 12, 24, 0.6);
+  --el-box-shadow: var(--le-shadow);
+  --el-box-shadow-light: var(--le-shadow-sm);
+  --el-color-primary: var(--le-primary);
 }
 
 *,
@@ -55,15 +90,18 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  color-scheme: dark;
 }
 
 body {
   margin: 0;
-  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  background: var(--le-bg);
+  font-family: var(--le-font-body);
+  background: var(--le-ambient);
+  background-attachment: fixed;
   color: var(--le-text);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
 
 #app {
@@ -72,7 +110,6 @@ body {
   flex-direction: column;
 }
 
-/* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -81,11 +118,13 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(15, 23, 42, 0.15);
+  background: rgba(148, 163, 184, 0.28);
   border-radius: 99px;
 }
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.42);
+}
 
-/* ===== Layout ===== */
 .le-app-main {
   flex: 1;
   width: 100%;
@@ -107,7 +146,6 @@ body {
   }
 }
 
-/* ===== Page shell ===== */
 .le-page {
   min-height: calc(100vh - var(--le-header-h) - 48px);
   animation: le-fade-in 0.35s ease;
@@ -136,6 +174,7 @@ body {
 }
 
 .le-page-title {
+  font-family: var(--le-font-display);
   font-size: clamp(1.25rem, 3vw, 1.75rem);
   font-weight: 700;
   color: var(--le-text);
@@ -162,44 +201,47 @@ body {
   align-items: center;
   gap: 4px;
   padding: 8px 12px;
-  border: none;
+  border: 1px solid var(--le-border);
   background: var(--le-bg-elevated);
   color: var(--le-text-secondary);
   border-radius: var(--le-radius-sm);
   font-size: 14px;
   cursor: pointer;
-  box-shadow: var(--le-shadow-sm);
   transition: all 0.2s;
 }
 
 .le-back-btn:hover {
   color: var(--le-primary);
-  box-shadow: var(--le-shadow);
+  border-color: var(--le-border-strong);
 }
 
 .le-badge {
   display: inline-flex;
   align-items: center;
   padding: 4px 12px;
-  border-radius: 99px;
-  font-size: 12px;
+  border-radius: 6px;
+  font-family: var(--le-font-mono);
+  font-size: 11px;
   font-weight: 600;
+  letter-spacing: 0.05em;
   background: var(--le-bg-muted);
-  color: var(--le-text-muted);
+  color: var(--le-text-secondary);
+  border: 1px solid var(--le-border);
 }
 
-/* ===== Cards ===== */
 .le-card {
   background: var(--le-bg-elevated);
   border: 1px solid var(--le-border);
   border-radius: var(--le-radius);
   box-shadow: var(--le-shadow-sm);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
 .le-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
+  border-color: var(--le-border-strong);
   box-shadow: var(--le-shadow);
+  background: var(--le-bg-elevated-hover);
 }
 
 .le-card-interactive {
@@ -222,13 +264,13 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  font-family: var(--le-font-display);
   font-size: 18px;
   font-weight: 600;
   margin: 0;
   color: var(--le-text);
 }
 
-/* ===== Stats ===== */
 .le-stats-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -242,10 +284,10 @@ body {
   border-radius: var(--le-radius);
   padding: 20px;
   text-align: center;
-  box-shadow: var(--le-shadow-sm);
 }
 
 .le-stat-value {
+  font-family: var(--le-font-display);
   font-size: 28px;
   font-weight: 700;
   color: var(--le-primary);
@@ -258,7 +300,6 @@ body {
   margin-top: 4px;
 }
 
-/* ===== Loading / Empty ===== */
 .le-loading-wrap,
 .le-empty-wrap {
   display: flex;
@@ -270,30 +311,109 @@ body {
   color: var(--le-text-muted);
 }
 
-/* ===== Element Plus overrides ===== */
 .el-button--primary {
   --el-button-bg-color: var(--le-primary);
   --el-button-border-color: var(--le-primary);
   --el-button-hover-bg-color: var(--le-primary-light);
   --el-button-hover-border-color: var(--le-primary-light);
+  --el-button-text-color: #0b1220;
+  --el-button-hover-text-color: #0b1220;
 }
 
 .le-btn-gradient.el-button--primary {
   background: var(--le-gradient) !important;
   border: none !important;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  color: #fff !important;
+  box-shadow: var(--le-shadow-sm);
 }
 
 .le-btn-gradient.el-button--primary:hover {
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+  box-shadow: var(--le-shadow);
   transform: translateY(-1px);
 }
 
 .el-pagination.is-background .el-pager li.is-active {
   background: var(--le-gradient) !important;
+  color: #fff !important;
 }
 
-/* Dialog mobile */
+.el-input__wrapper,
+.el-textarea__inner,
+.el-select__wrapper {
+  background-color: var(--le-bg-elev) !important;
+  box-shadow: 0 0 0 1px var(--le-border) inset !important;
+}
+
+.el-input__wrapper:hover,
+.el-select__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--le-border-strong) inset !important;
+}
+
+.el-input__wrapper.is-focus,
+.el-select__wrapper.is-focused {
+  box-shadow: 0 0 0 1px var(--le-primary) inset !important;
+}
+
+.el-dialog {
+  --el-dialog-bg-color: #161e34;
+  background: #161e34 !important;
+  border: 1px solid var(--le-border);
+  box-shadow: var(--le-shadow-lg);
+}
+
+.el-dialog__header,
+.el-dialog__title {
+  color: var(--le-text);
+}
+
+.el-dropdown-menu {
+  background: #161e34 !important;
+  border: 1px solid var(--le-border) !important;
+}
+
+.el-dropdown-menu__item {
+  color: var(--le-text-secondary) !important;
+}
+
+.el-dropdown-menu__item:hover {
+  background: var(--le-gradient-soft) !important;
+  color: var(--le-primary) !important;
+}
+
+.el-card {
+  --el-card-bg-color: var(--le-bg-elevated);
+  background: var(--le-bg-elevated);
+  border-color: var(--le-border);
+  color: var(--le-text);
+}
+
+.el-table {
+  --el-table-bg-color: transparent;
+  --el-table-tr-bg-color: transparent;
+  --el-table-header-bg-color: rgba(30, 41, 68, 0.7);
+  --el-table-row-hover-bg-color: rgba(99, 102, 241, 0.1);
+  --el-table-border-color: var(--le-border);
+  --el-table-text-color: var(--le-text);
+  --el-table-header-text-color: var(--le-text-secondary);
+}
+
+.el-message-box {
+  background: #161e34 !important;
+  border: 1px solid var(--le-border) !important;
+}
+
+.el-popper.is-light,
+.el-popover.el-popper {
+  background: #161e34 !important;
+  border: 1px solid var(--le-border) !important;
+  color: var(--le-text) !important;
+}
+
+.el-link.el-link--primary {
+  --el-link-text-color: var(--le-accent);
+  --el-link-hover-text-color: var(--le-primary-light);
+}
+
 @media (max-width: 768px) {
   .el-dialog {
     --el-dialog-width: 92% !important;

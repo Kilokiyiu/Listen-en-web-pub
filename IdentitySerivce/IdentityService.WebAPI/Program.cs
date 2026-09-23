@@ -58,7 +58,7 @@ idBuilder.AddEntityFrameworkStores<IdentityDbContext>()
     .AddRoleManager<RoleManager<Role>>()
     .AddUserManager<IdentityUserManager>();
 
-builder.Services.ServiceInit();
+builder.Services.ServiceInit(builder.Configuration);
 builder.Services.AddEventBus(builder.Configuration, "identity-service", typeof(Program).Assembly);
 
 var app = builder.Build();

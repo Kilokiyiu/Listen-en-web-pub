@@ -3,7 +3,7 @@
     <div class="header-inner">
       <div class="logo" @click="router.push('/')">
         <div class="logo-icon">
-          <el-icon :size="24"><Headset /></el-icon>
+          <el-icon :size="18"><Headset /></el-icon>
         </div>
         <span class="logo-text">ListenEase</span>
       </div>
@@ -40,10 +40,9 @@
           </button>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+              <el-dropdown-item command="profile">个人中心 / 学习记录</el-dropdown-item>
               <el-dropdown-item command="wordRoots">词根学习</el-dropdown-item>
               <el-dropdown-item command="myWords">我的单词本</el-dropdown-item>
-              <el-dropdown-item command="history">学习记录</el-dropdown-item>
               <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -59,13 +58,13 @@
       class="announcement-dialog"
       @close="handleCloseAnnouncement"
     >
-      <div class="admin-info-card">
-        <div class="admin-info-title">管理员信息</div>
-        <div class="admin-info-row"><span class="label">管理员</span><span>Kilo</span></div>
-        <div class="admin-info-row"><span class="label">邮箱</span><span>Kilokiyiu@outlook.com</span></div>
-        <div class="admin-info-row"><span class="label">GitHub</span><a href="https://github.com/Kilokiyiu" target="_blank" rel="noopener">github.com/Kilokiyiu</a></div>
-        <div class="admin-info-row"><span class="label">状态</span><span class="status-badge">正常运行</span></div>
-      </div>
+<div class="admin-info-card">
+          <div class="admin-info-title">管理员信息</div>
+          <div class="admin-info-row"><span class="label">管理员</span><span>Admin</span></div>
+          <div class="admin-info-row"><span class="label">邮箱</span><span>contact@your-domain.com</span></div>
+          <div class="admin-info-row"><span class="label">GitHub</span><a href="https://github.com/your-github-org/your-repo" target="_blank" rel="noopener">github.com/your-github-org/your-repo</a></div>
+          <div class="admin-info-row"><span class="label">状态</span><span class="status-badge">正常运行</span></div>
+        </div>
       <h3 class="ann-section-title">最新公告</h3>
       <div class="announcement-list">
         <article v-for="(item, i) in announcements" :key="i" class="announcement-item">
@@ -106,9 +105,9 @@ const isNavActive = (link) => {
 const announcementVisible = ref(false)
 const noShowToday = ref(false)
 const announcements = [
+  { date: '2026-09-22', title: '学习记录上线', content: '听力标记完成与每日短文已读会记入学习记录；个人中心展示真实进度。' },
   { date: '2026-05-13', title: '平台上线', content: 'ListenEase 正式上线！提供四六级真题听力、BBC 外刊、单词复习与每日一句。' },
-  { date: '2026-05-13', title: '音频原文', content: '部分音频原文正在整理中，后续会持续更新。' },
-  { date: '2026-05-13', title: '更新计划', content: '更多学习功能开发中，欢迎通过邮箱反馈建议。' },
+  { date: '2026-05-13', title: '更新计划', content: '更多学习功能开发中，欢迎通过邮箱(contact@your-domain.com)反馈建议。' },
 ]
 
 const isLoggedIn = ref(false)
@@ -140,7 +139,7 @@ const handleCommand = (cmd) => {
     router.push('/')
     return
   }
-  const map = { profile: '/profile', history: '/history', wordRoots: '/word-roots', myWords: '/my-words' }
+  const map = { profile: '/profile', wordRoots: '/word-roots', myWords: '/my-words' }
   if (map[cmd]) router.push(map[cmd])
 }
 </script>
@@ -150,11 +149,10 @@ const handleCommand = (cmd) => {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(12, 18, 34, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--le-border);
-  box-shadow: var(--le-shadow-sm);
 }
 
 .header-inner {
@@ -176,19 +174,19 @@ const handleCommand = (cmd) => {
 }
 
 .logo-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   background: var(--le-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 .logo-text {
-  font-size: 18px;
+  font-family: var(--le-font-display);
+  font-size: 20px;
   font-weight: 700;
   color: var(--le-text);
   letter-spacing: -0.02em;
@@ -202,14 +200,17 @@ const handleCommand = (cmd) => {
 }
 
 .nav-link {
+  position: relative;
   border: none;
   background: transparent;
-  padding: 8px 14px;
-  border-radius: 99px;
+  padding: 8px 16px;
+  border-radius: 8px;
   font-size: 14px;
+  font-weight: 500;
   color: var(--le-text-secondary);
   cursor: pointer;
   transition: all 0.2s;
+  font-family: inherit;
 }
 
 .nav-link:hover {
@@ -223,6 +224,18 @@ const handleCommand = (cmd) => {
   font-weight: 600;
 }
 
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 2px;
+  background: var(--le-primary);
+  border-radius: 2px;
+}
+
 .header-actions {
   display: flex;
   align-items: center;
@@ -231,7 +244,27 @@ const handleCommand = (cmd) => {
 }
 
 .icon-btn {
-  border: 1px solid var(--le-border) !important;
+  border: none !important;
+  background: transparent !important;
+  color: var(--le-text-secondary) !important;
+}
+
+.icon-btn:hover {
+  background: var(--le-gradient-soft) !important;
+  color: var(--le-primary) !important;
+}
+
+.header-actions :deep(.el-button:not(.le-btn-gradient):not(.el-button--primary)) {
+  background: transparent;
+  border: none;
+  color: var(--le-text-secondary);
+}
+
+.header-actions :deep(.le-btn-gradient) {
+  background: var(--le-gradient) !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .user-btn {
@@ -243,11 +276,11 @@ const handleCommand = (cmd) => {
   border-radius: 99px;
   padding: 4px 12px 4px 4px;
   cursor: pointer;
-  transition: box-shadow 0.2s;
+  transition: border-color 0.2s;
 }
 
 .user-btn:hover {
-  box-shadow: var(--le-shadow-sm);
+  border-color: var(--le-border-strong);
 }
 
 .username {

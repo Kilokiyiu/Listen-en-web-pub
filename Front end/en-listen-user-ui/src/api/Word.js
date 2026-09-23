@@ -55,14 +55,36 @@ export const getWordRootProgress = () => wordRequest.get('/word-root-progress')
 export const markWordRootMastered = (id) => wordRequest.post(`/word-root-progress/${id}/master`)
 export const getNextWordRoot = () => wordRequest.get('/word-root-progress/next')
 
-// 单词本相关 API
+// 单词本（多本）相关 API
+export const getWordBooks = () => wordRequest.get('/word-books')
+export const createWordBook = (data) => wordRequest.post('/word-books', data)
+export const updateWordBook = (id, data) => wordRequest.put(`/word-books/${id}`, data)
+export const deleteWordBook = (id, params) => wordRequest.delete(`/word-books/${id}`, { params })
+
+const CURRENT_WORD_BOOK_KEY = 'currentWordBookId'
+
+export const getCurrentWordBookId = () => localStorage.getItem(CURRENT_WORD_BOOK_KEY) || null
+
+export const setCurrentWordBookId = (id) => {
+    if (id) localStorage.setItem(CURRENT_WORD_BOOK_KEY, id)
+    else localStorage.removeItem(CURRENT_WORD_BOOK_KEY)
+}
+
+/** 添加单词时附带当前选中的单词本（无则走后端默认本） */
+export const addUserWordToCurrentBook = (data) => {
+    const wordBookId = getCurrentWordBookId()
+    return addUserWord(wordBookId ? { ...data, wordBookId } : data)
+}
+
+// 单词列表 / 复习相关 API
 export const getUserWords = (params) => wordRequest.get('/user-words', { params })
 export const addUserWord = (data) => wordRequest.post('/user-words', data)
 export const deleteUserWord = (id) => wordRequest.delete(`/user-words/${id}`)
+export const moveUserWord = (id, wordBookId) => wordRequest.post(`/user-words/${id}/move`, { wordBookId })
 export const getDueWords = (params) => wordRequest.get('/user-words/due', { params })
 export const getRandomWords = (params) => wordRequest.get('/user-words/random', { params })
 export const reviewWord = (id, quality) => wordRequest.post(`/user-words/${id}/review`, { quality })
-export const getWordStats = () => wordRequest.get('/user-words/stats')
+export const getWordStats = (params) => wordRequest.get('/user-words/stats', { params })
 
 // 查询单词、短语或句子（xxapi 词典，句子自动翻译）
 export const queryEnglishWord = async (word) => {

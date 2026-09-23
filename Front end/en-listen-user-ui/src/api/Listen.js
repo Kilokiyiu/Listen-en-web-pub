@@ -1,6 +1,6 @@
 import request from './Request'
 
-const CACHE_KEY = 'listenease_cache'
+const CACHE_KEY = 'app_cache'
 const CACHE_EXPIRE = 5 * 60 * 1000 // 缓存5分钟
 
 // 获取缓存

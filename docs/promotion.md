@@ -54,7 +54,7 @@ ListenEase 是一个专注于英语听力学习的平台，精选优质听力资
 
 **免费注册，即刻开始！**
 
-👉 **立即访问**：[listenease](https://listenease.online/#/)
+👉 **立即访问**：[ListenEase](https://your-domain.com/#/)
 
 ---
 

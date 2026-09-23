@@ -67,8 +67,25 @@ public class UserWordConfig : IEntityTypeConfiguration<UserWord>
         builder.Property(x => x.Word).HasMaxLength(200).IsRequired();
         builder.Property(x => x.Definition).HasMaxLength(1000);
         builder.Property(x => x.Example).HasMaxLength(2000);
-        builder.HasIndex(x => new { x.UserId, x.Word });
+        builder.HasIndex(x => new { x.UserId, x.WordBookId, x.Word });
         builder.Property(x => x.EaseFactor).HasDefaultValue(2.5);
+        builder.HasOne<UserWordBook>()
+            .WithMany()
+            .HasForeignKey(x => x.WordBookId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public class UserWordBookConfig : IEntityTypeConfiguration<UserWordBook>
+{
+    public void Configure(EntityTypeBuilder<UserWordBook> builder)
+    {
+        builder.ToTable("T_UserWordBook");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Name).HasMaxLength(100).IsRequired();
+        builder.Property(x => x.Description).HasMaxLength(500);
+        builder.HasIndex(x => new { x.UserId, x.Name });
+        builder.HasIndex(x => new { x.UserId, x.IsDefault });
     }
 }
 

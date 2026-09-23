@@ -27,6 +27,17 @@
         />
         <p class="audio-tip"><el-icon><InfoFilled /></el-icon> 点击播放，开启听力训练</p>
         <p class="audio-tip audio-tip--sub">锁屏后可从锁屏界面继续播放；回到页面会自动恢复进度</p>
+        <div class="complete-actions">
+          <el-button
+            type="success"
+            round
+            :loading="completing"
+            :disabled="completed"
+            @click="markComplete(false)"
+          >
+            {{ completed ? '已完成本卷' : '标记完成' }}
+          </el-button>
+        </div>
       </div>
 
       <div v-if="paperFileUrl || answerFileUrl" class="pdf-section">
@@ -96,17 +107,22 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import PageShell from '../components/PageShell.vue'
 import PdfViewer from '../components/PdfViewer.vue'
-import { getEpisodesByAlbumId, getAlbumById } from '../api/Listen.js'
+import { getEpisodesByAlbumId, getAlbumById, getCategories } from '../api/Listen.js'
+import { recordStudyActivity } from '../api/Study.js'
+import { trackEvent } from '../api/Analytics.js'
 import { useAudioPlayer } from '../composables/useAudioPlayer.js'
 
 const route = useRoute()
+const router = useRouter()
 const albumId = route.query.albumId
 const audioRef = ref(null)
 
 const albumTitle = ref('听力真题')
+const categoryLabel = ref('听力')
 const audioUrl = ref('')
 const paperFileUrl = ref('')
 const answerFileUrl = ref('')
@@ -114,6 +130,14 @@ const loading = ref(true)
 const showText = ref(false)
 const subtitleText = ref('')
 const activePdf = ref('')
+const completing = ref(false)
+const completed = ref(false)
+const sessionStartedAt = Date.now()
+
+const categoryMeta = {
+  cet4: 'CET-4',
+  cet6: 'CET-6',
+}
 
 const toFileUrl = (path) => (path ? `/api/listen${path}` : '')
 
@@ -142,6 +166,58 @@ const subtitleLines = computed(() => {
   return []
 })
 
+const resolveCategory = async (categoryId) => {
+  if (!categoryId) return
+  try {
+    const categories = await getCategories()
+    const cat = (categories || []).find(c => c.id === categoryId)
+    if (cat?.code) {
+      categoryLabel.value = categoryMeta[cat.code] || cat.name?.chinese || cat.name || cat.code
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+const getDurationSeconds = () => {
+  const audio = audioRef.value
+  if (audio && Number.isFinite(audio.duration) && audio.duration > 0) {
+    return Math.round(Math.min(audio.currentTime || audio.duration, audio.duration))
+  }
+  return Math.round((Date.now() - sessionStartedAt) / 1000)
+}
+
+const markComplete = async (fromAuto = false) => {
+  if (!albumId || completing.value || completed.value) return
+
+  trackEvent('listen_complete', `/exam?albumId=${albumId}`)
+
+  if (!localStorage.getItem('token')) {
+    if (!fromAuto) {
+      ElMessage.warning('登录后可记录学习进度')
+      router.push({ name: 'login', query: { redirect: route.fullPath } })
+    }
+    return
+  }
+
+  completing.value = true
+  try {
+    await recordStudyActivity({
+      activityType: 'listen',
+      contentId: String(albumId),
+      title: albumTitle.value,
+      category: categoryLabel.value,
+      durationSeconds: getDurationSeconds(),
+    })
+    completed.value = true
+    if (!fromAuto) ElMessage.success('已记录学习进度')
+  } catch (e) {
+    // 错误已在拦截器提示
+  } finally {
+    completing.value = false
+  }
+}
+
 const loadEpisode = async () => {
   if (!albumId) { loading.value = false; return }
   try {
@@ -154,6 +230,7 @@ const loadEpisode = async () => {
     }
     paperFileUrl.value = toFileUrl(album?.paperFileUrl || album?.PaperFileUrl)
     answerFileUrl.value = toFileUrl(album?.answerFileUrl || album?.AnswerFileUrl)
+    await resolveCategory(album?.categoryId || album?.CategoryId)
 
     const ep = (episodes || [])[0]
     if (ep) {
@@ -176,6 +253,7 @@ useAudioPlayer(audioRef, {
   storageKey: albumId ? `listen:audio:${albumId}` : '',
   title: albumTitle,
   album: '听力真题',
+  onEnded: () => markComplete(true),
 })
 </script>
 
@@ -240,6 +318,10 @@ useAudioPlayer(audioRef, {
   margin-top: 6px;
   font-size: 12px;
   opacity: 0.85;
+}
+
+.complete-actions {
+  margin-top: 16px;
 }
 
 .pdf-section {

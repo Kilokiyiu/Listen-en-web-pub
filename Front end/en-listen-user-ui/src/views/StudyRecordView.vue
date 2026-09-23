@@ -1,33 +1,30 @@
 <template>
   <div class="study-page le-page">
-    <!-- 顶部导航 -->
     <div class="page-header">
       <el-button text @click="$router.back()" class="back-btn">
         <el-icon><ArrowLeft /></el-icon> 返回
       </el-button>
     </div>
 
-    <!-- 标题区 -->
     <div class="title-section">
       <div class="title-icon">
         <el-icon :size="28" color="#409eff"><TrendCharts /></el-icon>
       </div>
       <div class="title-text">
         <h1 class="page-title">学习记录</h1>
-        <p class="page-subtitle">追踪你的学习进度，持续进步</p>
+        <p class="page-subtitle">听力与阅读完成记录，真实追踪你的进度</p>
       </div>
     </div>
 
-    <!-- 统计卡片 -->
     <div class="stats-row">
       <div class="stat-card">
         <div class="stat-card-inner">
           <div class="stat-icon-wrap icon-blue">
-            <el-icon :size="22" color="#409eff"><Document /></el-icon>
+            <el-icon :size="22" color="#409eff"><Headset /></el-icon>
           </div>
           <div class="stat-info">
-            <div class="stat-num">{{ summary.totalExams }}</div>
-            <div class="stat-desc">完成试卷</div>
+            <div class="stat-num">{{ summary.totalListen }}</div>
+            <div class="stat-desc">完成听力</div>
           </div>
         </div>
         <div class="stat-bar bar-blue"></div>
@@ -35,11 +32,11 @@
       <div class="stat-card">
         <div class="stat-card-inner">
           <div class="stat-icon-wrap icon-green">
-            <el-icon :size="22" color="#67c23a"><Timer /></el-icon>
+            <el-icon :size="22" color="#67c23a"><Reading /></el-icon>
           </div>
           <div class="stat-info">
-            <div class="stat-num">{{ summary.totalMinutes }}</div>
-            <div class="stat-desc">学习时长(分钟)</div>
+            <div class="stat-num">{{ summary.totalArticle }}</div>
+            <div class="stat-desc">完成阅读</div>
           </div>
         </div>
         <div class="stat-bar bar-green"></div>
@@ -47,11 +44,11 @@
       <div class="stat-card">
         <div class="stat-card-inner">
           <div class="stat-icon-wrap icon-orange">
-            <el-icon :size="22" color="#e6a23c"><TrendCharts /></el-icon>
+            <el-icon :size="22" color="#e6a23c"><Timer /></el-icon>
           </div>
           <div class="stat-info">
-            <div class="stat-num">{{ summary.avgAccuracy }}%</div>
-            <div class="stat-desc">平均正确率</div>
+            <div class="stat-num">{{ summary.totalMinutes }}</div>
+            <div class="stat-desc">学习时长(分钟)</div>
           </div>
         </div>
         <div class="stat-bar bar-orange"></div>
@@ -70,62 +67,60 @@
       </div>
     </div>
 
-    <!-- 记录列表 -->
     <div class="record-section">
       <div class="record-header">
         <div class="record-title-wrap">
           <div class="title-bar"></div>
           <span class="record-title">最近学习</span>
-          <span class="record-count">共 {{ filteredRecords.length }} 条</span>
+          <span class="record-count">共 {{ total }} 条</span>
         </div>
-        <el-radio-group v-model="filterType" size="small" class="filter-group">
+        <el-radio-group v-model="filterType" size="small" class="filter-group" @change="onFilterChange">
           <el-radio-button label="all">全部</el-radio-button>
-          <el-radio-button label="cet4">CET-4</el-radio-button>
-          <el-radio-button label="cet6">CET-6</el-radio-button>
+          <el-radio-button label="listen">听力</el-radio-button>
+          <el-radio-button label="article">阅读</el-radio-button>
+          <el-radio-button label="CET-4">CET-4</el-radio-button>
+          <el-radio-button label="CET-6">CET-6</el-radio-button>
         </el-radio-group>
       </div>
 
-      <div class="record-list">
+      <div v-if="loading" class="empty-wrap">
+        <el-icon class="is-loading" :size="28"><Loading /></el-icon>
+      </div>
+
+      <el-empty v-else-if="records.length === 0" description="还没有学习记录，去听一套真题或读一篇短文吧" />
+
+      <div v-else class="record-list">
         <div
-          v-for="item in filteredRecords"
+          v-for="item in records"
           :key="item.id"
           class="record-item"
-          @click="reviewExam(item)"
+          @click="openRecord(item)"
         >
           <div class="record-left">
             <div class="record-name-row">
-              <span class="record-name">{{ item.examName }}</span>
-              <span class="record-tag" :class="item.type === 'CET-4' ? 'tag-cet4' : 'tag-cet6'">
-                {{ item.type }}
+              <span class="record-name">{{ item.title }}</span>
+              <span class="record-tag" :class="tagClass(item)">
+                {{ tagLabel(item) }}
               </span>
             </div>
             <div class="record-meta">
               <span class="meta-item">
                 <el-icon><Clock /></el-icon>
-                {{ item.studyTime }}
+                {{ formatTime(item.updatedAt) }}
               </span>
               <span class="meta-item">
                 <el-icon><Timer /></el-icon>
-                {{ formatDuration(item.duration) }}
+                {{ formatDuration(item.durationSeconds) }}
               </span>
             </div>
           </div>
           <div class="record-right">
-            <div class="score-circle" :class="getScoreClass(item.score)">
-              <span class="score-val">{{ item.score }}</span>
-              <span class="score-unit">分</span>
-            </div>
-            <div class="accuracy-row">
-              <div class="accuracy-bar-bg">
-                <div class="accuracy-bar-fill" :style="{ width: item.accuracy + '%' }" :class="getScoreClass(item.score)"></div>
-              </div>
-              <span class="accuracy-text">{{ item.accuracy }}%</span>
-            </div>
+            <span class="done-badge">已完成</span>
           </div>
         </div>
       </div>
 
-      <div class="pagination-wrap">
+      <div v-if="total > pageSize" class="pagination-wrap">
         <el-pagination
           :current-page="currentPage"
           :page-size="pageSize"
@@ -139,10 +134,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { Document, Timer, TrendCharts, Calendar, Clock, ArrowLeft } from '@element-plus/icons-vue'
+import { Headset, Timer, TrendCharts, Calendar, Clock, ArrowLeft, Reading, Loading } from '@element-plus/icons-vue'
+import { getStudySummary, getStudyList } from '@/api/Study'
 
 const router = useRouter()
 
@@ -150,60 +145,109 @@ const filterType = ref('all')
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
+const loading = ref(false)
+const records = ref([])
 
-// Mock 统计数据
 const summary = ref({
-  totalExams: 12,
-  totalMinutes: 356,
-  avgAccuracy: 72,
-  streakDays: 3
+  totalListen: 0,
+  totalArticle: 0,
+  totalMinutes: 0,
+  streakDays: 0,
 })
 
-// Mock 学习记录
-const allRecords = ref([
-  { id: 1, examName: '2024年6月CET-4真题（第一套）', type: 'CET-4', score: 78, accuracy: 65, duration: 35, studyTime: '2026-04-30 14:20' },
-  { id: 2, examName: '2024年6月CET-4真题（第二套）', type: 'CET-4', score: 82, accuracy: 70, duration: 32, studyTime: '2026-04-29 10:15' },
-  { id: 3, examName: '2024年12月CET-6真题（第一套）', type: 'CET-6', score: 65, accuracy: 55, duration: 40, studyTime: '2026-04-28 16:30' },
-  { id: 4, examName: '2024年6月CET-4真题（第三套）', type: 'CET-4', score: 85, accuracy: 75, duration: 30, studyTime: '2026-04-27 09:00' },
-  { id: 5, examName: '2023年12月CET-6真题（第二套）', type: 'CET-6', score: 70, accuracy: 62, duration: 38, studyTime: '2026-04-26 20:10' },
-  { id: 6, examName: '2023年6月CET-4真题（第一套）', type: 'CET-4', score: 90, accuracy: 82, duration: 28, studyTime: '2026-04-25 15:45' },
-  { id: 7, examName: '2023年12月CET-4真题（第一套）', type: 'CET-4', score: 88, accuracy: 78, duration: 31, studyTime: '2026-04-24 11:20' },
-  { id: 8, examName: '2024年12月CET-6真题（第二套）', type: 'CET-6', score: 72, accuracy: 68, duration: 36, studyTime: '2026-04-23 19:00' },
-])
+const unwrap = (res) => res?.data ?? res
 
-const filteredRecords = computed(() => {
-  let list = allRecords.value
-  if (filterType.value !== 'all') {
-    const typeMap = { cet4: 'CET-4', cet6: 'CET-6' }
-    list = list.filter(r => r.type === typeMap[filterType.value])
+const loadSummary = async () => {
+  try {
+    const res = await getStudySummary()
+    const data = unwrap(res) || {}
+    summary.value = {
+      totalListen: data.totalListen ?? 0,
+      totalArticle: data.totalArticle ?? 0,
+      totalMinutes: data.totalMinutes ?? 0,
+      streakDays: data.streakDays ?? 0,
+    }
+  } catch {
+    /* interceptor */
   }
-  return list
-})
-
-const getScoreClass = (score) => {
-  if (score >= 80) return 'score-high'
-  if (score >= 60) return 'score-mid'
-  return 'score-low'
 }
 
-const formatDuration = (minutes) => {
-  const m = minutes % 60
-  const h = Math.floor(minutes / 60)
-  if (h > 0) return `${h}时${m}分`
-  return `${m}分钟`
+const buildListParams = () => {
+  const params = { page: currentPage.value, pageSize: pageSize.value }
+  if (filterType.value === 'listen' || filterType.value === 'article') {
+    params.activityType = filterType.value
+  } else if (filterType.value === 'CET-4' || filterType.value === 'CET-6') {
+    params.category = filterType.value
+  }
+  return params
 }
 
-const reviewExam = (row) => {
-  router.push({ name: 'examDetail', query: { albumId: row.id } })
+const loadList = async () => {
+  loading.value = true
+  try {
+    const res = await getStudyList(buildListParams())
+    const data = unwrap(res) || {}
+    records.value = data.items || []
+    total.value = data.total ?? 0
+  } catch {
+    records.value = []
+    total.value = 0
+  } finally {
+    loading.value = false
+  }
+}
+
+const onFilterChange = () => {
+  currentPage.value = 1
+  loadList()
 }
 
 const handlePageChange = (page) => {
   currentPage.value = page
-  // 实际项目中这里调用接口获取分页数据
+  loadList()
 }
 
-onMounted(() => {
-  total.value = allRecords.value.length
+const tagLabel = (item) => {
+  if (item.category && item.category !== 'other' && item.category !== 'daily') return item.category
+  return item.activityType === 'article' ? '阅读' : '听力'
+}
+
+const tagClass = (item) => {
+  const cat = (item.category || '').toUpperCase()
+  if (cat.includes('4')) return 'tag-cet4'
+  if (cat.includes('6')) return 'tag-cet6'
+  if (item.activityType === 'article') return 'tag-article'
+  return 'tag-cet4'
+}
+
+const formatTime = (dateStr) => {
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  if (Number.isNaN(d.getTime())) return dateStr
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+const formatDuration = (seconds) => {
+  const s = Math.max(0, Number(seconds) || 0)
+  const minutes = Math.round(s / 60)
+  if (minutes < 1) return `${s}秒`
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  if (h > 0) return `${h}时${m}分`
+  return `${m}分钟`
+}
+
+const openRecord = (item) => {
+  if (item.activityType === 'article') {
+    router.push({ name: 'dailyArticle' })
+    return
+  }
+  router.push({ name: 'examDetail', query: { albumId: item.contentId } })
+}
+
+onMounted(async () => {
+  await Promise.all([loadSummary(), loadList()])
 })
 </script>
 
@@ -212,7 +256,6 @@ onMounted(() => {
   padding: 0;
 }
 
-/* 顶部导航 */
 .page-header {
   padding: 16px 24px;
   border-bottom: 1px solid #eef1f6;
@@ -227,7 +270,6 @@ onMounted(() => {
   color: var(--accent-blue) !important;
 }
 
-/* 标题区 */
 .title-section {
   display: flex;
   align-items: center;
@@ -262,7 +304,6 @@ onMounted(() => {
   color: var(--text-muted);
 }
 
-/* 统计卡片 */
 .stats-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -342,23 +383,11 @@ onMounted(() => {
   opacity: 0.6;
 }
 
-.stat-bar.bar-blue {
-  background: linear-gradient(90deg, #409eff, #79bbff);
-}
+.stat-bar.bar-blue { background: linear-gradient(90deg, #409eff, #79bbff); }
+.stat-bar.bar-green { background: linear-gradient(90deg, #67c23a, #95d475); }
+.stat-bar.bar-orange { background: linear-gradient(90deg, #e6a23c, #eebe77); }
+.stat-bar.bar-red { background: linear-gradient(90deg, #f56c6c, #f89898); }
 
-.stat-bar.bar-green {
-  background: linear-gradient(90deg, #67c23a, #95d475);
-}
-
-.stat-bar.bar-orange {
-  background: linear-gradient(90deg, #e6a23c, #eebe77);
-}
-
-.stat-bar.bar-red {
-  background: linear-gradient(90deg, #f56c6c, #f89898);
-}
-
-/* 记录区域 */
 .record-section {
   margin: 0 28px 24px;
   background: var(--bg-card);
@@ -373,7 +402,9 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  border-bottom: 1px solid #f0f3f8;
+  border-bottom: 1px solid var(--le-border);
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .record-title-wrap {
@@ -398,13 +429,14 @@ onMounted(() => {
 .record-count {
   font-size: 12px;
   color: var(--text-muted);
-  background: #f4f6fb;
+  background: var(--le-bg-muted);
+  border: 1px solid var(--le-border);
   padding: 2px 10px;
   border-radius: 10px;
 }
 
 .filter-group :deep(.el-radio-button__inner) {
-  background: #f5f5f5;
+  background: var(--le-bg-muted);
   border-color: var(--border-glass);
   color: var(--text-secondary);
 }
@@ -415,7 +447,13 @@ onMounted(() => {
   color: #fff;
 }
 
-/* 记录列表 */
+.empty-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+  color: var(--text-muted);
+}
+
 .record-list {
   padding: 8px 0;
 }
@@ -427,7 +465,7 @@ onMounted(() => {
   padding: 18px 24px;
   cursor: pointer;
   transition: all 0.25s ease;
-  border-bottom: 1px solid #f5f7fa;
+  border-bottom: 1px solid var(--le-border);
 }
 
 .record-item:last-child {
@@ -435,7 +473,7 @@ onMounted(() => {
 }
 
 .record-item:hover {
-  background: linear-gradient(90deg, rgba(64, 158, 255, 0.03) 0%, rgba(0, 168, 232, 0.02) 100%);
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.12) 0%, rgba(6, 182, 212, 0.06) 100%);
 }
 
 .record-left {
@@ -478,6 +516,11 @@ onMounted(() => {
   color: #8b5cf6;
 }
 
+.record-tag.tag-article {
+  background: rgba(103, 194, 58, 0.12);
+  color: #67c23a;
+}
+
 .record-meta {
   display: flex;
   gap: 16px;
@@ -496,107 +539,23 @@ onMounted(() => {
 }
 
 .record-right {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
   margin-left: 20px;
 }
 
-.score-circle {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid;
+.done-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #67c23a;
+  background: rgba(103, 194, 58, 0.1);
 }
 
-.score-circle.score-high {
-  border-color: rgba(103, 194, 58, 0.3);
-  background: rgba(103, 194, 58, 0.06);
-}
-
-.score-circle.score-mid {
-  border-color: rgba(230, 162, 60, 0.3);
-  background: rgba(230, 162, 60, 0.06);
-}
-
-.score-circle.score-low {
-  border-color: rgba(245, 108, 108, 0.3);
-  background: rgba(245, 108, 108, 0.06);
-}
-
-.score-val {
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.score-circle.score-high .score-val { color: #67c23a; }
-.score-circle.score-mid .score-val { color: #e6a23c; }
-.score-circle.score-low .score-val { color: #f56c6c; }
-
-.score-unit {
-  font-size: 10px;
-  color: var(--text-muted);
-}
-
-.accuracy-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.accuracy-bar-bg {
-  width: 60px;
-  height: 4px;
-  border-radius: 2px;
-  background: #f0f3f8;
-  overflow: hidden;
-}
-
-.accuracy-bar-fill {
-  height: 100%;
-  border-radius: 2px;
-  transition: width 0.3s;
-}
-
-.accuracy-bar-fill.score-high { background: linear-gradient(90deg, #67c23a, #95d475); }
-.accuracy-bar-fill.score-mid { background: linear-gradient(90deg, #e6a23c, #eebe77); }
-.accuracy-bar-fill.score-low { background: linear-gradient(90deg, #f56c6c, #f89898); }
-
-.accuracy-text {
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-/* 分页 */
 .pagination-wrap {
   display: flex;
   justify-content: center;
   padding: 20px 0 24px;
-}
-
-.pagination-wrap :deep(.el-pagination) {
-  --el-pagination-text-color: var(--text-secondary);
-  --el-pagination-button-color: var(--text-secondary);
-}
-
-.pagination-wrap :deep(.el-pager li) {
-  background: var(--bg-card) !important;
-  border: 1px solid var(--border-glass);
-  color: var(--text-secondary);
-  border-radius: 8px;
-}
-
-.pagination-wrap :deep(.el-pager li.is-active) {
-  background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-cyan) 100%) !important;
-  border-color: transparent;
-  color: #fff;
-  box-shadow: 0 0 12px rgba(64, 158, 255, 0.3);
 }
 
 @media (max-width: 768px) {
@@ -609,7 +568,6 @@ onMounted(() => {
     gap: 12px;
   }
   .record-right {
-    flex-direction: row;
     margin-left: 0;
   }
 }

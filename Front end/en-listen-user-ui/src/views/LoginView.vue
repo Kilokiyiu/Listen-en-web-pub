@@ -28,7 +28,7 @@
             <el-input v-model="registerForm.username" placeholder="3-20 位字符" :prefix-icon="User" size="large" />
           </el-form-item>
           <el-form-item label="邮箱" prop="email">
-            <el-input v-model="registerForm.email" placeholder="your@email.com" :prefix-icon="Message" size="large" />
+            <el-input v-model="registerForm.email" placeholder="your@email.com(邮箱默认已验证，非真实邮箱亦可使用)" :prefix-icon="Message" size="large" />
           </el-form-item>
           <el-form-item label="密码" prop="password">
             <el-input v-model="registerForm.password" type="password" placeholder="至少 6 位" :prefix-icon="Lock" size="large" show-password />

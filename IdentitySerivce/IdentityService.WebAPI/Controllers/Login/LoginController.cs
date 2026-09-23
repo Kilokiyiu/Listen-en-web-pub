@@ -27,6 +27,11 @@ public class LoginController : ControllerBase
 
     /// <summary>
     /// 项目第一次部署时，直接创建初始的用户名为admin的管理员账号
+    /// 邮箱/密码默认为空占位，请通过环境变量或 appsettings.json 覆盖为实际值
+    /// 推荐在 appsettings.Production.json 设置：
+    ///   InitialAdmin: { UserName: "admin", Password: "<强密码>", Email: "admin@your-domain.com" }
+    /// 或在部署时通过环境变量：
+    ///   INITIAL_ADMIN__USERNAME / INITIAL_ADMIN__PASSWORD / INITIAL_ADMIN__EMAIL
     /// </summary>
     /// <returns></returns>
     [HttpPost]
@@ -37,16 +42,20 @@ public class LoginController : ControllerBase
         {
             return StatusCode((int)HttpStatusCode.Conflict, "已经被初始化");
         }
-        
+
+        var userName = Environment.GetEnvironmentVariable("INITIAL_ADMIN__USERNAME") ?? "admin";
+        var password = Environment.GetEnvironmentVariable("INITIAL_ADMIN__PASSWORD") ?? "ChangeMe_AdminPwd_2026!";
+        var email = Environment.GetEnvironmentVariable("INITIAL_ADMIN__EMAIL") ?? "admin@your-domain.com";
+
         //创建初始用户
-        User user = new User("admin");
-        var result = await repo.CreateAsync(user, "091623");
+        User user = new User(userName);
+        var result = await repo.CreateAsync(user, password);
         Debug.Assert(result.Succeeded);
-        
+
         //给初始用户绑定邮箱并确认
-        await repo.UpdateEmailAsync(user.Id, "Kilokiyiu@outlook.com");
+        await repo.UpdateEmailAsync(user.Id, email);
         await repo.ConfirmEmailAsync(user.Id);
-        
+
         //给初始用户分配角色
         result = await repo.AddToRoleAsync(user, "User");
         Debug.Assert(result.Succeeded);

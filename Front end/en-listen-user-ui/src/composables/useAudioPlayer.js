@@ -10,6 +10,7 @@ export function useAudioPlayer(audioRef, options = {}) {
     artist = 'ListenEase',
     album = '英语听力练习',
     resumeOnVisible = true,
+    onEnded = null,
   } = options
 
   let saveTimer = null
@@ -145,6 +146,17 @@ export function useAudioPlayer(audioRef, options = {}) {
     }
   }
 
+  const handleEnded = () => {
+    saveProgress()
+    if (typeof onEnded === 'function') {
+      try {
+        onEnded()
+      } catch {
+        /* ignore consumer errors */
+      }
+    }
+  }
+
   const bindAudio = (audio) => {
     if (!audio) return
     audio.setAttribute('playsinline', '')
@@ -154,7 +166,7 @@ export function useAudioPlayer(audioRef, options = {}) {
     audio.addEventListener('loadedmetadata', onLoadedMetadata)
     audio.addEventListener('timeupdate', onTimeUpdate)
     audio.addEventListener('pause', saveProgress)
-    audio.addEventListener('ended', saveProgress)
+    audio.addEventListener('ended', handleEnded)
   }
 
   const unbindAudio = (audio) => {
@@ -162,7 +174,7 @@ export function useAudioPlayer(audioRef, options = {}) {
     audio.removeEventListener('loadedmetadata', onLoadedMetadata)
     audio.removeEventListener('timeupdate', onTimeUpdate)
     audio.removeEventListener('pause', saveProgress)
-    audio.removeEventListener('ended', saveProgress)
+    audio.removeEventListener('ended', handleEnded)
   }
 
   const attach = () => {

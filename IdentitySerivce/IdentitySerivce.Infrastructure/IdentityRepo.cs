@@ -199,6 +199,102 @@ public class IdentityRepo : IIdentityRepo
         return await userManager.AddToRoleAsync(user, roleName);
     }
 
+    public Task<IdentityResult> RemoveFromRoleAsync(User user, string roleName)
+    {
+        return userManager.RemoveFromRoleAsync(user, roleName);
+    }
+
+    public async Task<(List<User> users, int total)> QueryUsersAsync(string? keyword, string? role, int page, int pageSize)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+        if (pageSize > 100) pageSize = 100;
+
+        IQueryable<User> query = userManager.Users.Where(u => !u.IsDeleted);
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            var key = keyword.Trim();
+            query = query.Where(u =>
+                (u.UserName != null && u.UserName.Contains(key)) ||
+                (u.Email != null && u.Email.Contains(key)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(role))
+        {
+            var roleUsers = await userManager.GetUsersInRoleAsync(role.Trim());
+            var roleIds = roleUsers.Where(u => !u.IsDeleted).Select(u => u.Id).ToHashSet();
+            query = query.Where(u => roleIds.Contains(u.Id));
+        }
+
+        var total = await query.CountAsync();
+        var users = await query
+            .OrderByDescending(u => u.CreationTime)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (users, total);
+    }
+
+    public async Task<IdentityResult> SetPasswordAsync(Guid userId, string newPassword)
+    {
+        var user = await FindByIdAsync(userId);
+        if (user == null)
+        {
+            return ErrorResult("找不到用户");
+        }
+
+        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
+        {
+            return ErrorResult("密码至少 6 位");
+        }
+
+        var token = await userManager.GeneratePasswordResetTokenAsync(user);
+        return await userManager.ResetPasswordAsync(user, token, newPassword);
+    }
+
+    public async Task<IdentityResult> LockUserAsync(Guid userId, DateTimeOffset? lockoutEnd)
+    {
+        var user = await FindByIdAsync(userId);
+        if (user == null)
+        {
+            return ErrorResult("找不到用户");
+        }
+
+        var enableResult = await userManager.SetLockoutEnabledAsync(user, true);
+        if (!enableResult.Succeeded)
+        {
+            return enableResult;
+        }
+
+        var end = lockoutEnd ?? DateTimeOffset.UtcNow.AddYears(100);
+        return await userManager.SetLockoutEndDateAsync(user, end);
+    }
+
+    public async Task<IdentityResult> UnlockUserAsync(Guid userId)
+    {
+        var user = await FindByIdAsync(userId);
+        if (user == null)
+        {
+            return ErrorResult("找不到用户");
+        }
+
+        var result = await userManager.SetLockoutEndDateAsync(user, null);
+        if (!result.Succeeded)
+        {
+            return result;
+        }
+
+        await userManager.ResetAccessFailedCountAsync(user);
+        return IdentityResult.Success;
+    }
+
+    public Task<bool> IsLockedOutAsync(User user)
+    {
+        return userManager.IsLockedOutAsync(user);
+    }
+
     /// <summary>
     /// 
     /// </summary>

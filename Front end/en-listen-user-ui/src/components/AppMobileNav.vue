@@ -48,9 +48,9 @@ const go = (path) => {
   left: 0;
   right: 0;
   height: var(--le-mobile-nav-h);
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(12, 18, 34, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-top: 1px solid var(--le-border);
   z-index: 200;
   padding: 0 4px;

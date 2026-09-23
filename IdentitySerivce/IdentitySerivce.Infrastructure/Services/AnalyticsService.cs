@@ -7,8 +7,10 @@ namespace IdentitySerivce.Infrastructure.Services;
 
 public interface IAnalyticsService
 {
+    Task TrackEventAsync(string eventType, string path, string visitorId, Guid? userId, CancellationToken cancellationToken = default);
     Task TrackPageViewAsync(string path, string visitorId, Guid? userId, CancellationToken cancellationToken = default);
     Task<AnalyticsOverviewDto> GetOverviewAsync(CancellationToken cancellationToken = default);
+    Task<AnalyticsFunnelDto> GetFunnelAsync(int days, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<DailyCountDto>> GetRegistrationTrendAsync(int days, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<DailyTrafficDto>> GetTrafficTrendAsync(int days, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<TopPageDto>> GetTopPagesAsync(int days, int limit, CancellationToken cancellationToken = default);
@@ -24,6 +26,19 @@ public record AnalyticsOverviewDto(
     int TodayPageViews,
     int TodayUniqueVisitors);
 
+public record AnalyticsFunnelDto(
+    int Days,
+    int ListenComplete,
+    int ArticleRead,
+    int AddWord,
+    int EnterReview,
+    int FinishReview,
+    int ListenCompleteToday,
+    int ArticleReadToday,
+    int AddWordToday,
+    int EnterReviewToday,
+    int FinishReviewToday);
+
 public record DailyCountDto(string Date, int Count);
 
 public record DailyTrafficDto(string Date, int PageViews, int UniqueVisitors);
@@ -32,6 +47,16 @@ public record TopPageDto(string Path, int PageViews, int UniqueVisitors);
 
 public class AnalyticsService : IAnalyticsService
 {
+    public static readonly HashSet<string> AllowedEventTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "page_view",
+        "listen_complete",
+        "article_read",
+        "add_word",
+        "enter_review",
+        "finish_review",
+    };
+
     private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(5);
 
     private readonly IdentityDbContext db;
@@ -43,11 +68,20 @@ public class AnalyticsService : IAnalyticsService
         this.cache = cache;
     }
 
-    public async Task TrackPageViewAsync(string path, string visitorId, Guid? userId, CancellationToken cancellationToken = default)
+    public Task TrackPageViewAsync(string path, string visitorId, Guid? userId, CancellationToken cancellationToken = default) =>
+        TrackEventAsync("page_view", path, visitorId, userId, cancellationToken);
+
+    public async Task TrackEventAsync(string eventType, string path, string visitorId, Guid? userId, CancellationToken cancellationToken = default)
     {
+        var type = (eventType ?? string.Empty).Trim().ToLowerInvariant();
+        if (!AllowedEventTypes.Contains(type))
+        {
+            throw new ArgumentException("invalid event type");
+        }
+
         db.AnalyticsEvents.Add(new AnalyticsEvent
         {
-            EventType = "page_view",
+            EventType = type,
             Path = path,
             VisitorId = visitorId,
             UserId = userId,
@@ -82,6 +116,46 @@ public class AnalyticsService : IAnalyticsService
 
             return new AnalyticsOverviewDto(totalUsers, newToday, new7, new30, todayPv, todayUv);
         }, CacheDuration);
+
+    public Task<AnalyticsFunnelDto> GetFunnelAsync(int days, CancellationToken cancellationToken = default)
+    {
+        days = Math.Clamp(days, 1, 90);
+        return cache.GetOrSetAsync($"analytics:funnel:{days}", async () =>
+        {
+            var todayStart = DateTime.Now.Date;
+            var rangeStart = todayStart.AddDays(-(days - 1));
+
+            var rangeCounts = await db.AnalyticsEvents
+                .Where(e => e.CreatedAt >= rangeStart && e.EventType != "page_view")
+                .GroupBy(e => e.EventType)
+                .Select(g => new { Type = g.Key, Count = g.Count() })
+                .ToListAsync(cancellationToken);
+
+            var todayCounts = await db.AnalyticsEvents
+                .Where(e => e.CreatedAt >= todayStart && e.EventType != "page_view")
+                .GroupBy(e => e.EventType)
+                .Select(g => new { Type = g.Key, Count = g.Count() })
+                .ToListAsync(cancellationToken);
+
+            var rangeMap = rangeCounts.ToDictionary(x => x.Type, x => x.Count, StringComparer.OrdinalIgnoreCase);
+            var todayMap = todayCounts.ToDictionary(x => x.Type, x => x.Count, StringComparer.OrdinalIgnoreCase);
+
+            int Get(Dictionary<string, int> map, string key) => map.TryGetValue(key, out var v) ? v : 0;
+
+            return new AnalyticsFunnelDto(
+                days,
+                Get(rangeMap, "listen_complete"),
+                Get(rangeMap, "article_read"),
+                Get(rangeMap, "add_word"),
+                Get(rangeMap, "enter_review"),
+                Get(rangeMap, "finish_review"),
+                Get(todayMap, "listen_complete"),
+                Get(todayMap, "article_read"),
+                Get(todayMap, "add_word"),
+                Get(todayMap, "enter_review"),
+                Get(todayMap, "finish_review"));
+        }, CacheDuration);
+    }
 
     public Task<IReadOnlyList<DailyCountDto>> GetRegistrationTrendAsync(int days, CancellationToken cancellationToken = default)
     {

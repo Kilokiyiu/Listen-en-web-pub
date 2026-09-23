@@ -2,25 +2,49 @@
   <div class="home-page le-page">
     <!-- Hero -->
     <section class="hero">
-      <div class="hero-content">
-        <p class="hero-tag">英语听力 · 智能学习</p>
-        <h1 class="hero-title">ListenEase</h1>
-        <p class="hero-desc">四六级真题听力、BBC 外刊阅读、词根单词与每日一句，一站提升听力水平</p>
-        <div class="hero-search">
-          <el-input
-            v-model="searchWord"
-            placeholder="输入单词，即点即查释义与例句"
-            size="large"
-            class="search-input"
-            @keyup.enter="doSearch"
-          >
-            <template #append>
-              <el-button type="primary" class="le-btn-gradient" @click="doSearch" :loading="searchLoading">
-                <el-icon><Search /></el-icon>
-              </el-button>
-            </template>
-          </el-input>
+      <div class="hero-inner">
+        <div class="hero-content">
+          <p class="hero-tag">今日学习</p>
+          <h1 class="hero-title">ListenEase</h1>
+          <p class="hero-desc">查词、练听力、记单词——从这里开始今天的学习</p>
+          <div class="hero-search">
+            <el-input
+              v-model="searchWord"
+              placeholder="输入单词，即点即查释义与例句"
+              size="large"
+              class="search-input"
+              @keyup.enter="doSearch"
+            >
+              <template #append>
+                <el-button type="primary" class="search-btn" @click="doSearch" :loading="searchLoading">
+                  <el-icon><Search /></el-icon>
+                </el-button>
+              </template>
+            </el-input>
+          </div>
         </div>
+
+        <aside class="hero-app-card">
+          <div class="app-card-top">
+            <span class="app-badge">ANDROID</span>
+            <span class="app-badge app-badge--purple">v0.8.9.2</span>
+          </div>
+          <div class="app-title-row">
+            <h2 class="app-name">EaseWord</h2>
+          </div>
+          <p class="app-cn">听易词</p>
+          <p class="app-desc">官方单词本 · 与网站同账号</p>
+          <a
+            class="app-download"
+            href="/downloads/EaseWord-0.8.9.2.apk"
+            download="EaseWord-0.8.9.2.apk"
+          >
+            下载 APK
+          </a>
+          <p class="app-note" title="旧签名版本（如 0.8.0）需先上传云端并卸载后再安装；之后可直接覆盖更新。">
+            仅 Android · 旧版需先卸载再装
+          </p>
+        </aside>
       </div>
     </section>
 
@@ -42,9 +66,9 @@
     </div>
 
     <!-- 每日一句 -->
-    <div v-if="dailyQuote" class="quote-card le-card">
+    <div v-if="dailyQuote" class="quote-card">
       <div class="quote-header">
-        <span class="quote-label">每日一句</span>
+        <span class="quote-label">DAILY · 每日一句</span>
         <span class="quote-date">{{ dailyQuote.date }}</span>
       </div>
       <p class="quote-en">{{ dailyQuote.content }}</p>
@@ -54,17 +78,20 @@
     <!-- 当前分类标题 -->
     <div class="category-intro">
       <h2>{{ currentCategory.title }}</h2>
-      <p>{{ currentCategory.subtitle }}</p>
+      <div class="category-meta">
+        <span class="meta-pill">{{ (activeCategory || 'CET').toUpperCase() }}</span>
+        <span>{{ currentCategory.subtitle }}</span>
+      </div>
     </div>
 
     <!-- 试卷列表 -->
     <section class="le-section">
       <div class="le-section-header">
         <h2>
-          <el-icon :color="currentCategory.color"><Document /></el-icon>
+          <el-icon color="var(--le-accent)"><Document /></el-icon>
           {{ currentCategory.listTitle }}
         </h2>
-        <el-link type="primary" @click="goExamList()">查看全部</el-link>
+        <a class="view-all" href="javascript:;" @click.prevent="goExamList()">查看全部 →</a>
       </div>
 
       <div v-if="albumsLoading" class="le-loading-wrap">
@@ -74,12 +101,14 @@
 
       <el-row v-else :gutter="16">
         <el-col v-for="item in currentList" :key="item.id" :xs="12" :sm="8" :md="6">
-          <div class="exam-card le-card le-card-interactive" @click="goAlbum(item.id)">
-            <span class="exam-tag" :class="activeCategory">{{ item.tag }}</span>
+          <div class="exam-card" @click="goAlbum(item.id)">
+            <div class="exam-tags">
+              <span class="exam-tag" :class="activeCategory">{{ item.tag }}</span>
+            </div>
             <h3 class="exam-title">{{ item.title }}</h3>
             <div class="exam-meta">
-              <el-icon><Headset /></el-icon>
-              <span>开始练习</span>
+              <span class="exam-meta-text">听力练习</span>
+              <span class="start-btn">开始练习 →</span>
             </div>
           </div>
         </el-col>
@@ -91,16 +120,18 @@
     <!-- 快捷入口 -->
     <section class="le-section">
       <div class="le-section-header">
-        <h2><el-icon color="#f59e0b"><Star /></el-icon> 快捷入口</h2>
+        <h2><el-icon color="var(--le-accent)"><Star /></el-icon> 快捷入口</h2>
       </div>
       <el-row :gutter="16">
         <el-col v-for="item in quickLinks" :key="item.title" :xs="12" :sm="6">
-          <div class="quick-card le-card le-card-interactive" @click="item.action?.()">
-            <div class="quick-icon" :style="{ background: item.bg }">
-              <el-icon :size="24" color="#fff"><component :is="item.icon" /></el-icon>
+          <div class="quick-card" @click="item.action?.()">
+            <div class="quick-icon">
+              <el-icon :size="22"><component :is="item.icon" /></el-icon>
             </div>
-            <h3>{{ item.title }}</h3>
-            <p>{{ item.desc }}</p>
+            <div class="quick-info">
+              <h3>{{ item.title }}</h3>
+              <p>{{ item.desc }}</p>
+            </div>
           </div>
         </el-col>
       </el-row>
@@ -240,7 +271,8 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getCategories, getAlbumsByCategoryId } from '../api/Listen.js'
-import { queryEnglishWord, addUserWord, getDailyEnglish, isValidEnglishQuery } from '../api/Word.js'
+import { queryEnglishWord, addUserWordToCurrentBook, getDailyEnglish, isValidEnglishQuery } from '../api/Word.js'
+import { promptGoReviewAfterAdd } from '../utils/promptGoReview.js'
 
 const router = useRouter()
 const searchWord = ref('')
@@ -282,10 +314,10 @@ const albumList = ref([])
 
 // 分类配置（标题、颜色等）
 const categoryMeta = {
-  cet6: { title: '英语六级听力练习', subtitle: '历年真题，助你轻松过级', listTitle: '六级听力真题', color: '#8b5cf6' },
-  cet4: { title: '英语四级听力练习', subtitle: '历年真题 + 模拟试题', listTitle: '四级听力真题', color: '#409eff' },
-  ielts: { title: '雅思听力练习', subtitle: '剑桥雅思真题 + 模拟训练', listTitle: '雅思真题', color: '#67c23a' },
-  toefl: { title: '托福听力练习', subtitle: 'TPO真题 + 专项训练', listTitle: '托福真题', color: '#e6a23c' }
+  cet6: { title: '英语六级听力练习', subtitle: '历年真题，助你轻松过级', listTitle: '六级听力真题', color: '#a78bfa' },
+  cet4: { title: '英语四级听力练习', subtitle: '历年真题 + 模拟试题', listTitle: '四级听力真题', color: '#22d3ee' },
+  ielts: { title: '雅思听力练习', subtitle: '剑桥雅思真题 + 模拟训练', listTitle: '雅思真题', color: '#22c55e' },
+  toefl: { title: '托福听力练习', subtitle: 'TPO真题 + 专项训练', listTitle: '托福真题', color: '#fbbf24' }
 }
 
 const currentCategory = computed(() => {
@@ -412,9 +444,9 @@ const addToWordBook = async () => {
 
   addingWord.value = true
   try {
-    await addUserWord({ word, definition, example })
-    ElMessage.success(`"${word}" 已加入单词本`)
+    await addUserWordToCurrentBook({ word, definition, example })
     wordDialogVisible.value = false
+    await promptGoReviewAfterAdd(router, word, '/')
   } catch (e) {
     if (e.response?.status === 409) {
       ElMessage.warning('该单词已在单词本中')
@@ -450,10 +482,10 @@ const goExamList = () => {
 }
 
 const quickLinks = [
-  { title: '每日短文', desc: '10 分钟保持语感', icon: 'Microphone', bg: 'linear-gradient(135deg,#2563eb,#3b82f6)', action: goDailyArticle },
-  { title: '词根学习', desc: '系统扩展词汇', icon: 'Collection', bg: 'linear-gradient(135deg,#10b981,#34d399)', action: goWordRoots },
-  { title: 'BBC 外刊', desc: '精选新闻阅读', icon: 'Document', bg: 'linear-gradient(135deg,#ef4444,#f87171)', action: goBBCNews },
-  { title: '单词复习', desc: '智能间隔复习', icon: 'Reading', bg: 'linear-gradient(135deg,#7c3aed,#a78bfa)', action: () => router.push('/word-review') },
+  { title: '每日短文', desc: '10 分钟保持语感', icon: 'Microphone', action: goDailyArticle },
+  { title: '词根学习', desc: '系统扩展词汇', icon: 'Collection', action: goWordRoots },
+  { title: 'BBC 外刊', desc: '精选新闻阅读', icon: 'Document', action: goBBCNews },
+  { title: '单词复习', desc: '智能间隔复习', icon: 'Reading', action: () => router.push('/word-review') },
 ]
 </script>
 
@@ -463,74 +495,191 @@ const quickLinks = [
 }
 
 .hero {
-  background: var(--le-gradient);
-  border-radius: var(--le-radius);
-  padding: 32px 28px;
-  margin-bottom: 20px;
-  color: #fff;
   position: relative;
+  padding: 28px 24px 32px;
+  margin-bottom: 8px;
   overflow: hidden;
+  border-radius: var(--le-radius);
+  background: var(--le-bg-surface);
+  border: 1px solid var(--le-border);
 }
 
-.hero::after {
+.hero::before {
   content: '';
   position: absolute;
-  right: -40px;
-  top: -40px;
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.1);
+  inset: 0;
+  background: linear-gradient(105deg, rgba(59, 130, 246, 0.08) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.hero-inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1.5fr 0.9fr;
+  gap: 28px;
+  align-items: center;
 }
 
 .hero-content {
-  position: relative;
-  z-index: 1;
-  max-width: 640px;
+  min-width: 0;
 }
 
 .hero-tag {
-  font-size: 13px;
-  opacity: 0.9;
-  margin: 0 0 8px;
-  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 12px;
+  padding: 4px 10px;
+  background: var(--le-bg-muted);
+  border: 1px solid var(--le-border);
+  border-radius: 6px;
+  color: var(--le-text-secondary);
+  font-family: var(--le-font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
 }
 
 .hero-title {
-  font-size: clamp(1.75rem, 5vw, 2.5rem);
-  font-weight: 800;
-  margin: 0 0 8px;
-  letter-spacing: -0.03em;
+  font-family: var(--le-font-display);
+  font-size: clamp(1.75rem, 3.5vw, 2.4rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin: 0 0 10px;
+  color: var(--le-text);
 }
 
 .hero-desc {
-  font-size: 14px;
-  opacity: 0.92;
+  font-size: 15px;
+  color: var(--le-text-secondary);
+  max-width: 480px;
   margin: 0 0 20px;
-  line-height: 1.6;
+  line-height: 1.65;
 }
 
 .hero-search :deep(.el-input__wrapper) {
-  border-radius: 99px 0 0 99px;
-  box-shadow: none;
+  border-radius: 10px 0 0 10px;
+  background: var(--le-bg-elev) !important;
+  box-shadow: 0 0 0 1px var(--le-border) inset !important;
+  padding-left: 8px;
 }
 
 .hero-search :deep(.el-input-group__append) {
-  border-radius: 0 99px 99px 0;
+  border-radius: 0 10px 10px 0;
   overflow: hidden;
   box-shadow: none;
+  background: transparent;
+  padding: 0;
+}
+
+.hero-search :deep(.search-btn) {
+  height: 42px;
+  width: 48px;
+  margin: 3px;
+  border-radius: 8px !important;
+  background: var(--le-primary) !important;
+  border: none !important;
+  color: #0b1220 !important;
+}
+
+.hero-search :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px var(--le-primary) inset !important;
+}
+
+.hero-app-card {
+  justify-self: stretch;
+  width: 100%;
+  max-width: none;
+  background: var(--le-bg-elevated);
+  border: 1px solid var(--le-border);
+  border-radius: var(--le-radius);
+  padding: 18px;
+}
+
+.app-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.app-badge {
+  font-family: var(--le-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: #bfdbfe;
+  background: rgba(59, 130, 246, 0.16);
+  border: 1px solid rgba(96, 165, 250, 0.28);
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.04em;
+}
+
+.app-badge--purple {
+  color: #ddd6fe;
+  background: rgba(139, 92, 246, 0.16);
+  border-color: rgba(167, 139, 250, 0.3);
+}
+
+.app-name {
+  margin: 0 0 4px;
+  font-family: var(--le-font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--le-text);
+}
+
+.app-cn {
+  margin: 0 0 10px;
+  color: var(--le-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.app-desc {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--le-text-secondary);
+}
+
+.app-download {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  background: var(--le-primary);
+  color: #0b1220;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 10px;
+  border-radius: 8px;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.app-download:hover {
+  opacity: 0.92;
+  background: var(--le-primary-light);
+  color: #0b1220;
+}
+
+.app-note {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: var(--le-text-muted);
+  text-align: center;
+  line-height: 1.35;
 }
 
 .category-tabs-wrap {
-  margin-bottom: 20px;
-  overflow: hidden;
+  margin: 8px 0 24px;
+  border-bottom: 1px solid var(--le-border);
 }
 
 .category-tabs {
   display: flex;
-  gap: 8px;
+  gap: 24px;
   overflow-x: auto;
-  padding-bottom: 4px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
@@ -540,55 +689,97 @@ const quickLinks = [
 }
 
 .category-tab {
+  position: relative;
   flex-shrink: 0;
-  border: 1px solid var(--le-border);
-  background: var(--le-bg-elevated);
-  color: var(--le-text-secondary);
-  padding: 10px 18px;
-  border-radius: 99px;
-  font-size: 14px;
+  border: none;
+  background: transparent;
+  color: var(--le-text-muted);
+  padding: 12px 4px;
+  font-size: 15px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: color 0.2s;
+  font-family: inherit;
+}
+
+.category-tab:hover:not(.active) {
+  color: var(--le-text);
 }
 
 .category-tab.active {
-  background: var(--le-gradient);
-  border-color: transparent;
-  color: #fff;
-  font-weight: 600;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  color: var(--le-primary);
+}
+
+.category-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--le-primary);
+  border-radius: 2px;
 }
 
 .quote-card {
-  padding: 20px 24px;
+  position: relative;
+  overflow: hidden;
+  background: var(--le-bg-elevated);
+  border: 1px solid var(--le-border);
+  border-radius: var(--le-radius);
+  padding: 20px 22px 20px 26px;
   margin-bottom: 24px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.quote-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 3px;
+  background: var(--le-primary);
+  border-radius: 3px;
+}
+
+.quote-card:hover {
+  border-color: var(--le-border-strong);
+  box-shadow: var(--le-shadow-sm);
 }
 
 .quote-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 12px;
+  align-items: center;
+  margin-bottom: 10px;
 }
 
 .quote-label {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--le-primary);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-family: var(--le-font-mono);
+  font-size: 11px;
+  color: var(--le-primary-light);
+  letter-spacing: 0.06em;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  padding: 3px 8px;
+  border-radius: 6px;
 }
 
 .quote-date {
+  font-family: var(--le-font-mono);
   font-size: 12px;
   color: var(--le-text-muted);
 }
 
 .quote-en {
-  font-size: 16px;
+  font-family: var(--le-font-display);
+  font-size: 18px;
+  font-style: italic;
   font-weight: 500;
   margin: 0 0 8px;
   color: var(--le-text);
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .quote-cn {
@@ -602,79 +793,190 @@ const quickLinks = [
 }
 
 .category-intro h2 {
-  font-size: 20px;
-  margin: 0 0 4px;
+  font-family: var(--le-font-display);
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: var(--le-text);
 }
 
-.category-intro p {
+.category-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--le-text-secondary);
   font-size: 14px;
-  color: var(--le-text-muted);
-  margin: 0;
+}
+
+.meta-pill {
+  font-family: var(--le-font-mono);
+  font-size: 11px;
+  color: #c7d2fe;
+  background: var(--le-gradient-soft);
+  border: 1px solid rgba(165, 180, 252, 0.22);
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.04em;
+}
+
+.view-all {
+  color: var(--le-primary);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.view-all:hover {
+  color: var(--le-primary-light);
 }
 
 .exam-card {
   padding: 18px;
   margin-bottom: 16px;
   height: calc(100% - 16px);
+  background: var(--le-bg-elevated);
+  border: 1px solid var(--le-border);
+  border-radius: var(--le-radius);
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.exam-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--le-border-strong);
+  box-shadow: var(--le-shadow);
+  background: var(--le-bg-elevated-hover);
+}
+
+.exam-tags {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .exam-tag {
   display: inline-block;
-  padding: 3px 10px;
-  border-radius: 99px;
+  font-family: var(--le-font-mono);
+  padding: 3px 8px;
+  border-radius: 6px;
   font-size: 11px;
   font-weight: 600;
-  margin-bottom: 10px;
+  letter-spacing: 0.04em;
+  background: rgba(59, 130, 246, 0.14);
+  color: #93c5fd;
+  border: 1px solid rgba(96, 165, 250, 0.25);
 }
 
-.exam-tag.cet4 { background: rgba(37,99,235,0.1); color: var(--le-primary); }
-.exam-tag.cet6 { background: rgba(124,58,237,0.1); color: var(--le-purple); }
-.exam-tag.ielts { background: rgba(16,185,129,0.1); color: var(--le-success); }
-.exam-tag.toefl { background: rgba(245,158,11,0.1); color: var(--le-warning); }
+.exam-tag.cet6 {
+  background: rgba(139, 92, 246, 0.14);
+  color: #c4b5fd;
+  border-color: rgba(167, 139, 250, 0.28);
+}
+
+.exam-tag.ielts {
+  background: rgba(52, 211, 153, 0.1);
+  color: var(--le-success);
+  border-color: rgba(52, 211, 153, 0.25);
+}
+
+.exam-tag.toefl {
+  background: rgba(251, 191, 36, 0.1);
+  color: var(--le-warning);
+  border-color: rgba(251, 191, 36, 0.25);
+}
 
 .exam-title {
   font-size: 15px;
   font-weight: 600;
-  margin: 0 0 12px;
-  line-height: 1.5;
+  margin: 0 0 14px;
+  line-height: 1.45;
   min-height: 44px;
+  color: var(--le-text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .exam-meta {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--le-text-muted);
+  justify-content: space-between;
+  gap: 8px;
   padding-top: 12px;
   border-top: 1px solid var(--le-border);
 }
 
+.exam-meta-text {
+  font-family: var(--le-font-mono);
+  font-size: 11px;
+  color: var(--le-text-muted);
+}
+
+.start-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  color: var(--le-primary-light);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.exam-card:hover .start-btn {
+  background: var(--le-primary);
+  color: #0b1220;
+  border-color: transparent;
+}
+
 .quick-card {
-  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
   margin-bottom: 16px;
-  text-align: center;
   height: calc(100% - 16px);
+  background: var(--le-bg-elevated);
+  border: 1px solid var(--le-border);
+  border-radius: var(--le-radius);
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  text-align: left;
+}
+
+.quick-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--le-border-strong);
+  box-shadow: var(--le-shadow-sm);
+  background: var(--le-bg-elevated-hover);
 }
 
 .quick-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 12px;
+  flex-shrink: 0;
+  background: rgba(59, 130, 246, 0.14);
+  color: var(--le-primary-light);
 }
 
-.quick-card h3 {
+.quick-info h3 {
   font-size: 15px;
-  margin: 0 0 4px;
+  font-weight: 600;
+  margin: 0 0 2px;
+  color: var(--le-text);
 }
 
-.quick-card p {
+.quick-info p {
   font-size: 12px;
-  color: var(--le-text-muted);
+  color: var(--le-text-secondary);
   margin: 0;
 }
 
@@ -700,10 +1002,11 @@ const quickLinks = [
 
 .phonetic-label {
   font-size: 11px;
-  color: #fff;
+  color: #0b1220;
   background: var(--le-primary);
   padding: 2px 6px;
   border-radius: 4px;
+  font-weight: 600;
 }
 
 .detail-section {
@@ -727,6 +1030,7 @@ const quickLinks = [
 .sentence-item {
   padding: 12px;
   background: var(--le-bg-muted);
+  border: 1px solid var(--le-border);
   border-radius: var(--le-radius-sm);
   margin-bottom: 8px;
 }
@@ -742,13 +1046,31 @@ const quickLinks = [
   align-items: center;
 }
 
+@media (max-width: 1024px) {
+  .hero-inner {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .hero-app-card {
+    max-width: none;
+  }
+}
+
 @media (max-width: 768px) {
   .hero {
-    padding: 24px 18px;
-    border-radius: var(--le-radius-sm);
+    padding: 20px 16px 24px;
+  }
+  .hero-title {
+    font-size: 1.65rem;
   }
   .quote-card {
-    padding: 16px;
+    padding: 16px 16px 16px 22px;
+  }
+  .category-intro h2 {
+    font-size: 20px;
+  }
+  .exam-meta-text {
+    display: none;
   }
 }
 </style>
