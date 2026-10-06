@@ -2,6 +2,9 @@
 
 *让每一次聆听，都成为进步的阶梯*
 
+**线上平台：** [https://listenease.online](https://listenease.online)  
+免费练四六级听力、读每日短文、背单词、复习考研内容；单词本APP EaseWord 可在首页下载。
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D)](https://vuejs.org/)
