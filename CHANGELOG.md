@@ -7,7 +7,25 @@
 
 ## [Unreleased]
 
-### 安全 (Security)
+### 新增
+- **KaoyanService**：考研英语试卷列表、完形/阅读在线作答、管理端导入
+- **官方词本**：四级 / 六级 / 考研词库发布与一键领取
+- **EaseWord 0.9.10**：词库页领取官方词本；界面与网站纸质风格对齐；应用内更新 `versionCode` 12
+- **听力在线单选**：管理端可导入听力测验
+
+### 变更
+- 用户端视觉统一为纸质书桌风格
+- `README` / `docs` 补充考研、官方词本、KaoyanService
+- 公开仓库域名统一为 `your-domain.com` 占位；移除个人邮箱与搜索引擎验证码
+
+### 安全
+- 初始管理员密码改为 `ChangeMe_Admin123!`（部署后必须修改）
+- JWT / 反馈邮箱 / RabbitMQ 账号不在 `appsettings.json` 中填写真实值
+
+---
+
+## 历史快照（2026-09）
+
 - **重构 JWT 启动保护**：未配置 `JWT_KEY` 时服务启动失败（杜绝弱密钥风险）
 - **个人邮箱清除**：从 `appsettings.json`、`FeedbackSettings.cs`、`docker-compose.yml`、`deploy/.env.example` 中移除个人邮箱硬编码
 - **域名占位化**：`listenease.online` 替换为 `your-domain.com` 占位
@@ -51,4 +69,4 @@
 
 ## 历史版本
 
-详细提交历史请查看 [GitHub Commits](#)（公开仓库后填入链接）。
+详细提交历史请查看 [GitHub Commits](https://github.com/Kilokiyiu/Listen-en-web-pub/commits/main)。

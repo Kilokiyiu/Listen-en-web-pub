@@ -123,4 +123,105 @@ public class ListenController : ControllerBase
             SubtitleType = episode.SubtitleType
         };
     }
+
+    /// <summary>
+    /// 获取听力做题分区与单选题（不含答案）
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<QuizPaperDto>> GetQuizByAlbumId([Required] Guid albumId)
+    {
+        var album = await repo.GetAlbumByIdAsync(albumId);
+        if (album == null)
+            return NotFound("试卷不存在");
+
+        var sections = await repo.GetQuizSectionsByAlbumIdAsync(albumId);
+        var questions = await repo.GetQuizQuestionsBySectionIdsAsync(sections.Select(s => s.Id));
+        var qBySection = questions.GroupBy(q => q.SectionId).ToDictionary(g => g.Key, g => g.ToArray());
+
+        var sectionDtos = sections.Select(s =>
+        {
+            qBySection.TryGetValue(s.Id, out var qs);
+            qs ??= Array.Empty<Domain.Entity.QuizQuestion>();
+            return new QuizSectionPublicDto
+            {
+                Id = s.Id,
+                GroupName = s.GroupName,
+                Title = s.Title,
+                Transcript = s.Transcript,
+                AudioUrl = s.AudioUrl,
+                SequenceNumber = s.SequenceNumber,
+                QuestionCount = qs.Length,
+                Questions = qs.Select(q => new QuizQuestionPublicDto
+                {
+                    Id = q.Id,
+                    Number = q.Number,
+                    Stem = q.Stem,
+                    Options = q.GetOptions(),
+                    SequenceNumber = q.SequenceNumber
+                }).ToArray()
+            };
+        }).ToArray();
+
+        return new QuizPaperDto
+        {
+            AlbumId = albumId,
+            SectionCount = sectionDtos.Length,
+            QuestionCount = sectionDtos.Sum(s => s.QuestionCount),
+            Sections = sectionDtos
+        };
+    }
+
+    /// <summary>
+    /// 提交听力答题（可按分区）并返回判分与正确答案
+    /// </summary>
+    [HttpPost]
+    public async Task<ActionResult<SubmitQuizResponse>> SubmitQuiz([FromBody] SubmitQuizRequest request)
+    {
+        if (request.AlbumId == Guid.Empty)
+            return BadRequest("albumId 无效");
+
+        var album = await repo.GetAlbumByIdAsync(request.AlbumId);
+        if (album == null)
+            return NotFound("试卷不存在");
+
+        var sections = await repo.GetQuizSectionsByAlbumIdAsync(request.AlbumId);
+        if (request.SectionId.HasValue && request.SectionId != Guid.Empty)
+            sections = sections.Where(s => s.Id == request.SectionId.Value).ToArray();
+
+        var questions = await repo.GetQuizQuestionsBySectionIdsAsync(sections.Select(s => s.Id));
+        var answerMap = (request.Answers ?? Array.Empty<QuizAnswerItem>())
+            .GroupBy(a => a.QuestionId)
+            .ToDictionary(g => g.Key, g => g.Last().SelectedIndex);
+
+        var results = questions.Select(q =>
+        {
+            answerMap.TryGetValue(q.Id, out var selected);
+            var hasAnswer = answerMap.ContainsKey(q.Id);
+            var isCorrect = hasAnswer && selected == q.CorrectAnswer;
+            return new QuizQuestionResultDto
+            {
+                QuestionId = q.Id,
+                SectionId = q.SectionId,
+                Number = q.Number,
+                Stem = q.Stem,
+                Options = q.GetOptions(),
+                SelectedIndex = hasAnswer ? selected : null,
+                CorrectAnswer = q.CorrectAnswer,
+                IsCorrect = isCorrect,
+                Explanation = q.Explanation
+            };
+        }).ToArray();
+
+        var correctCount = results.Count(r => r.IsCorrect);
+        var total = results.Length;
+        return new SubmitQuizResponse
+        {
+            AlbumId = request.AlbumId,
+            SectionId = request.SectionId,
+            Total = total,
+            CorrectCount = correctCount,
+            ScorePercent = total == 0 ? 0 : Math.Round(correctCount * 100.0 / total, 1),
+            Results = results
+        };
+    }
 }

@@ -29,8 +29,12 @@ const iconReview =
 const iconUser =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/></svg>'
 
+const iconPacks =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M4 7h16"/></svg>'
+
 const navItems = [
   { path: '/', label: '单词本', icon: iconBook, match: ['words', 'add'] },
+  { path: '/packs', label: '词库', icon: iconPacks, match: ['packs'] },
   { path: '/review', label: '复习', icon: iconReview, match: ['review'] },
   { path: '/settings', label: '我的', icon: iconUser, match: ['settings'] },
 ]
@@ -57,10 +61,10 @@ const go = (path) => {
   display: flex;
   align-items: stretch;
   justify-content: space-around;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  border-top: 1px solid var(--le-border);
   z-index: 200;
   padding: 0 4px;
   padding-bottom: env(safe-area-inset-bottom, 0);
@@ -75,7 +79,7 @@ const go = (path) => {
   gap: 2px;
   border: none;
   background: transparent;
-  color: var(--text-muted);
+  color: var(--le-text-muted);
   font-size: 10px;
   cursor: pointer;
   padding: 6px 0;
@@ -84,7 +88,7 @@ const go = (path) => {
 }
 
 .mobile-nav-item.active {
-  color: var(--primary);
+  color: var(--le-primary);
 }
 
 .mobile-nav-item.active :deep(svg) {

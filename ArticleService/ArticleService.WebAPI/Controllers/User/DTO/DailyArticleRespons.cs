@@ -12,6 +12,6 @@ public class DailyArticleRespons
     public string EnglishText { get; set; } = "";
     public string ChineseText { get; set; } = "";
     public string? AudioUrl { get; set; }
-    public bool IsRead { get; set; }       // 当前用户是否已读
-    public bool IsFavorite { get; set; }    // 当前用户是否收藏
+    public bool IsRead { get; set; }
+    public bool IsFavorite { get; set; }
 }

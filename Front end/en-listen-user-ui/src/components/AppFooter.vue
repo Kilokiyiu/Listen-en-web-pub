@@ -12,21 +12,21 @@
           <p class="footer-desc">专业的英语听力练习平台，开源共建，持续更新。</p>
         </div>
         <div class="footer-links">
+          <router-link to="/about" class="footer-link">
+            <el-icon :size="14"><User /></el-icon>
+            关于我们
+          </router-link>
           <router-link to="/feedback" class="footer-link">
             <el-icon :size="14"><ChatDotRound /></el-icon>
             意见反馈
           </router-link>
-          <a href="https://github.com/your-github-org/your-repo" target="_blank" rel="noopener noreferrer" class="footer-link">
+          <a href="https://github.com/Kilokiyiu/Listen-en-web-pub" target="_blank" rel="noopener noreferrer" class="footer-link">
             <el-icon :size="14"><Link /></el-icon>
             GitHub 源码
           </a>
-          <a href="mailto:contact@your-domain.com" class="footer-link">
-            <el-icon :size="14"><Message /></el-icon>
-            联系邮箱
-          </a>
-          <a href="https://your-domain.com" target="_blank" rel="noopener noreferrer" class="footer-link">
+          <a href="https://mywebpage-f2u.pages.dev/" target="_blank" rel="noopener noreferrer" class="footer-link">
             <el-icon :size="14"><User /></el-icon>
-            项目主页
+            作者主页
           </a>
         </div>
       </div>
@@ -46,7 +46,9 @@ const currentYear = computed(() => new Date().getFullYear())
 <style scoped>
 .app-footer {
   margin-top: auto;
-  background: var(--le-bg-dark);
+  background: rgba(247, 249, 252, 0.78);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-top: 1px solid var(--le-border);
   padding-bottom: env(safe-area-inset-bottom, 0);
   color: var(--le-text-secondary);

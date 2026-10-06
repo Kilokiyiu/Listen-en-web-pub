@@ -273,6 +273,12 @@ public class AdminController : ControllerBase
                 a.IsVisible,
                 a.CreationTime,
                 EpisodeCount = dbContext.Episodes.Count(e => e.AlbumId == a.Id),
+                QuizSectionCount = dbContext.QuizSections.Count(s => s.AlbumId == a.Id),
+                QuizQuestionCount = (
+                    from s in dbContext.QuizSections
+                    join q in dbContext.QuizQuestions on s.Id equals q.SectionId
+                    where s.AlbumId == a.Id
+                    select q.Id).Count(),
                 FirstEpisodeId = firstEpisode != null ? firstEpisode.Id : Guid.Empty,
                 Subtitle = firstEpisode != null ? firstEpisode.Subtitle : null,
                 HasSubtitle = firstEpisode != null && !string.IsNullOrWhiteSpace(firstEpisode.Subtitle),
@@ -338,6 +344,197 @@ public class AdminController : ControllerBase
         return Ok(new { message = "删除成功" });
     }
 
+    /// <summary>
+    /// 获取某套听力试卷的做题分区（含题目与答案）
+    /// </summary>
+    [HttpGet]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult> GetQuizSections([FromQuery] Guid albumId)
+    {
+        if (albumId == Guid.Empty)
+            return BadRequest("albumId 无效");
+
+        var sections = await dbContext.QuizSections.AsNoTracking()
+            .Where(s => s.AlbumId == albumId)
+            .OrderBy(s => s.SequenceNumber)
+            .ToListAsync();
+        var sectionIds = sections.Select(s => s.Id).ToArray();
+        var questions = await dbContext.QuizQuestions.AsNoTracking()
+            .Where(q => sectionIds.Contains(q.SectionId))
+            .OrderBy(q => q.SequenceNumber)
+            .ThenBy(q => q.Number)
+            .ToListAsync();
+        var qBySection = questions.GroupBy(q => q.SectionId).ToDictionary(g => g.Key, g => g.ToList());
+
+        return Ok(sections.Select(s =>
+        {
+            qBySection.TryGetValue(s.Id, out var qs);
+            qs ??= new List<QuizQuestion>();
+            return new
+            {
+                s.Id,
+                s.AlbumId,
+                s.GroupName,
+                s.Title,
+                s.Transcript,
+                s.AudioUrl,
+                s.SequenceNumber,
+                s.IsVisible,
+                questions = qs.Select(q => new
+                {
+                    q.Id,
+                    q.Number,
+                    q.Stem,
+                    options = q.GetOptions(),
+                    q.CorrectAnswer,
+                    q.Explanation,
+                    q.SequenceNumber
+                })
+            };
+        }));
+    }
+
+    /// <summary>
+    /// 全量覆盖保存听力做题分区与题目
+    /// </summary>
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult> SaveQuizSections([FromBody] SaveQuizSectionsRequest request)
+    {
+        if (request.AlbumId == Guid.Empty)
+            return BadRequest("albumId 无效");
+
+        var album = await dbContext.Albums.FindAsync(request.AlbumId);
+        if (album == null)
+            return NotFound("试卷不存在");
+
+        var oldSections = await dbContext.QuizSections.Where(s => s.AlbumId == request.AlbumId).ToListAsync();
+        var oldIds = oldSections.Select(s => s.Id).ToArray();
+        var oldQuestions = await dbContext.QuizQuestions.Where(q => oldIds.Contains(q.SectionId)).ToListAsync();
+        // 保留已有音频路径：按序号匹配回填
+        var oldAudioBySeq = oldSections.ToDictionary(s => s.SequenceNumber, s => s.AudioUrl);
+
+        dbContext.QuizQuestions.RemoveRange(oldQuestions);
+        dbContext.QuizSections.RemoveRange(oldSections);
+
+        var sections = request.Sections ?? Array.Empty<QuizSectionUpsertItem>();
+        var secSeq = 1;
+        foreach (var sec in sections)
+        {
+            var seq = sec.SequenceNumber <= 0 ? secSeq : sec.SequenceNumber;
+            var audioUrl = !string.IsNullOrWhiteSpace(sec.AudioUrl)
+                ? sec.AudioUrl
+                : (oldAudioBySeq.TryGetValue(seq, out var kept) ? kept : null);
+
+            var section = new QuizSection(
+                request.AlbumId,
+                sec.Title ?? $"Passage {secSeq}",
+                sec.Transcript ?? string.Empty,
+                audioUrl,
+                seq,
+                QuizSection.InferGroupName(sec.GroupName, sec.Title));
+            if (sec.IsVisible == false)
+                section.Hide();
+            dbContext.QuizSections.Add(section);
+
+            var qSeq = 1;
+            foreach (var item in sec.Questions ?? Array.Empty<QuizQuestionUpsertItem>())
+            {
+                try
+                {
+                    var options = (item.Options ?? Array.Empty<string>())
+                        .Select(o => (o ?? string.Empty).Trim())
+                        .Where(o => o.Length > 0)
+                        .ToArray();
+                    dbContext.QuizQuestions.Add(new QuizQuestion(
+                        section.Id,
+                        item.Number <= 0 ? qSeq : item.Number,
+                        item.Stem ?? string.Empty,
+                        options,
+                        item.CorrectAnswer,
+                        item.SequenceNumber <= 0 ? qSeq : item.SequenceNumber,
+                        item.Explanation));
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest($"分区「{section.Title}」第 {qSeq} 题无效：{ex.Message}");
+                }
+                qSeq++;
+            }
+            secSeq++;
+        }
+
+        await dbContext.SaveChangesAsync();
+        return Ok(new { message = "保存成功", sectionCount = sections.Length });
+    }
+
+    /// <summary>
+    /// 调整某段材料所属 Section（A/B/C），用于录错分区时快速纠错。
+    /// </summary>
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult> MoveQuizSectionGroup([FromBody] MoveQuizSectionGroupRequest request)
+    {
+        if (request.SectionId == Guid.Empty)
+            return BadRequest("sectionId 无效");
+
+        var section = await dbContext.QuizSections.FindAsync(request.SectionId);
+        if (section == null)
+            return NotFound("材料不存在");
+
+        var before = section.GroupName;
+        section.SetGroupName(request.GroupName);
+        await dbContext.SaveChangesAsync();
+        return Ok(new
+        {
+            message = $"已从 {before} 调整到 {section.GroupName}",
+            sectionId = section.Id,
+            groupName = section.GroupName,
+            title = section.Title
+        });
+    }
+
+    /// <summary>
+    /// 上传某分区听力音频（按 sectionId）
+    /// </summary>
+    [HttpPost]
+    [Consumes("multipart/form-data")]
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult> UploadSectionAudio(
+        [FromForm] Guid sectionId,
+        [FromForm] IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("请选择音频文件");
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (ext is not (".mp3" or ".wav" or ".m4a"))
+            return BadRequest("只支持 MP3/wav/m4a");
+
+        var section = await dbContext.QuizSections.FindAsync(sectionId);
+        if (section == null)
+            return NotFound("分区不存在");
+
+        var album = await dbContext.Albums.FindAsync(section.AlbumId);
+        var category = album == null ? null : await dbContext.Categories.FindAsync(album.CategoryId);
+        var categoryDir = (category?.Code ?? "misc").ToUpperInvariant();
+        var fileName = $"{sectionId}{ext}";
+        var dirPath = Path.Combine(env.WebRootPath, "audios", categoryDir, "sections");
+        Directory.CreateDirectory(dirPath);
+        var filePath = Path.Combine(dirPath, fileName);
+        var relativeUrl = $"/audios/{categoryDir}/sections/{fileName}";
+
+        TryDeleteWebFile(section.AudioUrl);
+        await using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        section.SetAudio(relativeUrl);
+        await dbContext.SaveChangesAsync();
+        return Ok(new { url = relativeUrl, sectionId });
+    }
+
     private void TryDeleteWebFile(string? relativeUrl)
     {
         if (string.IsNullOrWhiteSpace(relativeUrl))
@@ -356,3 +553,66 @@ public record UpdateSubtitleRequest(
 public record ToggleVisibilityRequest([property: JsonPropertyName("episodeId")] Guid EpisodeId);
 
 public record DeleteEpisodeRequest([property: JsonPropertyName("episodeId")] Guid EpisodeId);
+
+public class SaveQuizSectionsRequest
+{
+    [JsonPropertyName("albumId")]
+    public Guid AlbumId { get; set; }
+
+    [JsonPropertyName("sections")]
+    public QuizSectionUpsertItem[]? Sections { get; set; }
+}
+
+public class QuizSectionUpsertItem
+{
+    [JsonPropertyName("groupName")]
+    public string? GroupName { get; set; }
+
+    [JsonPropertyName("title")]
+    public string? Title { get; set; }
+
+    [JsonPropertyName("transcript")]
+    public string? Transcript { get; set; }
+
+    [JsonPropertyName("audioUrl")]
+    public string? AudioUrl { get; set; }
+
+    [JsonPropertyName("sequenceNumber")]
+    public int SequenceNumber { get; set; }
+
+    [JsonPropertyName("isVisible")]
+    public bool? IsVisible { get; set; }
+
+    [JsonPropertyName("questions")]
+    public QuizQuestionUpsertItem[]? Questions { get; set; }
+}
+
+public class QuizQuestionUpsertItem
+{
+    [JsonPropertyName("number")]
+    public int Number { get; set; }
+
+    [JsonPropertyName("stem")]
+    public string? Stem { get; set; }
+
+    [JsonPropertyName("options")]
+    public string[]? Options { get; set; }
+
+    [JsonPropertyName("correctAnswer")]
+    public int CorrectAnswer { get; set; }
+
+    [JsonPropertyName("explanation")]
+    public string? Explanation { get; set; }
+
+    [JsonPropertyName("sequenceNumber")]
+    public int SequenceNumber { get; set; }
+}
+
+public class MoveQuizSectionGroupRequest
+{
+    [JsonPropertyName("sectionId")]
+    public Guid SectionId { get; set; }
+
+    [JsonPropertyName("groupName")]
+    public string? GroupName { get; set; }
+}

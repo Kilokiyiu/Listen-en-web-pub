@@ -6,7 +6,7 @@
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D)](https://vuejs.org/)
 
-一个开源的英语学习平台，覆盖**听力真题训练、每日外刊阅读、词根学习、学习追踪、用户反馈**等模块，支持 Web、小程序、Android 多端访问。
+一个开源的英语学习平台，覆盖**听力真题训练、每日外刊阅读、词根与单词本、考研英语作答、学习追踪、用户反馈**等模块，支持 Web、小程序、Android 多端访问。
 
 ---
 
@@ -16,12 +16,13 @@
 |------|----------|
 | 🎧 **听力训练** | 按分类浏览听力试卷（CET-4/6 等），逐题播放音频并显示同步字幕，支持下载试卷 PDF 与答案 |
 | 📰 **外刊阅读** | 每日推送中英双语文章（BBC 等），支持已读标记、收藏、音频朗读 |
-| 📝 **词根学习** | 基于词根词缀法的系统化单词学习；含示例词、释义、间隔复习算法（SM-2）、学习记录 |
+| 📝 **词汇学习** | 词根词缀、个人单词本（SM-2）、官方词本一键领取 |
+| 📚 **考研英语** | 完形 / 阅读在线作答（KaoyanService） |
 | 👤 **用户系统** | 邮箱注册登录、JWT 认证、密码重置、学习进度追踪 |
-| 🖥️ **后台管理** | 用户管理、试卷/文章/词根增删改查、音频上传、数据统计（Dashboard） |
-| 📊 **学习追踪** | 学习活动（Study Activity）记录，Analytics 事件埋点，管理后台可视化看板 |
-| 💬 **用户反馈** | Web/App 内置反馈入口，通过 SMTP 或 SendCloud 转发到管理员邮箱 |
-| 📱 **多端支持** | 用户端（Vue 3）、管理端（Vue 3）、微信小程序、Capacitor Android App（EaseWord） |
+| 🖥️ **后台管理** | 用户、试卷、文章、词根、官方词本、考研试卷、数据看板 |
+| 📊 **学习追踪** | Study Activity + Analytics 埋点 |
+| 💬 **用户反馈** | Web/App 反馈，SMTP 或 SendCloud |
+| 📱 **多端支持** | 用户端、管理端、微信小程序、EaseWord Android（0.9.10） |
 
 ---
 
@@ -34,24 +35,17 @@
                                │
         ┌──────────┬───────────┼───────────┬──────────┐
         │          │           │           │          │
-   ┌────▼───┐ ┌───▼────┐ ┌────▼────┐ ┌────▼───┐ ┌────▼────┐
-   │user-ui │ │admin-ui│ │Identity │ │ Listen │ │ Article │
-   │(SPA)   │ │(SPA)   │ │ Service │ │Service │ │ Service │
-   └────────┘ └────────┘ │  :8080  │ │ :8080  │ │  :8080  │
-                         └────┬────┘ └────┬───┘ └────┬────┘
-                              │           │          │
-                              └─────┬─────┘          │
-                                    │                │
-                              ┌─────▼──────┐  ┌──────▼─────┐
-                              │ Word       │  │  RabbitMQ  │ ← 集成事件总线
-                              │ Service    │  │   :5672    │
-                              │  :8080     │  └────────────┘
-                              └─────┬──────┘
+   ┌────▼───┐ ┌───▼────┐ ┌────▼────┐ ┌────▼───┐ ┌────▼────┐ ┌────▼────┐
+   │user-ui │ │admin-ui│ │Identity │ │ Listen │ │ Article │ │ Word    │
+   │(SPA)   │ │(SPA)   │ │ Service │ │Service │ │ Service │ │Service  │
+   └────────┘ └────────┘ └────┬────┘ └────┬───┘ └────┬────┘ └────┬────┘
+                              │           │          │           │
+                              └─────┬─────┴──────────┴───────────┘
                                     │
-                              ┌─────▼──────┐
-                              │ SQL Server │
-                              │   2022     │  ← 每个微服务独立 Database
-                              └────────────┘
+                         ┌──────────▼──────────┐
+                         │ KaoyanService       │
+                         │ RabbitMQ + SQL Server│
+                         └─────────────────────┘
 
    Capacitor Android App (EaseWord) ──┐
    微信小程序 (listen-miniapp) ──┐    │
@@ -107,10 +101,11 @@ Listen-en-web/
 │   ├── ArticleService.Domain/
 │   ├── ArticleService.Infrastructure/
 │   └── ArticleService.WebAPI/
-├── WordService/                 # 词根学习微服务（含用户词本 SM-2 复习）
+├── WordService/                 # 词根、个人单词本、官方词本
 │   ├── WordService.Domain/
 │   ├── WordService.Infrastrucure/
 │   └── WordService.WebAPI/
+├── KaoyanService/               # 考研英语试卷与作答
 ├── FileService/                 # 文件管理微服务
 ├── Front end/
 │   ├── en-listen-user-ui/       # 用户端 Web（Vue 3）
@@ -124,7 +119,7 @@ Listen-en-web/
 │   └── audios/                  # 听力音频文件目录
 ├── docs/                        # 项目文档
 │   ├── 1.1 项目说明.md
-│   ├── 2.1-2.5 服务详细说明
+│   ├── 2.1-2.7 服务详细说明
 │   └── 3.1 Commons 公共库
 ├── .github/workflows/           # CI/CD 配置
 └── README.md
@@ -168,11 +163,11 @@ cd ListenService/ListenService.WebAPI
 dotnet run
 ```
 
-每个服务默认监听 `http://localhost:8080`：
+- WordService：5215（开发代理常见端口，以 launchSettings 为准）
 - IdentityService：5263
-- ListenService：5215
+- ListenService：5215 或独立端口
 - ArticleService：5216
-- WordService：5217
+- KaoyanService：见 `KaoyanService.WebAPI/Properties/launchSettings.json`
 
 #### 4. 启动前端
 
@@ -221,7 +216,7 @@ docker compose up -d
 
 部署完成后访问 `https://your-domain.com` 即可。
 
-> 💡 首次部署后，访问 `POST /api/identity/Login/CreateWorld` 创建初始管理员账号。
+> 💡 首次部署后，访问 `POST /api/identity/Login/CreateWorld` 创建初始管理员。默认用户名 `admin`，密码 `ChangeMe_Admin123!`，**上线后立即修改**。
 
 ---
 
@@ -265,6 +260,7 @@ docker compose up -d
 - [IdentityService 详解](docs/2.1%20IdentityService.md)
 - [ListenService 详解](docs/2.2%20ListenService.md)
 - [ArticleService 详解](docs/2.3%20ArticleService.md)
+- [KaoyanService](docs/2.7%20KaoyanService.md)
 - [WordService 详解](docs/2.4%20WordService.md)
 - [前端项目详解](docs/2.5%20FrontEnd.md)
 - [Commons 公共库总览](docs/3.1%20Commons.md)

@@ -1,7 +1,7 @@
 # EaseWord 发布目录
 
 ## 用户下载
-- 当前推荐：https://your-domain.com/downloads/EaseWord-0.8.9.2.apk
+- 当前推荐：https://your-domain.com/downloads/EaseWord-0.9.10.apk
 - 兼容旧链接：https://your-domain.com/downloads/EaseWord-beta.apk
 - 版本清单：https://your-domain.com/downloads/version.json
 

@@ -84,5 +84,10 @@ list_*.sql
 .DS_Store
 Thumbs.db
 
+# =本地资源（勿入库）=
+英语资源/
+**/英语资源/
+tools/word-pack-import/out/
+
 # =WorkBuddy =
 .workbuddy/

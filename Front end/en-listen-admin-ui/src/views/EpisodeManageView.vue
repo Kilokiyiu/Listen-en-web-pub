@@ -69,7 +69,9 @@
         >
           <el-table-column prop="nameChinese" label="试卷名称" min-width="280" show-overflow-tooltip />
           <el-table-column prop="categoryNameChinese" label="分类" width="120" />
-          <el-table-column prop="episodeCount" label="题目数量" width="90" align="center" />
+          <el-table-column prop="episodeCount" label="音频数" width="80" align="center" />
+          <el-table-column prop="quizSectionCount" label="做题段" width="80" align="center" />
+          <el-table-column prop="quizQuestionCount" label="在线题" width="80" align="center" />
           <el-table-column label="是否有原文" width="100" align="center">
             <template #default="{ row }">
               <el-tag :type="row.hasSubtitle ? 'success' : 'info'" size="small" effect="light">
@@ -105,10 +107,13 @@
               {{ formatDate(row.creationTime) }}
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="320" align="center" fixed="right">
+          <el-table-column label="操作" width="400" align="center" fixed="right">
             <template #default="{ row }">
               <el-button type="primary" link size="small" @click="openEdit(row)">
                 {{ row.hasSubtitle ? '编辑原文' : '添加原文' }}
+              </el-button>
+              <el-button type="warning" link size="small" @click="openQuizEditor(row)">
+                在线做题
               </el-button>
               <el-button type="primary" link size="small" @click="triggerUpload(row, 'paper')">
                 上传试卷
@@ -153,6 +158,13 @@
       </template>
     </el-dialog>
 
+    <ListenQuizEditDialog
+      v-model="quizDialogVisible"
+      :album-id="quizAlbumId"
+      :album-name="quizAlbumName"
+      @saved="loadAlbums"
+    />
+
     <input
       ref="pdfInputRef"
       type="file"
@@ -171,10 +183,11 @@ import {
   updateEpisodeSubtitle,
   toggleAlbumVisibility,
   deleteEpisode,
-  uploadAlbumDocument
+  uploadAlbumDocument,
 } from '../api/Admin'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import PageHeader from '../components/PageHeader.vue'
+import ListenQuizEditDialog from './ListenQuizEditDialog.vue'
 
 const router = useRouter()
 
@@ -186,6 +199,9 @@ const subtitleContent = ref('')
 const saving = ref(false)
 const pdfInputRef = ref(null)
 const pendingUpload = ref({ albumId: null, documentType: null })
+const quizDialogVisible = ref(false)
+const quizAlbumId = ref('')
+const quizAlbumName = ref('')
 
 const stats = computed(() => ({
   total: albums.value.length,
@@ -235,6 +251,12 @@ const openEdit = async (row) => {
   currentAlbum.value = row
   subtitleContent.value = row.subtitle || ''
   dialogVisible.value = true
+}
+
+const openQuizEditor = (row) => {
+  quizAlbumId.value = row.id
+  quizAlbumName.value = row.nameChinese || ''
+  quizDialogVisible.value = true
 }
 
 const saveSubtitle = async () => {
@@ -347,5 +369,9 @@ onMounted(() => {
 
 .hidden-file-input {
   display: none;
+}
+
+.quiz-hint {
+  margin-bottom: 12px;
 }
 </style>

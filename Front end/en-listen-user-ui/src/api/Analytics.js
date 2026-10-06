@@ -1,4 +1,4 @@
-const VISITOR_ID_KEY = 'app_visitor_id'
+const VISITOR_ID_KEY = 'listenease_visitor_id'
 
 const ALLOWED_EVENTS = new Set([
   'page_view',

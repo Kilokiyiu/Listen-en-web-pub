@@ -2,7 +2,6 @@
   <div class="settings-page">
     <section v-if="loggedIn" class="section">
       <h2>单词本切换</h2>
-      <p class="desc">登录后可同时使用云端与本地单词本，可通过下方同步互相备份</p>
       <div class="mode-options">
         <button
           class="mode-btn"
@@ -12,7 +11,7 @@
           <span class="mode-icon">☁️</span>
           <div>
             <strong>云端单词本</strong>
-            <small>同步到服务器，多设备共享</small>
+            <small>多设备同步</small>
           </div>
         </button>
         <button
@@ -23,7 +22,7 @@
           <span class="mode-icon">📱</span>
           <div>
             <strong>本地单词本</strong>
-            <small>仅存手机，可离线使用</small>
+            <small>仅存本机</small>
           </div>
         </button>
       </div>
@@ -31,7 +30,6 @@
 
     <section v-else class="section">
       <h2>离线模式</h2>
-      <p class="desc">当前为离线模式，仅可使用本地单词本。登录后可同时使用云端单词本。</p>
       <button class="btn-primary" @click="router.push({ name: 'login', query: { from: 'settings' } })">
         登录账号
       </button>
@@ -39,9 +37,6 @@
 
     <section v-if="loggedIn" class="section">
       <h2>数据同步</h2>
-      <p class="desc">
-        将「当前云端单词本」与本地互相备份。按单词文本合并：已存在的会跳过，不会覆盖复习进度。
-      </p>
       <div class="sync-actions">
         <button class="btn-primary" :disabled="busy" @click="downloadFromCloud">
           {{ syncing === 'download' ? '下载中...' : '云端 → 本地' }}
@@ -55,15 +50,11 @@
 
     <section class="section">
       <h2>意见反馈</h2>
-      <p class="desc">功能建议、问题反馈或内容相关意见，均可提交给我们。</p>
       <button class="btn-primary" @click="router.push({ name: 'feedback' })">去反馈</button>
     </section>
 
     <section class="section">
       <h2>导入 / 导出</h2>
-      <p class="desc">
-        导出当前单词本（{{ activeLabel }}）为 JSON 或 TXT；也可从文件导入并合并到当前单词本。
-      </p>
       <div class="sync-actions">
         <button class="btn-primary" :disabled="busy" @click="exportWords('json')">
           {{ syncing === 'export-json' ? '导出中...' : '导出为 JSON' }}
@@ -95,21 +86,16 @@
 
     <section v-if="activeWordbook === 'local'" class="section danger">
       <h2>本地数据</h2>
-      <p class="desc">清除后无法恢复，请谨慎操作</p>
       <button class="btn-danger" @click="clearLocal">清除本地单词本</button>
     </section>
 
     <section class="section">
       <h2>关于</h2>
       <p class="desc">
-        EaseWord 听易词 · 与
+        EaseWord 听易词 ·
         <a href="https://your-domain.com" target="_blank" rel="noopener">ListenEase</a>
-        网站共用云端账号
       </p>
       <p class="version">当前版本 {{ appVersionLabel }}</p>
-      <p class="update-notice">
-        由于 APK 签名变动，本次需先卸载旧版本再安装新包；请提前将本地单词上传到云端。之后更新可直接覆盖安装，无需再卸载。
-      </p>
       <div class="sync-actions" style="margin-top: 12px">
         <button
           class="btn-primary"
@@ -157,6 +143,7 @@ import {
   getLocalAppInfo,
 } from '../services/appUpdateService'
 import { WORDBOOK_TYPES } from '../config'
+import { confirmDialog } from '../utils/dialog'
 import { showToast } from '../utils/toast'
 
 const router = useRouter()
@@ -192,7 +179,8 @@ const load = async () => {
 const switchWordbook = async (type) => {
   if (type === activeWordbook.value) return
   const label = type === 'local' ? '本地单词本' : '云端单词本'
-  if (!confirm(`切换到「${label}」？\n\n本地与云端数据相互独立，可用「数据同步」互相备份。`)) return
+  const ok = await confirmDialog(`切换到「${label}」？`, { title: '切换单词本' })
+  if (!ok) return
 
   await setActiveWordbook(type === 'local' ? WORDBOOK_TYPES.local : WORDBOOK_TYPES.server)
   activeWordbook.value = type
@@ -201,13 +189,8 @@ const switchWordbook = async (type) => {
 }
 
 const downloadFromCloud = async () => {
-  if (
-    !confirm(
-      '将当前云端单词本合并到本地？\n\n本地已有的单词会跳过；仅补全本地空着的释义/例句。'
-    )
-  ) {
-    return
-  }
+  const ok = await confirmDialog('将当前云端单词本合并到本地？', { title: '云端 → 本地' })
+  if (!ok) return
 
   syncing.value = 'download'
   syncHint.value = ''
@@ -228,13 +211,8 @@ const downloadFromCloud = async () => {
 }
 
 const uploadToCloud = async () => {
-  if (
-    !confirm(
-      '将本地单词上传到当前云端单词本？\n\n云端已有的单词会跳过。\n新上传的单词在云端复习进度会重新开始。'
-    )
-  ) {
-    return
-  }
+  const ok = await confirmDialog('将本地单词上传到当前云端单词本？', { title: '本地 → 云端' })
+  if (!ok) return
 
   syncing.value = 'upload'
   syncHint.value = ''
@@ -256,7 +234,8 @@ const uploadToCloud = async () => {
 }
 
 const logout = async () => {
-  if (!confirm('确定退出登录？退出后需重新登录或选择离线模式。')) return
+  const ok = await confirmDialog('确定退出登录？', { title: '退出登录', danger: true, confirmText: '退出' })
+  if (!ok) return
   await clearAuth()
   await setOfflineOnly(false)
   username.value = ''
@@ -288,13 +267,8 @@ const onImportFile = async (event) => {
   event.target.value = ''
   if (!file) return
 
-  if (
-    !confirm(
-      `将「${file.name}」导入到当前「${activeLabel.value}」？\n\n已存在的单词会跳过，不会覆盖复习进度。`
-    )
-  ) {
-    return
-  }
+  const ok = await confirmDialog(`导入到「${activeLabel.value}」？`, { title: '导入' })
+  if (!ok) return
 
   syncing.value = 'import'
   ioHint.value = ''
@@ -314,7 +288,12 @@ const onImportFile = async (event) => {
 }
 
 const clearLocal = async () => {
-  if (!confirm('确定清除所有本地单词？此操作不可恢复。')) return
+  const ok = await confirmDialog('确定清除所有本地单词？', {
+    title: '清除本地数据',
+    confirmText: '清除',
+    danger: true,
+  })
+  if (!ok) return
   await clearAllData()
   showToast('本地数据已清除')
   router.push('/')
@@ -348,13 +327,11 @@ const handleCheckUpdate = async () => {
 
 const handleInstallUpdate = async () => {
   if (!pendingUpdate.value) return
-  if (
-    !confirm(
-      `下载并安装 ${pendingUpdate.value.versionName}？\n\n下载完成后请在系统弹窗中确认安装。`
-    )
-  ) {
-    return
-  }
+  const ok = await confirmDialog(`下载并安装 ${pendingUpdate.value.versionName}？`, {
+    title: '安装更新',
+    confirmText: '下载',
+  })
+  if (!ok) return
 
   syncing.value = 'updating'
   updateProgress.value = 0
@@ -381,8 +358,9 @@ onMounted(load)
 }
 
 .section {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+  background-color: rgba(255, 255, 255, 0.92);
+  background-image: var(--le-paper-grain);
+  border: 1px solid var(--le-border);
   border-radius: 14px;
   padding: 16px;
   margin-bottom: 16px;
@@ -419,8 +397,8 @@ onMounted(load)
 }
 
 .mode-btn.active {
-  border-color: var(--primary);
-  background: #ecf5ff;
+  border-color: var(--le-primary);
+  background: var(--le-gradient-soft);
 }
 
 .mode-icon {
@@ -483,7 +461,7 @@ onMounted(load)
 
 .btn-primary {
   width: 100%;
-  background: var(--primary);
+  background: var(--le-gradient);
   color: #fff;
   border: none;
 }
@@ -494,9 +472,9 @@ onMounted(load)
 
 .btn-danger {
   width: 100%;
-  background: #fef0f0;
-  color: #f56c6c;
-  border: 1px solid #fbc4c4;
+  background: rgba(220, 38, 38, 0.08);
+  color: var(--le-danger);
+  border: 1px solid rgba(220, 38, 38, 0.28);
 }
 
 .version {
@@ -520,6 +498,6 @@ onMounted(load)
 }
 
 .section.danger h2 {
-  color: #f56c6c;
+  color: var(--le-danger);
 }
 </style>

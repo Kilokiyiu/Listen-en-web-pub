@@ -44,6 +44,11 @@ public class CachedListenRepo : IListenRepo
             DefaultExpiry());
     }
 
+    public Task<(Guid Id, DateTime CreationTime)[]> GetVisibleAlbumSitemapItemsAsync()
+    {
+        return inner.GetVisibleAlbumSitemapItemsAsync();
+    }
+
     public Task<Album> GetAlbumByIdAsync(Guid albumId)
     {
         return cache.GetOrSetAsync(
@@ -77,6 +82,12 @@ public class CachedListenRepo : IListenRepo
             () => inner.GetEpisodeByIdAsync(episodeId),
             DefaultExpiry());
     }
+
+    public Task<QuizSection[]> GetQuizSectionsByAlbumIdAsync(Guid albumId) =>
+        inner.GetQuizSectionsByAlbumIdAsync(albumId);
+
+    public Task<QuizQuestion[]> GetQuizQuestionsBySectionIdsAsync(IEnumerable<Guid> sectionIds) =>
+        inner.GetQuizQuestionsBySectionIdsAsync(sectionIds);
 
     private TimeSpan DefaultExpiry() => TimeSpan.FromMinutes(options.DefaultExpirationMinutes);
 }

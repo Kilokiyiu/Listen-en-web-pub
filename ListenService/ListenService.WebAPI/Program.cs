@@ -67,7 +67,7 @@ app.MapControllers();
 app.MapGet("/health", () => Results.Ok(new { service = "listen-service", status = "ok" }));
 app.MapGet("/api/listen/health", () => Results.Ok(new { service = "listen-service", status = "ok" }));
 
-// 自动执行 EF Core 数据库迁移
+// 自动执行 EF Core 数据库迁移；Development 下播种联调卷，非 Development 隐藏联调卷
 using (var scope = app.Services.CreateScope())
 {
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
@@ -82,6 +82,16 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "ListenService database migration failed.");
         throw;
     }
+}
+
+try
+{
+    await ListenMockQuizSeeder.SeedAsync(app.Services, app.Logger, app.Environment.IsDevelopment());
+}
+catch (Exception ex)
+{
+    app.Logger.LogError(ex, "ListenService dev mock quiz seed failed.");
+    throw;
 }
 
 app.Run();

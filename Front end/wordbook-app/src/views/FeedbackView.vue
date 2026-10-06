@@ -1,6 +1,6 @@
 <template>
   <div class="feedback-page">
-    <p class="intro">遇到问题或有改进建议？告诉我们，我们会认真阅读每一条反馈。</p>
+    <p class="intro">功能建议或问题都可以写在这里。</p>
 
     <form class="form" @submit.prevent="handleSubmit">
       <label>
@@ -36,10 +36,6 @@
         {{ loading ? '提交中...' : '提交反馈' }}
       </button>
     </form>
-
-    <p class="tip">
-      提交后我们会将反馈发送至管理员邮箱。若填写了联系邮箱，我们会在必要时与你取得联系。
-    </p>
   </div>
 </template>
 
@@ -131,7 +127,7 @@ label span {
 }
 
 label em {
-  color: #f56c6c;
+  color: var(--le-danger);
   font-style: normal;
 }
 
@@ -161,7 +157,7 @@ textarea {
 .btn-primary {
   margin-top: 4px;
   padding: 14px;
-  background: var(--primary);
+  background: var(--le-gradient);
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -171,13 +167,5 @@ textarea {
 
 .btn-primary:disabled {
   opacity: 0.6;
-}
-
-.tip {
-  margin: 16px 0 0;
-  font-size: 12px;
-  color: var(--text-muted);
-  line-height: 1.55;
-  text-align: center;
 }
 </style>

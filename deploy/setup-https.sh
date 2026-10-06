@@ -4,9 +4,8 @@
 
 set -e
 
-# 修改为你自己的域名与邮箱
-DOMAIN="${DOMAIN:-your-domain.com}"
-EMAIL="${EMAIL:-your-email@example.com}"
+DOMAIN="your-domain.com"
+EMAIL="your-email@example.com"  # 修改为你的邮箱
 DEPLOY_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "========================================"

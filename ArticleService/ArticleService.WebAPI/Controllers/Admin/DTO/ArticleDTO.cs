@@ -47,3 +47,9 @@ public class UpdateArticleRequest
     public string ChineseText { get; set; } = "";
     public string? ArticleUrl { get; set; }
 }
+
+public class UpdatePublicDateRequest
+{
+    public Guid Id { get; set; }
+    public DateTime PublicDate { get; set; }
+}

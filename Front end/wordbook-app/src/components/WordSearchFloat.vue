@@ -155,7 +155,8 @@ const POS_KEY = 'wordbook_search_float_pos'
 const BTN_SIZE = 52
 
 const route = useRoute()
-const router = useRouter()const pos = ref({ x: 0, y: 200 })
+const router = useRouter()
+const pos = ref({ x: 0, y: 200 })
 const isDragging = ref(false)
 const isRealDragging = ref(false)
 const dragOffset = ref({ x: 0, y: 0 })
@@ -296,7 +297,7 @@ const addToWordBook = async () => {
   try {
     await addWord({ word, definition, example })
     closeSearch()
-    promptGoReviewAfterAdd(router, word)
+    await promptGoReviewAfterAdd(router, word)
   } catch (e) {
     const msg = typeof e === 'string' ? e : e?.message || '添加失败'
     showToast(msg.includes('已存在') ? '该单词已在单词本中' : msg)
@@ -348,12 +349,12 @@ onUnmounted(() => {
   height: 52px;
   border: none;
   border-radius: 50%;
-  background: linear-gradient(135deg, #409eff 0%, #36cfc9 100%);
+  background: var(--le-gradient);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.4), 0 0 0 4px rgba(64, 158, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35), 0 0 0 4px rgba(37, 99, 235, 0.1);
   position: relative;
   padding: 0;
 }
@@ -363,7 +364,7 @@ onUnmounted(() => {
   position: absolute;
   inset: -4px;
   border-radius: 50%;
-  border: 2px solid rgba(64, 158, 255, 0.3);
+  border: 2px solid rgba(37, 99, 235, 0.28);
   animation: pulse 2s ease-in-out infinite;
   pointer-events: none;
 }
@@ -445,7 +446,7 @@ onUnmounted(() => {
   padding: 0 16px;
   border: none;
   border-radius: 24px;
-  background: linear-gradient(135deg, #409eff 0%, #36cfc9 100%);
+  background: var(--le-gradient);
   color: #fff;
   font-size: 14px;
   font-weight: 600;
@@ -494,7 +495,7 @@ onUnmounted(() => {
 .phonetic-label {
   font-size: 12px;
   color: #fff;
-  background: #409eff;
+  background: var(--le-primary);
   padding: 2px 6px;
   border-radius: 4px;
 }
@@ -506,8 +507,8 @@ onUnmounted(() => {
 
 .btn-play {
   border: none;
-  background: #ecf5ff;
-  color: #409eff;
+  background: var(--le-gradient-soft);
+  color: var(--le-primary);
   width: 28px;
   height: 28px;
   border-radius: 50%;
@@ -537,8 +538,8 @@ onUnmounted(() => {
   display: inline-block;
   padding: 4px 10px;
   border-radius: 6px;
-  background: #ecf5ff;
-  color: #409eff;
+  background: var(--le-gradient-soft);
+  color: var(--le-primary);
   font-size: 13px;
 }
 
@@ -548,13 +549,13 @@ onUnmounted(() => {
 }
 
 .tag-warn {
-  background: #fdf6ec;
-  color: #e6a23c;
+  background: rgba(217, 119, 6, 0.1);
+  color: var(--le-warning);
 }
 
 .tag-ok {
-  background: #f0f9eb;
-  color: #67c23a;
+  background: rgba(5, 150, 105, 0.1);
+  color: var(--le-success);
 }
 
 .sentence-item {

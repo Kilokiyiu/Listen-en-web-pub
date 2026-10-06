@@ -29,6 +29,12 @@ export const wordRequest = axios.create({
   timeout: 10000,
 })
 
+// 创建 KaoyanService 的 axios 实例（考研英语独立微服务）
+export const kaoyanRequest = axios.create({
+  baseURL: "/api/kaoyan",
+  timeout: 10000,
+})
+
 // 三个实例都添加 token 拦截器
 const addTokenInterceptor = (instance, serviceName) => {
   instance.interceptors.request.use(
@@ -72,6 +78,7 @@ addTokenInterceptor(identityRequest, 'IdentityService')
 addTokenInterceptor(listenRequest, 'ListenService')
 addTokenInterceptor(articleRequest, 'ArticleService')
 addTokenInterceptor(wordRequest, 'WordService')
+addTokenInterceptor(kaoyanRequest, 'KaoyanService')
 
 export default listenRequest
 export { articleRequest }

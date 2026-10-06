@@ -27,16 +27,33 @@ const showMobileNav = computed(() => route.name !== 'login')
 </script>
 
 <style>
-.le-route-enter-active,
+.le-route-enter-active {
+  transition: transform 0.55s cubic-bezier(0.22, 0.9, 0.3, 1), opacity 0.4s ease;
+  transform-origin: left center;
+  backface-visibility: hidden;
+}
 .le-route-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: transform 0.4s cubic-bezier(0.55, 0.05, 0.8, 0.4), opacity 0.32s ease;
+  transform-origin: left center;
+  backface-visibility: hidden;
 }
 .le-route-enter-from {
   opacity: 0;
-  transform: translateY(6px);
+  transform: rotateY(-68deg) translateX(-18px) scale(0.98);
 }
 .le-route-leave-to {
   opacity: 0;
-  transform: translateY(-4px);
+  transform: rotateY(48deg) translateX(10px) scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .le-route-enter-active,
+  .le-route-leave-active {
+    transition: opacity 0.2s ease;
+  }
+  .le-route-enter-from,
+  .le-route-leave-to {
+    transform: none;
+  }
 }
 </style>

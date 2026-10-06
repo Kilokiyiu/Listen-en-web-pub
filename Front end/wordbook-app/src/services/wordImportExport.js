@@ -1,7 +1,7 @@
 import { Capacitor } from '@capacitor/core'
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem'
 import { Share } from '@capacitor/share'
-import { getActiveWordbook } from './appSettings'
+import { getActiveWordbook, getCurrentWordBookId } from './appSettings'
 import { getAllWords, importWords } from './localWordStore'
 import { fetchAllCloudWords } from './wordSyncService'
 import { addUserWord } from '../api/word'
@@ -226,10 +226,12 @@ export async function importIntoActiveWordbook(words) {
       continue
     }
     try {
+      const wordBookId = await getCurrentWordBookId()
       await addUserWord({
         word: item.word,
         definition: item.definition || '',
         example: item.example || '',
+        ...(wordBookId ? { wordBookId } : {}),
       })
       keys.add(key)
       added += 1

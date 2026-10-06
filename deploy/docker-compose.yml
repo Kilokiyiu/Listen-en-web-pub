@@ -55,8 +55,8 @@ services:
       - RabbitMQ__HostName=rabbitmq
       - RabbitMQ__UserName=${RABBITMQ_USER:-guest}
       - RabbitMQ__Password=${RABBITMQ_PASSWORD:-guest}
-      - CorsOrigins__0=${CORS_ORIGIN_0:-https://your-domain.com}
-      - CorsOrigins__1=${CORS_ORIGIN_1:-https://www.your-domain.com}
+      - CorsOrigins__0=https://your-domain.com
+      - CorsOrigins__1=https://www.your-domain.com
       - CloudEmail__ApiUser=${SENDCLOUD_API_USER:-}
       - CloudEmail__ApiKey=${SENDCLOUD_API_KEY:-}
       - CloudEmail__From=${SENDCLOUD_FROM:-}
@@ -86,8 +86,8 @@ services:
       - RabbitMQ__HostName=rabbitmq
       - RabbitMQ__UserName=${RABBITMQ_USER:-guest}
       - RabbitMQ__Password=${RABBITMQ_PASSWORD:-guest}
-      - CorsOrigins__0=${CORS_ORIGIN_0:-https://your-domain.com}
-      - CorsOrigins__1=${CORS_ORIGIN_1:-https://www.your-domain.com}
+      - CorsOrigins__0=https://your-domain.com
+      - CorsOrigins__1=https://www.your-domain.com
     volumes:
       - ./audios:/app/wwwroot/audios  # 音频文件挂载（本地目录 deploy/audios/）
       - ./papers:/app/wwwroot/papers  # 试卷/答案 PDF
@@ -106,8 +106,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - DatabaseConnStr=Server=sqlserver;Database=Listen_En_Web_article;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True
       - JWT_KEY=${JWT_KEY}
-      - CorsOrigins__0=${CORS_ORIGIN_0:-https://your-domain.com}
-      - CorsOrigins__1=${CORS_ORIGIN_1:-https://www.your-domain.com}
+      - CorsOrigins__0=https://your-domain.com
+      - CorsOrigins__1=https://www.your-domain.com
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -123,9 +123,26 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - DatabaseConnStr=Server=sqlserver;Database=Listen_En_Web_word;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True
       - JWT_KEY=${JWT_KEY}
-      - CorsOrigins__0=${CORS_ORIGIN_0:-https://your-domain.com}
-      - CorsOrigins__1=${CORS_ORIGIN_1:-https://www.your-domain.com}
+      - CorsOrigins__0=https://your-domain.com
+      - CorsOrigins__1=https://www.your-domain.com
       - XxApi__ApiKey=${XXAPI_API_KEY:-}
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    restart: always
+
+  # KaoyanService 考研英语服务（独立微服务，开发中）
+  kaoyan-service:
+    build:
+      context: ..
+      dockerfile: deploy/KaoyanService.WebAPI/Dockerfile
+    container_name: listen_kaoyan
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DatabaseConnStr=Server=sqlserver;Database=Listen_En_Web_kaoyan;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True
+      - JWT_KEY=${JWT_KEY}
+      - CorsOrigins__0=https://your-domain.com
+      - CorsOrigins__1=https://www.your-domain.com
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -159,6 +176,7 @@ services:
       - listen-service
       - article-service
       - word-service
+      - kaoyan-service
     restart: always
 
 volumes:

@@ -81,17 +81,21 @@
     <div v-if="loading" class="loading">加载中...</div>
 
     <div v-else-if="wordList.length === 0" class="empty">
-      <p>{{ search ? '没有找到匹配的单词' : '还没有单词，点击右上角添加' }}</p>
+      <p>{{ search ? '没有找到匹配的单词' : '还没有单词' }}</p>
+      <router-link v-if="!search && !isLocal" to="/packs" class="empty-link">从词库领取</router-link>
     </div>
 
     <ul v-else class="word-list">
       <li v-for="word in wordList" :key="word.id" class="word-item">
         <div class="word-main">
-          <span class="word-text">{{ word.word }}</span>
-          <span class="status-tag" :class="getStatus(word).type">{{ getStatus(word).text }}</span>
+          <div class="word-title">
+            <span class="word-text">{{ word.word }}</span>
+            <span class="status-tag" :class="getStatus(word).type">{{ getStatus(word).text }}</span>
+          </div>
+          <button type="button" class="btn-delete" @click="onDelete(word)">删除</button>
         </div>
         <p class="definition">{{ word.definition || '暂无释义' }}</p>
-        <button class="btn-delete" @click="onDelete(word)">删除</button>
+        <p v-if="word.example" class="example">{{ word.example }}</p>
       </li>
     </ul>
 
@@ -121,6 +125,7 @@ import {
 } from '../services/appSettings'
 import { WORDBOOK_TYPES } from '../config'
 import { getReviewStatus } from '../utils/sm2'
+import { confirmDialog, promptDialog } from '../utils/dialog'
 import { showToast } from '../utils/toast'
 
 const router = useRouter()
@@ -190,7 +195,7 @@ const onBookChange = async (id) => {
 }
 
 const openCreateBook = async () => {
-  const name = prompt('新建单词本名称')?.trim()
+  const name = await promptDialog('新建单词本', { title: '新建', confirmText: '创建' })
   if (!name) return
   try {
     const book = await createBook({ name })
@@ -206,7 +211,11 @@ const openCreateBook = async () => {
 
 const openRenameBook = async () => {
   if (!currentBook.value) return
-  const name = prompt('重命名单词本', currentBook.value.name)?.trim()
+  const name = await promptDialog('重命名单词本', {
+    title: '重命名',
+    value: currentBook.value.name,
+    confirmText: '保存',
+  })
   if (!name || name === currentBook.value.name) return
   try {
     await renameBook(currentBook.value.id, {
@@ -222,13 +231,12 @@ const openRenameBook = async () => {
 
 const handleDeleteBook = async () => {
   if (!currentBook.value || currentBook.value.isDefault) return
-  if (
-    !confirm(
-      `确定删除「${currentBook.value.name}」吗？其中的单词会移到默认单词本。`
-    )
-  ) {
-    return
-  }
+  const ok = await confirmDialog(`删除「${currentBook.value.name}」？单词会移到默认本。`, {
+    title: '删除单词本',
+    confirmText: '删除',
+    danger: true,
+  })
+  if (!ok) return
   try {
     await removeBook(currentBook.value.id)
     showToast('已删除')
@@ -273,7 +281,12 @@ const changePage = (p) => {
 }
 
 const onDelete = async (word) => {
-  if (!confirm(`确定删除「${word.word}」？`)) return
+  const ok = await confirmDialog(`删除「${word.word}」？`, {
+    title: '删除单词',
+    confirmText: '删除',
+    danger: true,
+  })
+  if (!ok) return
   try {
     await deleteWord(word.id)
     showToast('已删除')
@@ -332,7 +345,7 @@ onMounted(async () => {
 }
 
 .switch-btn.active {
-  background: var(--primary);
+  background: var(--le-gradient);
   color: #fff;
   font-weight: 500;
 }
@@ -344,18 +357,18 @@ onMounted(async () => {
 }
 
 .mode-badge.local {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: rgba(5, 150, 105, 0.12);
+  color: var(--le-success);
 }
 
 .mode-badge.server {
-  background: #e3f2fd;
-  color: #1565c0;
+  background: var(--le-gradient-soft);
+  color: var(--le-primary);
 }
 
 .btn-add {
   padding: 8px 14px;
-  background: var(--primary);
+  background: var(--le-gradient);
   color: #fff;
   border-radius: 8px;
   text-decoration: none;
@@ -370,8 +383,9 @@ onMounted(async () => {
   gap: 8px;
   margin-bottom: 14px;
   padding: 12px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+  background-color: rgba(255, 255, 255, 0.92);
+  background-image: var(--le-paper-grain);
+  border: 1px solid var(--le-border);
   border-radius: 12px;
 }
 
@@ -405,8 +419,8 @@ onMounted(async () => {
 }
 
 .book-btn.danger {
-  color: #f56c6c;
-  border-color: #fbc4c4;
+  color: var(--le-danger);
+  border-color: rgba(220, 38, 38, 0.28);
 }
 
 .stats {
@@ -417,11 +431,12 @@ onMounted(async () => {
 }
 
 .stat-item {
-  background: var(--bg-card);
+  background-color: rgba(255, 255, 255, 0.92);
+  background-image: var(--le-paper-grain);
   border-radius: 12px;
   padding: 12px 8px;
   text-align: center;
-  border: 1px solid var(--border);
+  border: 1px solid var(--le-border);
 }
 
 .stat-value {
@@ -429,8 +444,8 @@ onMounted(async () => {
   font-weight: 600;
 }
 
-.stat-item.due .stat-value { color: #e6a23c; }
-.stat-item.mastered .stat-value { color: #67c23a; }
+.stat-item.due .stat-value { color: var(--le-warning); }
+.stat-item.mastered .stat-value { color: var(--le-success); }
 
 .stat-label {
   font-size: 11px;
@@ -464,12 +479,12 @@ onMounted(async () => {
 }
 
 .btn-review {
-  background: #67c23a;
+  background: var(--le-success);
   color: #fff;
 }
 
 .btn-free {
-  background: #e6a23c;
+  background: var(--le-warning);
   color: #fff;
 }
 
@@ -486,52 +501,79 @@ onMounted(async () => {
 }
 
 .word-item {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+  background-color: rgba(255, 255, 255, 0.92);
+  background-image: var(--le-paper-grain);
+  border: 1px solid var(--le-border);
   border-radius: 12px;
   padding: 14px;
   margin-bottom: 10px;
-  position: relative;
 }
 
 .word-main {
   display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.word-title {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin-bottom: 6px;
+  min-width: 0;
+  flex: 1;
 }
 
 .word-text {
   font-size: 18px;
   font-weight: 600;
+  word-break: break-word;
 }
 
 .status-tag {
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 10px;
+  flex-shrink: 0;
 }
 
-.status-tag.new { background: #f0f0f0; color: #666; }
-.status-tag.due { background: #fdf6ec; color: #e6a23c; }
-.status-tag.mastered { background: #f0f9eb; color: #67c23a; }
-.status-tag.learning { background: #ecf5ff; color: #409eff; }
+.status-tag.new { background: var(--le-bg-muted); color: var(--le-text-muted); }
+.status-tag.due { background: rgba(217, 119, 6, 0.1); color: var(--le-warning); }
+.status-tag.mastered { background: rgba(5, 150, 105, 0.1); color: var(--le-success); }
+.status-tag.learning { background: var(--le-gradient-soft); color: var(--le-primary); }
 
 .definition {
   font-size: 14px;
   color: var(--text-secondary);
   margin: 0;
-  padding-right: 48px;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.example {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  word-break: break-word;
 }
 
 .btn-delete {
-  position: absolute;
-  right: 14px;
-  top: 14px;
+  flex-shrink: 0;
   background: none;
   border: none;
-  color: #f56c6c;
+  color: var(--le-danger);
   font-size: 13px;
+  padding: 2px 0 0;
+}
+
+.empty-link {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--le-primary);
+  font-size: 14px;
 }
 
 .pagination {

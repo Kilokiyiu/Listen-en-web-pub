@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using ArticleService.Domain;
 using ArticleService.Domain.Entity;
-using ArticleService.Infrastructure;
 using ArticleService.WebAPI.Controllers.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,8 +21,6 @@ public class ArticleController : ControllerBase
     /// <summary>
     /// 获取对应日期的文章
     /// </summary>
-    /// <param name="date"></param>
-    /// <returns></returns>
     [HttpGet]
     [AllowAnonymous]
     public async Task<ActionResult<DailyArticle>> GetArticleByDate(DateTime date)
@@ -62,8 +59,6 @@ public class ArticleController : ControllerBase
     /// <summary>
     /// 将文章标记为已读
     /// </summary>
-    /// <param name="request"></param>
-    /// <returns></returns>
     [HttpPost]
     [Authorize]
     public async Task<ActionResult> MarkIsRead([FromBody] ArticleRequest request)
@@ -76,8 +71,6 @@ public class ArticleController : ControllerBase
     /// <summary>
     /// 收藏对应文章
     /// </summary>
-    /// <param name="request"></param>
-    /// <returns></returns>
     [HttpPost]
     [Authorize]
     public async Task<ActionResult> ToggleFavoriteAsync([FromBody] ArticleRequest request)
@@ -87,13 +80,9 @@ public class ArticleController : ControllerBase
         return Ok();
     }
 
-
     /// <summary>
     /// 获取用户的阅读记录
     /// </summary>
-    /// <param name="page"></param>
-    /// <param name="pageSize"></param>
-    /// <returns></returns>
     [HttpGet]
     [Authorize]
     public async Task<ActionResult<ReadHistoryResponse[]>> GetReadHistoryAsync(int page = 1, int pageSize = 20)
@@ -110,10 +99,9 @@ public class ArticleController : ControllerBase
             IsFavorited = e.IsFavorited,
             CreatedAt = e.CreatedAt
         }).ToArray();
-        
+
         return Ok(dto);
     }
-
 
     private async Task<Guid> GetCurrentUserId()
     {

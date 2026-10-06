@@ -73,11 +73,22 @@ public class FeedbackController : ControllerBase
         var userName = User.FindFirstValue(ClaimTypes.Name) ?? string.Empty;
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
 
+        var source = request.Source?.Trim() ?? string.Empty;
+        if (source.Length > 200)
+        {
+            return BadRequest("来源信息过长");
+        }
+
         var subject = $"[ListenEase 反馈] {category}";
         var body = new StringBuilder();
         body.AppendLine("收到一条新的用户反馈：");
         body.AppendLine();
         body.AppendLine($"分类：{category}");
+        if (!string.IsNullOrEmpty(source))
+        {
+            body.AppendLine($"来源页面：{source}");
+        }
+
         if (!string.IsNullOrEmpty(name))
         {
             body.AppendLine($"称呼：{name}");
@@ -131,4 +142,6 @@ public class SubmitFeedbackRequest
     public string? Name { get; set; }
     public string? Email { get; set; }
     public string Message { get; set; } = string.Empty;
+    /// <summary>来源页面，如听力试卷标题</summary>
+    public string? Source { get; set; }
 }

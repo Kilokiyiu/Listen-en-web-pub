@@ -66,12 +66,13 @@ import { ElMessage } from 'element-plus'
 import {
   Headset,
   DataAnalysis,
-  Upload,
   FolderOpened,
   Document,
+  Reading,
   User,
   ArrowDown,
   SwitchButton,
+  Notebook,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -79,9 +80,10 @@ const router = useRouter()
 
 const menuItems = [
   { path: '/', title: '数据概览', icon: DataAnalysis },
-  { path: '/upload', title: '音频上传', icon: Upload },
-  { path: '/manage', title: '音频管理', icon: FolderOpened },
+  { path: '/listen', title: '听力内容', icon: FolderOpened },
+  { path: '/kaoyan', title: '考研内容', icon: Reading },
   { path: '/article', title: '每日一篇', icon: Document },
+  { path: '/word-packs', title: '官方词本', icon: Notebook },
   { path: '/users', title: '用户管理', icon: User },
 ]
 

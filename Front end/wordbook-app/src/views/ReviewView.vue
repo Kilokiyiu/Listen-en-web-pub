@@ -239,7 +239,7 @@ onMounted(load)
   border-radius: 16px;
   padding: 24px;
   transition: transform 0.5s;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--le-shadow);
 }
 
 .card-face.back {
@@ -298,9 +298,9 @@ onMounted(load)
   color: #fff;
 }
 
-.rate.forget { background: #f56c6c; }
-.rate.fuzzy { background: #e6a23c; }
-.rate.remember { background: #67c23a; }
+.rate.forget { background: var(--le-danger); }
+.rate.fuzzy { background: var(--le-warning); }
+.rate.remember { background: var(--le-success); }
 
 .btn-skip {
   background: none;
@@ -340,7 +340,7 @@ onMounted(load)
 }
 
 .btn-primary {
-  background: var(--primary);
+  background: var(--le-gradient);
   color: #fff;
 }
 

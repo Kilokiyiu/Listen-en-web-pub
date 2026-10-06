@@ -38,7 +38,7 @@ public class StudyService : IStudyService
 {
     private static readonly HashSet<string> AllowedTypes = new(StringComparer.OrdinalIgnoreCase)
     {
-        "listen", "article",
+        "listen", "article", "listen_quiz", "kaoyan",
     };
 
     private readonly IdentityDbContext db;

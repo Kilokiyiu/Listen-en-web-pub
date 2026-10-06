@@ -77,7 +77,9 @@
         <el-radio-group v-model="filterType" size="small" class="filter-group" @change="onFilterChange">
           <el-radio-button label="all">全部</el-radio-button>
           <el-radio-button label="listen">听力</el-radio-button>
+          <el-radio-button label="listen_quiz">听力答题</el-radio-button>
           <el-radio-button label="article">阅读</el-radio-button>
+          <el-radio-button label="kaoyan">考研</el-radio-button>
           <el-radio-button label="CET-4">CET-4</el-radio-button>
           <el-radio-button label="CET-6">CET-6</el-radio-button>
         </el-radio-group>
@@ -174,7 +176,7 @@ const loadSummary = async () => {
 
 const buildListParams = () => {
   const params = { page: currentPage.value, pageSize: pageSize.value }
-  if (filterType.value === 'listen' || filterType.value === 'article') {
+  if (['listen', 'listen_quiz', 'article', 'kaoyan'].includes(filterType.value)) {
     params.activityType = filterType.value
   } else if (filterType.value === 'CET-4' || filterType.value === 'CET-6') {
     params.category = filterType.value
@@ -208,12 +210,16 @@ const handlePageChange = (page) => {
 }
 
 const tagLabel = (item) => {
+  if (item.activityType === 'kaoyan') return item.category || '考研'
+  if (item.activityType === 'listen_quiz') return '听力答题'
   if (item.category && item.category !== 'other' && item.category !== 'daily') return item.category
   return item.activityType === 'article' ? '阅读' : '听力'
 }
 
 const tagClass = (item) => {
   const cat = (item.category || '').toUpperCase()
+  if (item.activityType === 'kaoyan') return 'tag-kaoyan'
+  if (item.activityType === 'listen_quiz') return 'tag-quiz'
   if (cat.includes('4')) return 'tag-cet4'
   if (cat.includes('6')) return 'tag-cet6'
   if (item.activityType === 'article') return 'tag-article'
@@ -241,6 +247,10 @@ const formatDuration = (seconds) => {
 const openRecord = (item) => {
   if (item.activityType === 'article') {
     router.push({ name: 'dailyArticle' })
+    return
+  }
+  if (item.activityType === 'kaoyan') {
+    router.push({ name: 'kaoyanPaper', query: { paperId: item.contentId } })
     return
   }
   router.push({ name: 'examDetail', query: { albumId: item.contentId } })
@@ -519,6 +529,16 @@ onMounted(async () => {
 .record-tag.tag-article {
   background: rgba(103, 194, 58, 0.12);
   color: #67c23a;
+}
+
+.record-tag.tag-quiz {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+}
+
+.record-tag.tag-kaoyan {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
 }
 
 .record-meta {

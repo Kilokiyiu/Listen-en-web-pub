@@ -38,6 +38,17 @@ public class ListenRepo : IListenRepo
             .OrderByDescending(a => a.Name.Chinese).ToArrayAsync();
     }
 
+    public async Task<(Guid Id, DateTime CreationTime)[]> GetVisibleAlbumSitemapItemsAsync()
+    {
+        var items = await dbContext.Albums
+            .AsNoTracking()
+            .Where(a => a.IsVisible)
+            .OrderByDescending(a => a.CreationTime)
+            .Select(a => new { a.Id, a.CreationTime })
+            .ToListAsync();
+        return items.Select(a => (a.Id, a.CreationTime)).ToArray();
+    }
+
     public Task<Album> GetAlbumByIdAsync(Guid albumId)
     {
         return dbContext.Albums.FindAsync(albumId).AsTask();
@@ -66,5 +77,26 @@ public class ListenRepo : IListenRepo
     public Task<Episode> GetEpisodeByIdAsync(Guid episodeId)
     {
         return dbContext.Episodes.FindAsync(episodeId).AsTask();
+    }
+
+    public Task<QuizSection[]> GetQuizSectionsByAlbumIdAsync(Guid albumId)
+    {
+        return dbContext.QuizSections
+            .AsNoTracking()
+            .Where(s => s.AlbumId == albumId && s.IsVisible)
+            .OrderBy(s => s.GroupName)
+            .ThenBy(s => s.SequenceNumber)
+            .ToArrayAsync();
+    }
+
+    public Task<QuizQuestion[]> GetQuizQuestionsBySectionIdsAsync(IEnumerable<Guid> sectionIds)
+    {
+        var ids = sectionIds.ToArray();
+        return dbContext.QuizQuestions
+            .AsNoTracking()
+            .Where(q => ids.Contains(q.SectionId) && q.IsVisible)
+            .OrderBy(q => q.SequenceNumber)
+            .ThenBy(q => q.Number)
+            .ToArrayAsync();
     }
 }

@@ -69,7 +69,7 @@ public class ArticleAdminController : ControllerBase
             request.ChineseText,
             request.ArticleUrl
         );
-        article.Publish(); // 默认发布
+        article.Publish();
         var result = await repo.AddArticleAsync(article);
         return Ok(ToDto(result));
     }
@@ -95,7 +95,7 @@ public class ArticleAdminController : ControllerBase
                 req.ChineseText,
                 req.ArticleUrl
             );
-            article.Publish(); // 默认发布
+            article.Publish();
             return article;
         }).ToList();
 
@@ -104,26 +104,49 @@ public class ArticleAdminController : ControllerBase
     }
 
     /// <summary>
-    /// 更新文章内容
+    /// 更新文章公开日期
     /// </summary>
     [HttpPost]
-    public async Task<ActionResult> UpdateArticle([FromBody] UpdateArticleRequest request)
+    public async Task<ActionResult> UpdatePublicDate([FromBody] UpdatePublicDateRequest request)
     {
-        // 通过反射或查找方式更新... 由于实体没有公开 Update 方法，需要重新设计
-        // 这里我们删除旧文章，创建新文章（简单粗暴的方式）
-        var allArticles = await repo.GetAllArticlesAsync();
-        var article = allArticles.FirstOrDefault(a => a.Id == request.Id);
+        var article = await dbContext.DailyArticles.FindAsync(request.Id);
         if (article == null)
         {
             return NotFound("文章不存在");
         }
 
-        // 先删除
-        await repo.DeleteArticleAsync(request.Id);
+        var newDate = request.PublicDate.Date;
+        if (article.PublicDate.Date != newDate)
+        {
+            var conflict = await dbContext.DailyArticles
+                .AnyAsync(a => a.Id != request.Id && a.PublicDate == newDate);
+            if (conflict)
+            {
+                return BadRequest("该公开日期已有其他文章，请选择其他日期");
+            }
 
-        // 再创建（保持原来的 Date 和 Title，但更新其他内容）
-        // 注意：这里我们用了一个偷懒的方式，实际生产环境应该直接更新字段
-        return Ok(new { message = "文章已更新" });
+            article.SetPublicDate(newDate);
+            await dbContext.SaveChangesAsync();
+        }
+
+        return Ok(new { message = "公开日期已更新", data = ToDto(article) });
+    }
+
+    /// <summary>
+    /// 更新文章内容
+    /// </summary>
+    [HttpPost]
+    public async Task<ActionResult> UpdateArticle([FromBody] UpdateArticleRequest request)
+    {
+        var article = await dbContext.DailyArticles.FindAsync(request.Id);
+        if (article == null)
+        {
+            return NotFound("文章不存在");
+        }
+
+        article.Update(request.EnglishText, request.ChineseText, request.ArticleUrl);
+        await repo.UpdateArticleAsync(article);
+        return Ok(new { message = "文章已更新", data = ToDto(article) });
     }
 
     /// <summary>

@@ -14,7 +14,7 @@ export function getVersionManifestUrl() {
 
 export async function getLocalAppInfo() {
   if (!Capacitor.isNativePlatform()) {
-    return { version: '0.8.9.2', build: '11', id: 'web' }
+    return { version: '0.9.10', build: '12', id: 'web' }
   }
   const info = await App.getInfo()
   return {

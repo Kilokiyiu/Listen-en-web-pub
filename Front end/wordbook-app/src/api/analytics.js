@@ -2,7 +2,7 @@ import { Preferences } from '@capacitor/preferences'
 import { API_BASE } from '../config'
 import { getAuth } from '../services/appSettings'
 
-const VISITOR_KEY = 'app_visitor_id'
+const VISITOR_KEY = 'listenease_visitor_id'
 const ALLOWED = new Set([
   'add_word',
   'enter_review',

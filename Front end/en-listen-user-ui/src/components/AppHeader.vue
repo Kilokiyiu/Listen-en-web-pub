@@ -58,13 +58,12 @@
       class="announcement-dialog"
       @close="handleCloseAnnouncement"
     >
-<div class="admin-info-card">
-          <div class="admin-info-title">管理员信息</div>
-          <div class="admin-info-row"><span class="label">管理员</span><span>Admin</span></div>
-          <div class="admin-info-row"><span class="label">邮箱</span><span>contact@your-domain.com</span></div>
-          <div class="admin-info-row"><span class="label">GitHub</span><a href="https://github.com/your-github-org/your-repo" target="_blank" rel="noopener">github.com/your-github-org/your-repo</a></div>
-          <div class="admin-info-row"><span class="label">状态</span><span class="status-badge">正常运行</span></div>
-        </div>
+      <div class="admin-info-card">
+        <div class="admin-info-title">管理员信息</div>
+        <div class="admin-info-row"><span class="label">管理员</span><span>Kilo</span></div>
+        <div class="admin-info-row"><span class="label">GitHub</span><a href="https://github.com/Kilokiyiu" target="_blank" rel="noopener">github.com/Kilokiyiu</a></div>
+        <div class="admin-info-row"><span class="label">状态</span><span class="status-badge">正常运行</span></div>
+      </div>
       <h3 class="ann-section-title">最新公告</h3>
       <div class="announcement-list">
         <article v-for="(item, i) in announcements" :key="i" class="announcement-item">
@@ -92,9 +91,11 @@ const route = useRoute()
 const navLinks = [
   { path: '/', label: '首页', names: ['home'] },
   { path: '/daily', label: '每日阅读', names: ['dailyArticle'] },
+  { path: '/kaoyan', label: '考研英语', names: ['kaoyan', 'kaoyanPaper'] },
   { path: '/bbc-news', label: 'BBC', names: ['bbcNews'] },
   { path: '/word-roots', label: '词根', names: ['wordRoots', 'wordRootDetail'] },
   { path: '/my-words', label: '单词本', names: ['myWords', 'wordReview'] },
+  { path: '/about', label: '关于', names: ['about'] },
 ]
 
 const isNavActive = (link) => {
@@ -107,7 +108,7 @@ const noShowToday = ref(false)
 const announcements = [
   { date: '2026-09-22', title: '学习记录上线', content: '听力标记完成与每日短文已读会记入学习记录；个人中心展示真实进度。' },
   { date: '2026-05-13', title: '平台上线', content: 'ListenEase 正式上线！提供四六级真题听力、BBC 外刊、单词复习与每日一句。' },
-  { date: '2026-05-13', title: '更新计划', content: '更多学习功能开发中，欢迎通过邮箱(contact@your-domain.com)反馈建议。' },
+  { date: '2026-05-13', title: '更新计划', content: '更多学习功能开发中，欢迎通过 GitHub 或站内反馈提出建议。' },
 ]
 
 const isLoggedIn = ref(false)
@@ -149,9 +150,9 @@ const handleCommand = (cmd) => {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(12, 18, 34, 0.92);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
   border-bottom: 1px solid var(--le-border);
 }
 

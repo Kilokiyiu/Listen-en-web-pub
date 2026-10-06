@@ -98,3 +98,49 @@ public class WordReviewLogConfig : IEntityTypeConfiguration<WordReviewLog>
         builder.HasIndex(x => new { x.UserId, x.WordId, x.CreationTime });
     }
 }
+
+public class WordPackConfig : IEntityTypeConfiguration<WordPack>
+{
+    public void Configure(EntityTypeBuilder<WordPack> builder)
+    {
+        builder.ToTable("T_WordPack");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Code).HasMaxLength(50).IsRequired();
+        builder.Property(x => x.Name).HasMaxLength(100).IsRequired();
+        builder.Property(x => x.Description).HasMaxLength(500);
+        builder.Property(x => x.Category).HasMaxLength(30).IsRequired();
+        builder.HasIndex(x => x.Code).IsUnique();
+        builder.HasIndex(x => new { x.IsPublished, x.SortOrder });
+        builder.HasMany<WordPackEntry>()
+            .WithOne(x => x.WordPack!)
+            .HasForeignKey(x => x.WordPackId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Ignore(x => x.Entries);
+    }
+}
+
+public class WordPackEntryConfig : IEntityTypeConfiguration<WordPackEntry>
+{
+    public void Configure(EntityTypeBuilder<WordPackEntry> builder)
+    {
+        builder.ToTable("T_WordPackEntry");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Word).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.Phonetic).HasMaxLength(100);
+        builder.Property(x => x.Definition).HasMaxLength(1000);
+        builder.Property(x => x.Example).HasMaxLength(2000);
+        builder.HasIndex(x => new { x.WordPackId, x.Word });
+        builder.HasIndex(x => new { x.WordPackId, x.Rank });
+    }
+}
+
+public class UserWordPackClaimConfig : IEntityTypeConfiguration<UserWordPackClaim>
+{
+    public void Configure(EntityTypeBuilder<UserWordPackClaim> builder)
+    {
+        builder.ToTable("T_UserWordPackClaim");
+        builder.HasKey(x => x.Id);
+        builder.HasIndex(x => new { x.UserId, x.WordPackId }).IsUnique();
+        builder.HasIndex(x => x.UserWordBookId);
+    }
+}

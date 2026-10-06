@@ -74,6 +74,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import PageShell from '../components/PageShell.vue'
 import { getAlbumsByCategoryId, getCategories } from '../api/Listen.js'
+import { listCategoryMeta } from '../utils/categoryMeta.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -89,12 +90,7 @@ const categoriesLoading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(12)
 
-const categoryMeta = {
-  cet6: { title: '六级听力真题', label: 'CET-6' },
-  cet4: { title: '四级听力真题', label: 'CET-4' },
-  ielts: { title: '雅思听力真题', label: 'IELTS' },
-  toefl: { title: '托福听力真题', label: 'TOEFL' },
-}
+const categoryMeta = listCategoryMeta
 
 const examList = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value

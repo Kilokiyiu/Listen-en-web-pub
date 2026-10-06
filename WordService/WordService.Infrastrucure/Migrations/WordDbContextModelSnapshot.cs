@@ -109,6 +109,40 @@ namespace WordService.Infrastrucure.Migrations
                     b.ToTable("T_UserWordBook", (string)null);
                 });
 
+            modelBuilder.Entity("WordService.Domain.Entity.UserWordPackClaim", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ClaimedCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastSyncAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserWordBookId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("WordPackId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserWordBookId");
+
+                    b.HasIndex("UserId", "WordPackId")
+                        .IsUnique();
+
+                    b.ToTable("T_UserWordPackClaim", (string)null);
+                });
+
             modelBuilder.Entity("WordService.Domain.Entity.UserWordRootProgress", b =>
                 {
                     b.Property<Guid>("Id")
@@ -138,6 +172,94 @@ namespace WordService.Infrastrucure.Migrations
                         .IsUnique();
 
                     b.ToTable("T_UserWordRootProgress", (string)null);
+                });
+
+            modelBuilder.Entity("WordService.Domain.Entity.WordPack", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("IsPublished", "SortOrder");
+
+                    b.ToTable("T_WordPack", (string)null);
+                });
+
+            modelBuilder.Entity("WordService.Domain.Entity.WordPackEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Definition")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Example")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Phonetic")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Rank")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Word")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid>("WordPackId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WordPackId", "Rank");
+
+                    b.HasIndex("WordPackId", "Word");
+
+                    b.ToTable("T_WordPackEntry", (string)null);
                 });
 
             modelBuilder.Entity("WordService.Domain.Entity.WordReviewLog", b =>
@@ -298,6 +420,17 @@ namespace WordService.Infrastrucure.Migrations
                         .IsRequired();
 
                     b.Navigation("WordRoot");
+                });
+
+            modelBuilder.Entity("WordService.Domain.Entity.WordPackEntry", b =>
+                {
+                    b.HasOne("WordService.Domain.Entity.WordPack", "WordPack")
+                        .WithMany()
+                        .HasForeignKey("WordPackId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("WordPack");
                 });
 
             modelBuilder.Entity("WordService.Domain.Entity.WordRootExample", b =>

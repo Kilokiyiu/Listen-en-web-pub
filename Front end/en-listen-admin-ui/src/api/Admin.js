@@ -1,6 +1,6 @@
 import { identityRequest } from './Request'
 import listenRequest from './Request'
-import { articleRequest, wordRequest } from './Request'
+import { articleRequest, wordRequest, kaoyanRequest } from './Request'
 
 // ========== IdentityService 登录相关 ==========
 export const loginByUserName = (userName, password) =>
@@ -76,6 +76,47 @@ export const toggleEpisodeVisibility = (episodeId) =>
 export const deleteEpisode = (episodeId) =>
   listenRequest.post('/Admin/DeleteEpisode', { episodeId })
 
+export const getQuizSections = (albumId) =>
+  listenRequest.get('/Admin/GetQuizSections', { params: { albumId } })
+
+export const saveQuizSections = (albumId, sections) =>
+  listenRequest.post('/Admin/SaveQuizSections', { albumId, sections })
+
+export const moveQuizSectionGroup = (sectionId, groupName) =>
+  listenRequest.post('/Admin/MoveQuizSectionGroup', { sectionId, groupName })
+
+export const uploadSectionAudio = (sectionId, file) => {
+  const formData = new FormData()
+  formData.append('sectionId', sectionId)
+  formData.append('file', file)
+  return listenRequest.post('/Admin/UploadSectionAudio', formData)
+}
+
+// ========== KaoyanService ==========
+export const getKaoyanModuleStatus = () =>
+  kaoyanRequest.get('/Kaoyan/GetModuleStatus')
+
+export const getKaoyanAllPapers = () =>
+  kaoyanRequest.get('/Admin/GetAllPapers')
+
+export const getKaoyanPaperFull = (paperId) =>
+  kaoyanRequest.get('/Admin/GetPaperFull', { params: { paperId } })
+
+export const toggleKaoyanPaperVisibility = (id) =>
+  kaoyanRequest.post('/Admin/TogglePaperVisibility', { id })
+
+export const createKaoyanPaper = (data) =>
+  kaoyanRequest.post('/Admin/CreatePaper', data)
+
+export const deleteKaoyanPaper = (id) =>
+  kaoyanRequest.post('/Admin/DeletePaper', { id })
+
+export const importKaoyanPaper = (data) =>
+  kaoyanRequest.post('/Admin/ImportPaper', data)
+
+export const saveKaoyanPaperContent = (data) =>
+  kaoyanRequest.post('/Admin/SavePaperContent', data)
+
 // ========== ArticleService 文章管理 ==========
 export const getAllArticles = () =>
   articleRequest.get('/Admin/GetAllArticles')
@@ -91,3 +132,32 @@ export const deleteArticle = (id) =>
 
 export const toggleArticlePublishStatus = (id) =>
   articleRequest.post('/Admin/TogglePublishStatus', { id })
+
+export const updateArticlePublicDate = (id, publicDate) =>
+  articleRequest.post('/Admin/UpdatePublicDate', { id, publicDate })
+
+// ========== WordService 官方词本 ==========
+export const getWordPacks = () => wordRequest.get('/Admin/WordPacks')
+
+export const createWordPack = (data) => wordRequest.post('/Admin/WordPacks', data)
+
+export const updateWordPack = (id, data) => wordRequest.put(`/Admin/WordPacks/${id}`, data)
+
+export const toggleWordPackPublish = (id) => wordRequest.post(`/Admin/WordPacks/${id}/publish`)
+
+export const deleteWordPack = (id) => wordRequest.delete(`/Admin/WordPacks/${id}`)
+
+export const getWordPackEntries = (id, params = {}) =>
+  wordRequest.get(`/Admin/WordPacks/${id}/entries`, { params })
+
+export const addWordPackEntry = (id, data) =>
+  wordRequest.post(`/Admin/WordPacks/${id}/entries`, data)
+
+export const updateWordPackEntry = (packId, entryId, data) =>
+  wordRequest.put(`/Admin/WordPacks/${packId}/entries/${entryId}`, data)
+
+export const deleteWordPackEntry = (packId, entryId) =>
+  wordRequest.delete(`/Admin/WordPacks/${packId}/entries/${entryId}`)
+
+export const importWordPackEntries = (id, data) =>
+  wordRequest.post(`/Admin/WordPacks/${id}/entries/import`, data, { timeout: 180000 })

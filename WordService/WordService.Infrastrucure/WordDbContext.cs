@@ -12,6 +12,9 @@ public class WordDbContext : DbContext
     public DbSet<UserWord> UserWords { get; set; }
     public DbSet<UserWordBook> UserWordBooks { get; set; }
     public DbSet<WordReviewLog> WordReviewLogs { get; set; }
+    public DbSet<WordPack> WordPacks { get; set; }
+    public DbSet<WordPackEntry> WordPackEntries { get; set; }
+    public DbSet<UserWordPackClaim> UserWordPackClaims { get; set; }
 
     public WordDbContext(DbContextOptions<WordDbContext> options) : base(options)
     {

@@ -13,7 +13,7 @@
 
 请通过以下方式私下联系：
 - 📧 邮箱：[security@your-domain.com](mailto:security@your-domain.com)（公开后请替换为真实邮箱）
-- 或在 GitHub 上使用 [Security Advisories](https://github.com/owner/repo/security/advisories/new)
+- 或在 GitHub 上使用 [Security Advisories](https://github.com/Kilokiyiu/Listen-en-web-pub/security/advisories/new)
 
 我们会在 48 小时内确认收到，14 天内给出修复计划。
 
@@ -115,7 +115,7 @@ if (string.IsNullOrEmpty(jwtOptions.Key))
 - [ ] `CORS_ORIGIN_0/1` 已设置为真实域名
 - [ ] `nginx.conf` 中 `your-domain.com` 已替换
 - [ ] 启用 HTTPS 且 Let's Encrypt 证书正常续期
-- [ ] 默认管理员账号密码已修改
+- [ ] 默认管理员账号密码已修改（`CreateWorld` 初始密码见 README）
 - [ ] 数据库定期备份策略已就位
 - [ ] `.env` 文件**未**提交到仓库
 

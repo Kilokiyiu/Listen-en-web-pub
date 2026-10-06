@@ -19,22 +19,31 @@ const routes = [
         meta: { title: '数据概览' },
       },
       {
-        path: 'upload',
-        name: 'upload',
-        component: () => import('../views/UploadView.vue'),
-        meta: { title: '音频上传' },
+        path: 'listen',
+        name: 'listen',
+        component: () => import('../views/ListenContentView.vue'),
+        meta: { title: '听力内容' },
       },
-      {
-        path: 'manage',
-        name: 'manage',
-        component: () => import('../views/EpisodeManageView.vue'),
-        meta: { title: '音频管理' },
-      },
+      // 旧入口兼容
+      { path: 'upload', redirect: '/listen' },
+      { path: 'manage', redirect: '/listen' },
       {
         path: 'article',
         name: 'article',
         component: () => import('../views/ArticleManageView.vue'),
         meta: { title: '每日一篇' },
+      },
+      {
+        path: 'word-packs',
+        name: 'wordPacks',
+        component: () => import('../views/WordPackManageView.vue'),
+        meta: { title: '官方词本' },
+      },
+      {
+        path: 'kaoyan',
+        name: 'kaoyan',
+        component: () => import('../views/KaoyanManageView.vue'),
+        meta: { title: '考研内容' },
       },
       {
         path: 'users',

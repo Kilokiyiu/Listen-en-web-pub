@@ -1,4 +1,25 @@
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /downloads/
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /downloads/
+
+User-agent: msnbot
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /downloads/
+
+User-agent: Baiduspider
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /downloads/
 
 Sitemap: https://your-domain.com/sitemap.xml

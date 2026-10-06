@@ -433,14 +433,14 @@ onUnmounted(() => {
 }
 
 .search-input :deep(.el-input__wrapper) {
-  background: var(--le-bg-elev) !important;
-  box-shadow: 0 0 0 1px var(--border-glass) inset, 0 4px 16px rgba(0,0,0,0.25) !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 1px var(--border-glass) inset, var(--le-shadow-sm) !important;
   border-radius: 28px;
   padding: 4px 8px 4px 20px;
 }
 
 .search-input :deep(.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px var(--le-border-strong) inset, 0 6px 20px rgba(0,0,0,0.3) !important;
+  box-shadow: 0 0 0 1px var(--le-border-strong) inset, var(--le-shadow) !important;
 }
 
 .search-input :deep(.el-input__wrapper.is-focus) {

@@ -7,41 +7,31 @@ public interface IArticleRepo
     /// <summary>
     /// 获取对应日期的短文
     /// </summary>
-    /// <param name="date"></param>
-    /// <returns></returns>
     Task<DailyArticle?> GetByDateAsync(DateTime date);
-    
+
     /// <summary>
     /// 获取所有已经发布的短文
     /// </summary>
-    /// <param name="page"></param>
-    /// <param name="pageSize"></param>
-    /// <returns></returns>
     Task<DailyArticle[]> GetPublishedArticlesAsync(int page, int pageSize);
-    
+
+    /// <summary>
+    /// 站点地图：已发布短文（日期 + 创建时间）
+    /// </summary>
+    Task<(DateTime PublicDate, DateTime CreationTime)[]> GetPublishedSitemapItemsAsync();
+
     /// <summary>
     /// 标记为已读
     /// </summary>
-    /// <param name="userId"></param>
-    /// <param name="articleId"></param>
-    /// <returns></returns>
     Task MarkIsReadAsync(Guid userId, Guid articleId);
-    
+
     /// <summary>
     /// 是否收藏短文
     /// </summary>
-    /// <param name="userId"></param>
-    /// <param name="articleId"></param>
-    /// <returns></returns>
     Task ToggleFavoriteAsync(Guid userId, Guid articleId);
 
     /// <summary>
     /// 获取用户的阅读历史
     /// </summary>
-    /// <param name="userId"></param>
-    /// <param name="page"></param>
-    /// <param name="pageSize"></param>
-    /// <returns></returns>
     Task<UserArticleStatus[]> GetReadHistoryAsync(Guid userId, int page, int pageSize);
 
     /// <summary>

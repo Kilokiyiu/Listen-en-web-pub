@@ -15,6 +15,12 @@ export const getRandomWords = (params) => wordApi.get('/user-words/random', { pa
 export const reviewWord = (id, quality) => wordApi.post(`/user-words/${id}/review`, { quality })
 export const getWordStats = (params) => wordApi.get('/user-words/stats', { params })
 
+export const getOfficialWordPacks = () => wordApi.get('/word-packs')
+export const getOfficialWordPackDetail = (id, preview = 20) =>
+  wordApi.get(`/word-packs/${id}`, { params: { preview } })
+export const claimOfficialWordPack = (id, data = {}) =>
+  wordApi.post(`/word-packs/${id}/claim`, data, { timeout: 120000 })
+
 /** 查询单词/短语/句子（后端 xxapi，与网站共用） */
 export const queryEnglishWord = (word) =>
   wordApi.get('/dictionary', { params: { word: String(word || '').trim() } })

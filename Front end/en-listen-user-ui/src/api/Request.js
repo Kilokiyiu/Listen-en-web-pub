@@ -21,6 +21,12 @@ export const articleRequest = axios.create({
     timeout: 10000,
 })
 
+//这是考研英语独立服务的入口
+export const kaoyanRequest = axios.create({
+    baseURL: "/api/kaoyan",
+    timeout: 10000,
+})
+
 //两个实例共用的token拦截器
 const addTokenInterceptor = (instance) => {
     instance.interceptors.request.use(
@@ -60,6 +66,7 @@ const addTokenInterceptor = (instance) => {
 
 addTokenInterceptor(request)
 addTokenInterceptor(articleRequest)
+addTokenInterceptor(kaoyanRequest)
 addTokenInterceptor(identityRequest)
 
 export default request;

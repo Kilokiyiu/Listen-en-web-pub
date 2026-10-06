@@ -42,6 +42,11 @@ public class DailyArticle : ICreationTime
     public void TogglePublishStatus() => IsPublished = !IsPublished;
 
     /// <summary>
+    /// 修改公开日期
+    /// </summary>
+    public void SetPublicDate(DateTime publicDate) => PublicDate = publicDate.Date;
+
+    /// <summary>
     /// 更新文章内容
     /// </summary>
     public void Update(string englishText, string chineseText, string? articleUrl = null)

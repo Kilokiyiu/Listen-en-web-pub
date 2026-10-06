@@ -21,6 +21,12 @@ const routes = [
     meta: { topBar: { title: '我的单词本', showBack: false } },
   },
   {
+    path: '/packs',
+    name: 'packs',
+    component: () => import('../views/PacksView.vue'),
+    meta: { topBar: { title: '官方词本', showBack: false } },
+  },
+  {
     path: '/add',
     name: 'add',
     component: () => import('../views/AddWordView.vue'),

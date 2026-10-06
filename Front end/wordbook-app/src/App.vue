@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import BottomNav from './components/BottomNav.vue'
 import PageTopBar from './components/PageTopBar.vue'
 import ToastHost from './components/ToastHost.vue'
+import AppDialog from './components/AppDialog.vue'
 import UpdatePromptDialog from './components/UpdatePromptDialog.vue'
 import WordSearchFloat from './components/WordSearchFloat.vue'
 import {
@@ -81,6 +82,7 @@ onMounted(async () => {
     <BottomNav v-if="showNav" />
     <WordSearchFloat v-if="showWordSearch" />
     <ToastHost />
+    <AppDialog />
     <UpdatePromptDialog
       :visible="updateVisible"
       :remote="updateRemote"
@@ -96,14 +98,15 @@ onMounted(async () => {
 <style scoped>
 .app {
   min-height: 100vh;
-  background: var(--bg);
+  background: var(--le-bg);
 }
 
 .app.has-nav :deep(.words-page),
 .app.has-nav :deep(.review-page),
 .app.has-nav :deep(.settings-page),
 .app.has-nav :deep(.add-page),
-.app.has-nav :deep(.feedback-page) {
-  padding-bottom: calc(var(--mobile-nav-h) + env(safe-area-inset-bottom, 0) + 16px);
+.app.has-nav :deep(.feedback-page),
+.app.has-nav :deep(.packs-page) {
+  padding-bottom: calc(var(--le-mobile-nav-h) + env(safe-area-inset-bottom, 0) + 16px);
 }
 </style>

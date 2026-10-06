@@ -86,6 +86,13 @@ export const getRandomWords = (params) => wordRequest.get('/user-words/random', 
 export const reviewWord = (id, quality) => wordRequest.post(`/user-words/${id}/review`, { quality })
 export const getWordStats = (params) => wordRequest.get('/user-words/stats', { params })
 
+// 官方词本
+export const getOfficialWordPacks = () => wordRequest.get('/word-packs')
+export const getOfficialWordPackDetail = (id, preview = 20) =>
+  wordRequest.get(`/word-packs/${id}`, { params: { preview } })
+export const claimOfficialWordPack = (id, data = {}) =>
+  wordRequest.post(`/word-packs/${id}/claim`, data, { timeout: 120000 })
+
 // 查询单词、短语或句子（xxapi 词典，句子自动翻译）
 export const queryEnglishWord = async (word) => {
     return wordRequest.get('/dictionary', { params: { word: word.trim() } })

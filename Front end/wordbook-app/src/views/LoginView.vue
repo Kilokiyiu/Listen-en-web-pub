@@ -4,7 +4,7 @@
       <div class="icon">📖</div>
       <h2>EaseWord</h2>
       <p class="brand-desc">
-        {{ isLogin ? '听易词 · 登录后可使用云端与本地单词本' : '听易词 · 注册账号，云端单词本多设备同步' }}
+        {{ isLogin ? '听易词 · 登录后同步云端单词本' : '听易词 · 注册账号' }}
       </p>
     </div>
 
@@ -60,7 +60,7 @@
     <template v-if="isLogin">
       <div class="divider"><span>或</span></div>
       <button type="button" class="btn-offline" :disabled="loading" @click="enterOffline">
-        离线模式 · 仅使用本地单词本
+        离线模式
       </button>
     </template>
   </div>
@@ -219,7 +219,7 @@ input {
 .btn-primary {
   margin-top: 8px;
   padding: 14px;
-  background: var(--primary);
+  background: var(--le-gradient);
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -241,7 +241,7 @@ input {
 .link-btn {
   background: none;
   border: none;
-  color: var(--primary);
+  color: var(--le-primary);
   font-size: 14px;
   padding: 0;
   font-weight: 500;

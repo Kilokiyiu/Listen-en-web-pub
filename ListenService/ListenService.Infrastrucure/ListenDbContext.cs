@@ -9,6 +9,8 @@ public class ListenDbContext : DbContext
     public DbSet<Category> Categories { get; private set; }
     public DbSet<Album> Albums { get; private set; }
     public DbSet<Episode> Episodes { get; private set; }
+    public DbSet<QuizSection> QuizSections { get; private set; }
+    public DbSet<QuizQuestion> QuizQuestions { get; private set; }
 
     public ListenDbContext(DbContextOptions<ListenDbContext> options) : base(options)
     {

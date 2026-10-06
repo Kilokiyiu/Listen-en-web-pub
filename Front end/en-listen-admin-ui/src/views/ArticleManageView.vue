@@ -111,8 +111,11 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="150" fixed="right">
+          <el-table-column label="操作" width="220" fixed="right">
             <template #default="{ row }">
+              <el-button type="primary" link size="small" @click="openEditDate(row)">
+                改日期
+              </el-button>
               <el-button type="primary" link size="small" @click="toggleStatus(row)">
                 {{ row.isPublished ? '取消发布' : '发布' }}
               </el-button>
@@ -126,19 +129,57 @@
         <el-empty v-if="articles.length === 0 && !loading" description="暂无文章，点击上方表单添加" />
       </div>
     </div>
+
+    <el-dialog
+      v-model="editDateVisible"
+      title="修改公开日期"
+      width="400px"
+      :close-on-click-modal="false"
+    >
+      <p v-if="editingArticle" class="edit-date-title">
+        {{ editingArticle.titleChinese || editingArticle.titleEnglish }}
+      </p>
+      <el-form label-position="top">
+        <el-form-item label="公开日期" required>
+          <el-date-picker
+            v-model="editPublicDate"
+            type="date"
+            placeholder="选择日期"
+            format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD"
+            style="width: 100%"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editDateVisible = false">取消</el-button>
+        <el-button type="primary" :loading="savingDate" @click="savePublicDate">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getAllArticles, batchAddArticles, deleteArticle, toggleArticlePublishStatus } from '../api/Admin'
+import {
+  getAllArticles,
+  batchAddArticles,
+  deleteArticle,
+  toggleArticlePublishStatus,
+  updateArticlePublicDate,
+} from '../api/Admin'
 import PageHeader from '../components/PageHeader.vue'
 
 const loading = ref(false)
 const submitting = ref(false)
 const articles = ref([])
 const formRefs = reactive({})
+
+const editDateVisible = ref(false)
+const savingDate = ref(false)
+const editingArticle = ref(null)
+const editPublicDate = ref('')
 
 const getDefaultArticle = () => ({
   publicDate: '',
@@ -234,6 +275,43 @@ const toggleStatus = async (row) => {
   }
 }
 
+const toDateInput = (dateStr) => {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  if (Number.isNaN(d.getTime())) return String(dateStr).slice(0, 10)
+  const pad = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+const openEditDate = (row) => {
+  editingArticle.value = row
+  editPublicDate.value = toDateInput(row.publicDate)
+  editDateVisible.value = true
+}
+
+const savePublicDate = async () => {
+  if (!editingArticle.value?.id) return
+  if (!editPublicDate.value) {
+    ElMessage.warning('请选择公开日期')
+    return
+  }
+
+  savingDate.value = true
+  try {
+    await updateArticlePublicDate(editingArticle.value.id, editPublicDate.value)
+    ElMessage.success('公开日期已更新')
+    editDateVisible.value = false
+    await loadArticles()
+  } catch (e) {
+    const msg = e?.response?.data
+    if (typeof msg === 'string' && msg) {
+      ElMessage.error(msg)
+    }
+  } finally {
+    savingDate.value = false
+  }
+}
+
 const handleDelete = async (row) => {
   try {
     await ElMessageBox.confirm(
@@ -303,5 +381,12 @@ onMounted(() => {
 
 .table-body :deep(.el-empty) {
   padding: 32px 0;
+}
+
+.edit-date-title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: var(--admin-text);
+  font-weight: 600;
 }
 </style>

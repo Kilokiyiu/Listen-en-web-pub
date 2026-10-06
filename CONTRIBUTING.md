@@ -14,7 +14,7 @@
 
 ### 报告 Bug
 
-1. 先在 [Issues](https://github.com/owner/repo/issues) 中搜索，确认未被报告
+1. 先在 [Issues](https://github.com/Kilokiyiu/Listen-en-web-pub/issues) 中搜索，确认未被报告
 2. 使用 **Bug Report** 模板新建 Issue
 3. 提供：复现步骤、期望行为、实际行为、截图/日志、环境信息
 
@@ -115,7 +115,7 @@ chore: 升级 NuGet 依赖
 
 ## 联系方式
 
-- **项目仓库**：[GitHub Repo](#)（公开后填入）
+- **项目仓库**：[github.com/Kilokiyiu/Listen-en-web-pub](https://github.com/Kilokiyiu/Listen-en-web-pub)
 - **Issues**：用于 Bug 报告、功能请求、问题交流
 - **Discussions**：用于一般性讨论、问题求助
 

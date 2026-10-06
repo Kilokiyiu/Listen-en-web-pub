@@ -1,7 +1,8 @@
 ﻿<template>
   <div class="home-page le-page">
-    <!-- Hero -->
-    <section class="hero">
+    <!-- Hero: notebook paper sheet -->
+    <section class="hero le-paper le-paper--ruled le-paper--margin le-paper-flip">
+      <div class="hero-corner" aria-hidden="true"></div>
       <div class="hero-inner">
         <div class="hero-content">
           <p class="hero-tag">今日学习</p>
@@ -24,10 +25,10 @@
           </div>
         </div>
 
-        <aside class="hero-app-card">
+        <aside class="hero-app-card le-paper-flip le-paper-flip-delay-1">
           <div class="app-card-top">
             <span class="app-badge">ANDROID</span>
-            <span class="app-badge app-badge--purple">v0.8.9.2</span>
+            <span class="app-badge app-badge--version">v0.9.10</span>
           </div>
           <div class="app-title-row">
             <h2 class="app-name">EaseWord</h2>
@@ -36,8 +37,8 @@
           <p class="app-desc">官方单词本 · 与网站同账号</p>
           <a
             class="app-download"
-            href="/downloads/EaseWord-0.8.9.2.apk"
-            download="EaseWord-0.8.9.2.apk"
+            href="/downloads/EaseWord-0.9.10.apk"
+            download="EaseWord-0.9.10.apk"
           >
             下载 APK
           </a>
@@ -48,25 +49,30 @@
       </div>
     </section>
 
-    <!-- 分类 Tab -->
-    <div class="category-tabs-wrap">
-      <div class="category-tabs" role="tablist">
-        <button
-          v-for="cat in categories"
-          :key="cat.code"
-          type="button"
-          role="tab"
-          class="category-tab"
-          :class="{ active: activeCategory === cat.code }"
-          @click="handleSelect(cat.code)"
+    <!-- 进站祝福弹层：打字后自动消失 -->
+    <Teleport to="body">
+      <Transition name="welcome-popup">
+        <div
+          v-if="ENABLE_WELCOME_POPUP && welcomePopupVisible"
+          class="welcome-popup"
+          role="dialog"
+          aria-live="polite"
+          @click.self="dismissWelcomePopup"
         >
-          {{ cat.name?.chinese || cat.name }}
-        </button>
-      </div>
-    </div>
+          <p class="welcome-popup__text">
+            <span class="welcome-popup__line">{{ typedWelcome }}</span>
+            <span
+              v-show="!welcomeTypingDone"
+              class="exam-blessing__cursor welcome-popup__cursor"
+              aria-hidden="true"
+            ></span>
+          </p>
+        </div>
+      </Transition>
+    </Teleport>
 
     <!-- 每日一句 -->
-    <div v-if="dailyQuote" class="quote-card">
+    <div v-if="dailyQuote" class="quote-card le-paper le-paper--ruled le-paper--margin le-paper-flip le-paper-flip-delay-1">
       <div class="quote-header">
         <span class="quote-label">DAILY · 每日一句</span>
         <span class="quote-date">{{ dailyQuote.date }}</span>
@@ -75,56 +81,107 @@
       <p class="quote-cn">{{ dailyQuote.note }}</p>
     </div>
 
-    <!-- 当前分类标题 -->
-    <div class="category-intro">
+    <!-- 分类 Tab -->
+    <div class="category-tabs-wrap le-paper-flip le-paper-flip-delay-2">
+      <div class="category-tabs" role="tablist">
+        <button
+          v-for="cat in displayCategories"
+          :key="cat.code"
+          type="button"
+          role="tab"
+          class="category-tab"
+          :class="{ active: activeCategory === cat.code, 'is-coming-soon': cat.comingSoon }"
+          @click="handleSelect(cat.code)"
+        >
+          {{ cat.name?.chinese || cat.name }}
+          <span v-if="cat.comingSoon" class="tab-soon-badge">开发中</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 当前分类标题 + 祝福打字机 -->
+    <div class="category-intro le-paper-flip le-paper-flip-delay-2">
       <h2>{{ currentCategory.title }}</h2>
       <div class="category-meta">
         <span class="meta-pill">{{ (activeCategory || 'CET').toUpperCase() }}</span>
         <span>{{ currentCategory.subtitle }}</span>
       </div>
+      <p class="exam-blessing" aria-live="polite">
+        <span class="exam-blessing__text">{{ typedBlessing || blessingFullText }}</span>
+        <span
+          v-show="ENABLE_BLESSING_TYPEWRITER && !blessingTypingDone"
+          class="exam-blessing__cursor"
+          aria-hidden="true"
+        ></span>
+      </p>
     </div>
 
-    <!-- 试卷列表 -->
-    <section class="le-section">
+    <!-- 试卷列表 / 考研精读入口 -->
+    <section class="le-section le-paper-flip le-paper-flip-delay-3">
       <div class="le-section-header">
         <h2>
           <el-icon color="var(--le-accent)"><Document /></el-icon>
           {{ currentCategory.listTitle }}
         </h2>
-        <a class="view-all" href="javascript:;" @click.prevent="goExamList()">查看全部 →</a>
+        <a
+          v-if="!isKaoyanCategory"
+          class="view-all"
+          href="javascript:;"
+          @click.prevent="goExamList()"
+        >查看全部 →</a>
       </div>
 
-      <div v-if="albumsLoading" class="le-loading-wrap">
-        <el-icon class="is-loading" :size="28"><Loading /></el-icon>
-        <span>加载试卷中...</span>
+      <div v-if="isKaoyanCategory" class="coming-soon-panel le-paper">
+        <p class="coming-soon-title">考研英语 · 开发中（模拟）</p>
+        <p class="coming-soon-desc">
+          当前试卷与题目仅用于功能模拟练习，非正式历年真题库。可体验完形填空与阅读理解在线做题。
+        </p>
+        <button type="button" class="kaoyan-cta" @click="goKaoyan">
+          进入模拟练习
+        </button>
       </div>
 
-      <el-row v-else :gutter="16">
-        <el-col v-for="item in currentList" :key="item.id" :xs="12" :sm="8" :md="6">
-          <div class="exam-card" @click="goAlbum(item.id)">
-            <div class="exam-tags">
-              <span class="exam-tag" :class="activeCategory">{{ item.tag }}</span>
-            </div>
-            <h3 class="exam-title">{{ item.title }}</h3>
-            <div class="exam-meta">
-              <span class="exam-meta-text">听力练习</span>
-              <span class="start-btn">开始练习 →</span>
-            </div>
-          </div>
-        </el-col>
-      </el-row>
+      <template v-else>
+        <div v-if="albumsLoading" class="le-loading-wrap">
+          <el-icon class="is-loading" :size="28"><Loading /></el-icon>
+          <span>加载试卷中...</span>
+        </div>
 
-      <el-empty v-if="!albumsLoading && currentList.length === 0" description="暂无试卷" />
+        <el-row v-else :gutter="16">
+          <el-col v-for="(item, index) in currentList" :key="item.id" :xs="12" :sm="8" :md="6">
+            <div
+              class="exam-card le-paper-flip"
+              :class="`le-paper-flip-delay-${Math.min(index % 4 + 1, 5)}`"
+              @click="goAlbum(item.id)"
+            >
+              <div class="exam-tags">
+                <span class="exam-tag" :class="activeCategory">{{ item.tag }}</span>
+              </div>
+              <h3 class="exam-title">{{ item.title }}</h3>
+              <div class="exam-meta">
+                <span class="exam-meta-text">听力练习</span>
+                <span class="start-btn">开始练习 →</span>
+              </div>
+            </div>
+          </el-col>
+        </el-row>
+
+        <el-empty v-if="!albumsLoading && currentList.length === 0" description="暂无试卷" />
+      </template>
     </section>
 
     <!-- 快捷入口 -->
-    <section class="le-section">
+    <section class="le-section le-paper-flip le-paper-flip-delay-4">
       <div class="le-section-header">
         <h2><el-icon color="var(--le-accent)"><Star /></el-icon> 快捷入口</h2>
       </div>
       <el-row :gutter="16">
-        <el-col v-for="item in quickLinks" :key="item.title" :xs="12" :sm="6">
-          <div class="quick-card" @click="item.action?.()">
+        <el-col v-for="(item, index) in quickLinks" :key="item.title" :xs="12" :sm="6">
+          <div
+            class="quick-card le-paper-flip"
+            :class="`le-paper-flip-delay-${Math.min(index + 1, 5)}`"
+            @click="item.action?.()"
+          >
             <div class="quick-icon">
               <el-icon :size="22"><component :is="item.icon" /></el-icon>
             </div>
@@ -267,12 +324,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getCategories, getAlbumsByCategoryId } from '../api/Listen.js'
 import { queryEnglishWord, addUserWordToCurrentBook, getDailyEnglish, isValidEnglishQuery } from '../api/Word.js'
 import { promptGoReviewAfterAdd } from '../utils/promptGoReview.js'
+import { homeCategoryMeta, mergeHomeCategoriesWithExtras } from '../utils/categoryMeta.js'
 
 const router = useRouter()
 const searchWord = ref('')
@@ -313,18 +371,155 @@ const categories = ref([])
 const albumList = ref([])
 
 // 分类配置（标题、颜色等）
-const categoryMeta = {
-  cet6: { title: '英语六级听力练习', subtitle: '历年真题，助你轻松过级', listTitle: '六级听力真题', color: '#a78bfa' },
-  cet4: { title: '英语四级听力练习', subtitle: '历年真题 + 模拟试题', listTitle: '四级听力真题', color: '#22d3ee' },
-  ielts: { title: '雅思听力练习', subtitle: '剑桥雅思真题 + 模拟训练', listTitle: '雅思真题', color: '#22c55e' },
-  toefl: { title: '托福听力练习', subtitle: 'TPO真题 + 专项训练', listTitle: '托福真题', color: '#fbbf24' }
-}
+const categoryMeta = homeCategoryMeta
+
+const displayCategories = computed(() => mergeHomeCategoriesWithExtras(categories.value))
+
+const activeDisplayCategory = computed(() =>
+  displayCategories.value.find((c) => c.code === activeCategory.value)
+)
+
+const isKaoyanCategory = computed(() => activeDisplayCategory.value?.kind === 'kaoyan')
 
 const currentCategory = computed(() => {
   return categoryMeta[activeCategory.value] || { title: '英语听力练习', subtitle: '选择分类开始练习', listTitle: '听力真题', color: '#409eff' }
 })
 
 const currentList = computed(() => albumList.value.slice(0, 8))
+
+const DEFAULT_BLESSING = '今天也认真学一点，英语会记住你的努力。'
+const WELCOME_TEXT = '欢迎回来。今天也要轻轻推自己一把，英语会慢慢回应你。'
+const WELCOME_HOLD_MS = 1600
+const WELCOME_STORAGE_KEY = 'le_welcome_popup_date'
+/** 进站祝福弹层（打字机）。需要时改成 true。 */
+const ENABLE_WELCOME_POPUP = false
+/** 分类祝福文案始终展示；true=打字机，false=直接全文。 */
+const ENABLE_BLESSING_TYPEWRITER = false
+
+const todayKey = () => {
+  const d = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+const hasShownWelcomeToday = () => {
+  try {
+    return localStorage.getItem(WELCOME_STORAGE_KEY) === todayKey()
+  } catch {
+    return false
+  }
+}
+
+const markWelcomeShownToday = () => {
+  try {
+    localStorage.setItem(WELCOME_STORAGE_KEY, todayKey())
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+const typedBlessing = ref('')
+const blessingTypingDone = ref(false)
+let blessingTimer = null
+
+const typedWelcome = ref('')
+const welcomeTypingDone = ref(false)
+const welcomePopupVisible = ref(false)
+let welcomeTimer = null
+let welcomeDismissTimer = null
+
+const blessingFullText = computed(() => {
+  return currentCategory.value.blessing || DEFAULT_BLESSING
+})
+
+const startTypewriter = (text, onTick, onDone, getTimer, setTimer) => {
+  const prev = getTimer()
+  if (prev) clearInterval(prev)
+  onTick('')
+  onDone(false)
+  if (!text) {
+    setTimer(null)
+    return
+  }
+  let i = 0
+  const timer = setInterval(() => {
+    onTick(text.slice(0, i + 1))
+    i += 1
+    if (i >= text.length) {
+      clearInterval(timer)
+      setTimer(null)
+      onDone(true)
+    }
+  }, 42)
+  setTimer(timer)
+}
+
+const dismissWelcomePopup = () => {
+  if (welcomeDismissTimer) {
+    clearTimeout(welcomeDismissTimer)
+    welcomeDismissTimer = null
+  }
+  if (welcomeTimer) {
+    clearInterval(welcomeTimer)
+    welcomeTimer = null
+  }
+  welcomePopupVisible.value = false
+  welcomeTypingDone.value = true
+}
+
+const runBlessingTypewriter = (text) => {
+  if (!ENABLE_BLESSING_TYPEWRITER) {
+    if (blessingTimer) {
+      clearInterval(blessingTimer)
+      blessingTimer = null
+    }
+    typedBlessing.value = text || ''
+    blessingTypingDone.value = true
+    return
+  }
+  startTypewriter(
+    text,
+    (v) => { typedBlessing.value = v },
+    (v) => { blessingTypingDone.value = v },
+    () => blessingTimer,
+    (t) => { blessingTimer = t }
+  )
+}
+
+const runWelcomeTypewriter = (text) => {
+  if (!ENABLE_WELCOME_POPUP) return
+  markWelcomeShownToday()
+  welcomePopupVisible.value = true
+  startTypewriter(
+    text,
+    (v) => { typedWelcome.value = v },
+    (v) => {
+      welcomeTypingDone.value = v
+      if (v) {
+        welcomeDismissTimer = setTimeout(() => {
+          welcomePopupVisible.value = false
+          welcomeDismissTimer = null
+        }, WELCOME_HOLD_MS)
+      }
+    },
+    () => welcomeTimer,
+    (t) => { welcomeTimer = t }
+  )
+}
+
+watch(
+  blessingFullText,
+  (text) => {
+    runBlessingTypewriter(text)
+  },
+  { immediate: true }
+)
+
+onUnmounted(() => {
+  if (blessingTimer) clearInterval(blessingTimer)
+  if (welcomeTimer) clearInterval(welcomeTimer)
+  if (welcomeDismissTimer) clearTimeout(welcomeDismissTimer)
+})
 
 // 加载分类数据
 const loadCategories = async (retryCount = 0) => {
@@ -333,6 +528,8 @@ const loadCategories = async (retryCount = 0) => {
     categories.value = data || []
     if (categories.value.length > 0) {
       activeCategory.value = categories.value[0].code
+    } else if (displayCategories.value.length > 0) {
+      activeCategory.value = displayCategories.value[0].code
     }
   } catch (e) {
     console.error('获取分类失败', e)
@@ -345,7 +542,10 @@ const loadCategories = async (retryCount = 0) => {
 
 // 加载试卷数据
 const loadAlbums = async (retryCount = 0) => {
-  if (!activeCategory.value) return
+  if (!activeCategory.value || isKaoyanCategory.value) {
+    albumList.value = []
+    return
+  }
   const cat = categories.value.find(c => c.code === activeCategory.value)
   if (!cat) return
 
@@ -372,12 +572,21 @@ const loadAlbums = async (retryCount = 0) => {
 
 // 切换分类时重新加载试卷
 watch(activeCategory, (newVal) => {
-  if (newVal && categories.value.length > 0) {
+  if (!newVal) return
+  if (isKaoyanCategory.value) {
+    albumList.value = []
+    albumsLoading.value = false
+    return
+  }
+  if (categories.value.length > 0) {
     loadAlbums()
   }
 })
 
 onMounted(async () => {
+  if (!hasShownWelcomeToday()) {
+    runWelcomeTypewriter(WELCOME_TEXT)
+  }
   await loadCategories()
   // 确保分类加载完成后再加载试卷
   await nextTick()
@@ -466,25 +675,29 @@ const goDailyArticle = () => {
   router.push({ name: 'dailyArticle' })
 }
 
-const goWordRoots = () => {
-  router.push({ name: 'wordRoots' })
-}
-
 const goBBCNews = () => {
   router.push({ name: 'bbcNews' })
 }
 
 const goExamList = () => {
+  if (isKaoyanCategory.value) {
+    goKaoyan()
+    return
+  }
   const cat = categories.value.find(c => c.code === activeCategory.value)
   if (cat) {
     router.push({ name: 'exams', query: { categoryId: cat.id } })
   }
 }
 
+const goKaoyan = () => {
+  router.push(activeDisplayCategory.value?.entryRoute || { name: 'kaoyan' })
+}
+
 const quickLinks = [
   { title: '每日短文', desc: '10 分钟保持语感', icon: 'Microphone', action: goDailyArticle },
-  { title: '词根学习', desc: '系统扩展词汇', icon: 'Collection', action: goWordRoots },
-  { title: 'BBC 外刊', desc: '精选新闻阅读', icon: 'Document', action: goBBCNews },
+  { title: '官方词本', desc: '四六级 / 考研高频', icon: 'Notebook', action: () => router.push({ name: 'wordPacks' }) },
+  { title: '词根学习', desc: '系统扩展词汇', icon: 'Collection', action: () => router.push({ name: 'wordRoots' }) },
   { title: '单词复习', desc: '智能间隔复习', icon: 'Reading', action: () => router.push('/word-review') },
 ]
 </script>
@@ -496,20 +709,22 @@ const quickLinks = [
 
 .hero {
   position: relative;
-  padding: 28px 24px 32px;
-  margin-bottom: 8px;
+  padding: 32px 28px 36px 52px;
+  margin-bottom: 16px;
   overflow: hidden;
-  border-radius: var(--le-radius);
-  background: var(--le-bg-surface);
-  border: 1px solid var(--le-border);
 }
 
-.hero::before {
-  content: '';
+.hero-corner {
   position: absolute;
-  inset: 0;
-  background: linear-gradient(105deg, rgba(59, 130, 246, 0.08) 0%, transparent 55%);
+  top: 0;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  background:
+    linear-gradient(225deg, transparent 48%, rgba(55, 75, 105, 0.08) 50%, rgba(55, 75, 105, 0.06) 100%),
+    linear-gradient(225deg, transparent 50%, rgba(232, 238, 245, 0.95) 50%);
   pointer-events: none;
+  z-index: 2;
 }
 
 .hero-inner {
@@ -529,20 +744,20 @@ const quickLinks = [
   display: inline-flex;
   align-items: center;
   margin: 0 0 12px;
-  padding: 4px 10px;
-  background: var(--le-bg-muted);
-  border: 1px solid var(--le-border);
-  border-radius: 6px;
-  color: var(--le-text-secondary);
+  padding: 3px 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: var(--le-ink-rule);
   font-family: var(--le-font-mono);
   font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 .hero-title {
   font-family: var(--le-font-display);
-  font-size: clamp(1.75rem, 3.5vw, 2.4rem);
+  font-size: clamp(1.75rem, 3.5vw, 2.35rem);
   font-weight: 700;
   line-height: 1.15;
   letter-spacing: -0.02em;
@@ -558,15 +773,96 @@ const quickLinks = [
   line-height: 1.65;
 }
 
+.welcome-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 18vh 20px 24px;
+  background: rgba(26, 36, 51, 0.22);
+  backdrop-filter: blur(1.5px);
+  -webkit-backdrop-filter: blur(1.5px);
+  cursor: pointer;
+}
+
+.welcome-popup__text {
+  margin: 0;
+  max-width: min(960px, 100%);
+  font-family: var(--le-font-hand);
+  font-size: clamp(1.65rem, 4.4vw, 2.45rem);
+  line-height: 1.35;
+  letter-spacing: 0.03em;
+  color: #ffffff;
+  opacity: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  text-align: center;
+  cursor: default;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.35),
+    0 2px 12px rgba(0, 0, 0, 0.22);
+}
+
+.welcome-popup__line {
+  white-space: nowrap;
+}
+
+.welcome-popup__cursor {
+  background: #ffffff !important;
+  height: 1.15em;
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.welcome-popup-enter-active,
+.welcome-popup-leave-active {
+  transition: opacity 0.35s ease;
+}
+
+.welcome-popup-enter-active .welcome-popup__text,
+.welcome-popup-leave-active .welcome-popup__text {
+  transition: transform 0.35s ease, opacity 0.35s ease;
+}
+
+.welcome-popup-enter-from,
+.welcome-popup-leave-to {
+  opacity: 0;
+}
+
+.welcome-popup-enter-from .welcome-popup__text,
+.welcome-popup-leave-to .welcome-popup__text {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+@media (max-width: 768px) {
+  .welcome-popup {
+    padding-top: 16vh;
+  }
+
+  .welcome-popup__line {
+    white-space: normal;
+  }
+
+  .welcome-popup__text {
+    font-size: clamp(1.4rem, 5.8vw, 1.85rem);
+    line-height: 1.45;
+  }
+}
+
 .hero-search :deep(.el-input__wrapper) {
-  border-radius: 10px 0 0 10px;
-  background: var(--le-bg-elev) !important;
+  border-radius: 8px 0 0 8px;
+  background: #fff !important;
   box-shadow: 0 0 0 1px var(--le-border) inset !important;
   padding-left: 8px;
 }
 
 .hero-search :deep(.el-input-group__append) {
-  border-radius: 0 10px 10px 0;
+  border-radius: 0 8px 8px 0;
   overflow: hidden;
   box-shadow: none;
   background: transparent;
@@ -577,10 +873,10 @@ const quickLinks = [
   height: 42px;
   width: 48px;
   margin: 3px;
-  border-radius: 8px !important;
+  border-radius: 6px !important;
   background: var(--le-primary) !important;
   border: none !important;
-  color: #0b1220 !important;
+  color: #fff !important;
 }
 
 .hero-search :deep(.el-input__wrapper.is-focus) {
@@ -591,10 +887,12 @@ const quickLinks = [
   justify-self: stretch;
   width: 100%;
   max-width: none;
-  background: var(--le-bg-elevated);
+  background: rgba(255, 255, 255, 0.94);
+  background-image: var(--le-paper-grain);
   border: 1px solid var(--le-border);
-  border-radius: var(--le-radius);
+  border-radius: 4px 8px 8px 4px;
   padding: 18px;
+  box-shadow: var(--le-shadow-sm);
 }
 
 .app-card-top {
@@ -609,18 +907,18 @@ const quickLinks = [
   font-family: var(--le-font-mono);
   font-size: 11px;
   font-weight: 500;
-  color: #bfdbfe;
-  background: rgba(59, 130, 246, 0.16);
-  border: 1px solid rgba(96, 165, 250, 0.28);
+  color: var(--le-primary);
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.18);
   padding: 3px 8px;
-  border-radius: 6px;
+  border-radius: 4px;
   letter-spacing: 0.04em;
 }
 
-.app-badge--purple {
-  color: #ddd6fe;
-  background: rgba(139, 92, 246, 0.16);
-  border-color: rgba(167, 139, 250, 0.3);
+.app-badge--version {
+  color: var(--le-text-muted);
+  background: var(--le-bg-muted);
+  border-color: var(--le-border);
 }
 
 .app-name {
@@ -649,7 +947,7 @@ const quickLinks = [
   text-align: center;
   text-decoration: none;
   background: var(--le-primary);
-  color: #0b1220;
+  color: #fff;
   font-weight: 700;
   font-size: 14px;
   padding: 10px;
@@ -660,7 +958,7 @@ const quickLinks = [
 .app-download:hover {
   opacity: 0.92;
   background: var(--le-primary-light);
-  color: #0b1220;
+  color: #fff;
 }
 
 .app-note {
@@ -721,31 +1019,69 @@ const quickLinks = [
   border-radius: 2px;
 }
 
+.category-tab.is-coming-soon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tab-soon-badge {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 3px 5px;
+  border-radius: 4px;
+  color: var(--le-warning);
+  background: rgba(217, 119, 6, 0.1);
+  border: 1px solid rgba(217, 119, 6, 0.2);
+}
+
+.coming-soon-panel {
+  padding: 36px 24px;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.coming-soon-title {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--le-text);
+}
+
+.coming-soon-desc {
+  margin: 0 0 18px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--le-text-muted);
+}
+
+.kaoyan-cta {
+  border: none;
+  background: var(--le-primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 10px 22px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.kaoyan-cta:hover {
+  opacity: 0.9;
+}
+
 .quote-card {
   position: relative;
   overflow: hidden;
-  background: var(--le-bg-elevated);
-  border: 1px solid var(--le-border);
-  border-radius: var(--le-radius);
-  padding: 20px 22px 20px 26px;
+  padding: 22px 24px 22px 52px;
   margin-bottom: 24px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.quote-card::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 14px;
-  bottom: 14px;
-  width: 3px;
-  background: var(--le-primary);
-  border-radius: 3px;
 }
 
 .quote-card:hover {
-  border-color: var(--le-border-strong);
-  box-shadow: var(--le-shadow-sm);
+  box-shadow: var(--le-shadow);
 }
 
 .quote-header {
@@ -758,12 +1094,12 @@ const quickLinks = [
 .quote-label {
   font-family: var(--le-font-mono);
   font-size: 11px;
-  color: var(--le-primary-light);
+  color: var(--le-primary);
   letter-spacing: 0.06em;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(96, 165, 250, 0.2);
-  padding: 3px 8px;
-  border-radius: 6px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  border-radius: 0;
 }
 
 .quote-date {
@@ -808,14 +1144,39 @@ const quickLinks = [
   font-size: 14px;
 }
 
+.exam-blessing {
+  margin: 12px 0 0;
+  min-height: 1.6em;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--le-text-muted);
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.exam-blessing__text {
+  white-space: pre-wrap;
+}
+
+.exam-blessing__cursor {
+  display: inline-block;
+  width: 1.5px;
+  height: 1em;
+  margin-bottom: 2px;
+  background: var(--le-primary);
+  flex-shrink: 0;
+  opacity: 1;
+}
+
 .meta-pill {
   font-family: var(--le-font-mono);
   font-size: 11px;
-  color: #c7d2fe;
-  background: var(--le-gradient-soft);
-  border: 1px solid rgba(165, 180, 252, 0.22);
+  color: var(--le-primary);
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.16);
   padding: 3px 8px;
-  border-radius: 6px;
+  border-radius: 4px;
   letter-spacing: 0.04em;
 }
 
@@ -828,25 +1189,27 @@ const quickLinks = [
 }
 
 .view-all:hover {
-  color: var(--le-primary-light);
+  color: var(--le-accent);
 }
 
 .exam-card {
   padding: 18px;
   margin-bottom: 16px;
   height: calc(100% - 16px);
-  background: var(--le-bg-elevated);
+  background-color: rgba(255, 255, 255, 0.92);
+  background-image: var(--le-paper-grain);
   border: 1px solid var(--le-border);
-  border-radius: var(--le-radius);
+  border-radius: 4px 10px 10px 4px;
+  box-shadow: var(--le-shadow-sm);
   cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transform-origin: left center;
 }
 
 .exam-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-2px) rotateY(-2deg);
   border-color: var(--le-border-strong);
   box-shadow: var(--le-shadow);
-  background: var(--le-bg-elevated-hover);
 }
 
 .exam-tags {
@@ -859,31 +1222,37 @@ const quickLinks = [
   display: inline-block;
   font-family: var(--le-font-mono);
   padding: 3px 8px;
-  border-radius: 6px;
+  border-radius: 4px;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
-  background: rgba(59, 130, 246, 0.14);
-  color: #93c5fd;
-  border: 1px solid rgba(96, 165, 250, 0.25);
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--le-primary);
+  border: 1px solid rgba(37, 99, 235, 0.16);
 }
 
 .exam-tag.cet6 {
-  background: rgba(139, 92, 246, 0.14);
-  color: #c4b5fd;
-  border-color: rgba(167, 139, 250, 0.28);
+  background: rgba(91, 106, 191, 0.08);
+  color: var(--le-purple);
+  border-color: rgba(91, 106, 191, 0.2);
 }
 
 .exam-tag.ielts {
-  background: rgba(52, 211, 153, 0.1);
+  background: rgba(5, 150, 105, 0.08);
   color: var(--le-success);
-  border-color: rgba(52, 211, 153, 0.25);
+  border-color: rgba(5, 150, 105, 0.2);
 }
 
 .exam-tag.toefl {
-  background: rgba(251, 191, 36, 0.1);
+  background: rgba(217, 119, 6, 0.08);
   color: var(--le-warning);
-  border-color: rgba(251, 191, 36, 0.25);
+  border-color: rgba(217, 119, 6, 0.2);
+}
+
+.exam-tag.kaoyan {
+  background: rgba(239, 68, 68, 0.08);
+  color: #dc2626;
+  border-color: rgba(239, 68, 68, 0.2);
 }
 
 .exam-title {
@@ -905,7 +1274,7 @@ const quickLinks = [
   justify-content: space-between;
   gap: 8px;
   padding-top: 12px;
-  border-top: 1px solid var(--le-border);
+  border-top: 1px dashed var(--le-border);
 }
 
 .exam-meta-text {
@@ -918,10 +1287,10 @@ const quickLinks = [
   display: inline-flex;
   align-items: center;
   padding: 5px 12px;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(96, 165, 250, 0.22);
-  color: var(--le-primary-light);
-  border-radius: 8px;
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.16);
+  color: var(--le-primary);
+  border-radius: 6px;
   font-size: 12px;
   font-weight: 500;
   transition: all 0.2s ease;
@@ -929,7 +1298,7 @@ const quickLinks = [
 
 .exam-card:hover .start-btn {
   background: var(--le-primary);
-  color: #0b1220;
+  color: #fff;
   border-color: transparent;
 }
 
@@ -940,31 +1309,33 @@ const quickLinks = [
   padding: 18px;
   margin-bottom: 16px;
   height: calc(100% - 16px);
-  background: var(--le-bg-elevated);
+  background-color: rgba(255, 255, 255, 0.92);
+  background-image: var(--le-paper-grain);
   border: 1px solid var(--le-border);
-  border-radius: var(--le-radius);
+  border-radius: 4px 10px 10px 4px;
+  box-shadow: var(--le-shadow-sm);
   cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   text-align: left;
+  transform-origin: left center;
 }
 
 .quick-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-2px) rotateY(-2deg);
   border-color: var(--le-border-strong);
-  box-shadow: var(--le-shadow-sm);
-  background: var(--le-bg-elevated-hover);
+  box-shadow: var(--le-shadow);
 }
 
 .quick-icon {
   width: 44px;
   height: 44px;
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: rgba(59, 130, 246, 0.14);
-  color: var(--le-primary-light);
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--le-primary);
 }
 
 .quick-info h3 {
@@ -1002,7 +1373,7 @@ const quickLinks = [
 
 .phonetic-label {
   font-size: 11px;
-  color: #0b1220;
+  color: #fff;
   background: var(--le-primary);
   padding: 2px 6px;
   border-radius: 4px;
@@ -1058,13 +1429,13 @@ const quickLinks = [
 
 @media (max-width: 768px) {
   .hero {
-    padding: 20px 16px 24px;
+    padding: 24px 16px 28px 44px;
   }
   .hero-title {
     font-size: 1.65rem;
   }
   .quote-card {
-    padding: 16px 16px 16px 22px;
+    padding: 18px 16px 18px 44px;
   }
   .category-intro h2 {
     font-size: 20px;

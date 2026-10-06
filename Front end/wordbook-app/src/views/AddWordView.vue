@@ -3,7 +3,12 @@
     <form class="form" @submit.prevent="submit">
       <label>
         <span>单词 <em>*</em></span>
-        <input v-model="form.word" type="text" placeholder="输入英文单词" required />
+        <div class="word-row">
+          <input v-model="form.word" type="text" placeholder="输入英文单词" required />
+          <button type="button" class="btn-lookup" :disabled="lookingUp" @click="lookup">
+            {{ lookingUp ? '...' : '查词' }}
+          </button>
+        </div>
       </label>
       <label>
         <span>释义</span>
@@ -24,12 +29,44 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { addWord } from '../services/wordService'
+import { queryEnglishWord, isValidEnglishQuery } from '../api/word'
 import { showToast } from '../utils/toast'
 import { promptGoReviewAfterAdd } from '../utils/promptGoReview'
 
 const router = useRouter()
 const saving = ref(false)
+const lookingUp = ref(false)
 const form = ref({ word: '', definition: '', example: '' })
+
+const lookup = async () => {
+  const word = form.value.word.trim()
+  if (!word) {
+    showToast('请输入单词')
+    return
+  }
+  if (!isValidEnglishQuery(word)) {
+    showToast('请输入有效英语单词')
+    return
+  }
+  lookingUp.value = true
+  try {
+    const res = await queryEnglishWord(word)
+    if (res?.code === 200 && res.data) {
+      const data = res.data
+      form.value.word = data.word || word
+      form.value.definition =
+        data.translations?.map((t) => `${t.pos}. ${t.tran_cn}`).join('; ') || form.value.definition
+      const first = data.sentences?.[0]
+      if (first) form.value.example = `${first.s_content}\n${first.s_cn}`
+    } else {
+      showToast(res?.message || '未找到释义')
+    }
+  } catch (e) {
+    showToast(typeof e === 'string' ? e : '查询失败')
+  } finally {
+    lookingUp.value = false
+  }
+}
 
 const submit = async () => {
   if (!form.value.word.trim()) {
@@ -40,7 +77,7 @@ const submit = async () => {
   try {
     const word = form.value.word.trim()
     await addWord(form.value)
-    if (!promptGoReviewAfterAdd(router, word)) {
+    if (!await promptGoReviewAfterAdd(router, word)) {
       router.back()
     }
   } catch (e) {
@@ -74,8 +111,29 @@ label span {
 }
 
 label em {
-  color: #f56c6c;
+  color: var(--le-danger);
   font-style: normal;
+}
+
+.word-row {
+  display: flex;
+  gap: 8px;
+}
+
+.word-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.btn-lookup {
+  flex-shrink: 0;
+  padding: 0 14px;
+  border: 1px solid var(--le-border-strong);
+  border-radius: 10px;
+  background: var(--le-bg-elevated);
+  color: var(--le-primary);
+  font-size: 14px;
+  font-weight: 500;
 }
 
 input, textarea {
@@ -91,7 +149,7 @@ input, textarea {
 .btn-primary {
   margin-top: 8px;
   padding: 14px;
-  background: var(--primary);
+  background: var(--le-gradient);
   color: #fff;
   border: none;
   border-radius: 10px;

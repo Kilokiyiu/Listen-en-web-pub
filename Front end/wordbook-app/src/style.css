@@ -1,17 +1,62 @@
 :root {
-  --primary: #409eff;
-  --bg: #f5f7fa;
-  --bg-card: #ffffff;
-  --border: #e4e7ed;
-  --text-primary: #303133;
-  --text-secondary: #606266;
-  --text-muted: #909399;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
-    Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --le-header-h: 48px;
+  --le-mobile-nav-h: 62px;
+  --le-radius: 12px;
+  --le-radius-sm: 8px;
+
+  --le-bg: #e8eef5;
+  --le-bg-dark: #d5dde8;
+  --le-bg-surface: #f7f9fc;
+  --le-bg-elevated: #ffffff;
+  --le-bg-muted: #eef2f7;
+
+  --le-text: #1a2433;
+  --le-text-secondary: #4a5568;
+  --le-text-muted: #7a8699;
+
+  --le-primary: #2563eb;
+  --le-primary-light: #3b82f6;
+  --le-accent: #1d4ed8;
+  --le-success: #059669;
+  --le-warning: #d97706;
+  --le-danger: #dc2626;
+  --le-ink-rule: #c97878;
+
+  --le-border: rgba(55, 75, 105, 0.12);
+  --le-border-strong: rgba(55, 75, 105, 0.22);
+  --le-shadow-sm: 0 1px 2px rgba(30, 41, 59, 0.05), 0 1px 1px rgba(30, 41, 59, 0.03);
+  --le-shadow:
+    0 1px 1px rgba(30, 41, 59, 0.04),
+    0 4px 14px rgba(30, 41, 59, 0.07),
+    0 10px 28px rgba(30, 41, 59, 0.05);
+  --le-gradient: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  --le-gradient-soft: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(29, 78, 216, 0.05) 100%);
+  --le-ambient: linear-gradient(165deg, rgba(238, 242, 247, 0.38) 0%, rgba(228, 235, 244, 0.45) 45%, rgba(221, 229, 239, 0.5) 100%);
+  --le-paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+  --le-paper-lines: repeating-linear-gradient(
+    transparent 0,
+    transparent 27px,
+    rgba(90, 130, 180, 0.09) 27px,
+    rgba(90, 130, 180, 0.09) 28px
+  );
+  --le-font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --le-font-body: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --le-font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+  --primary: var(--le-primary);
+  --bg: var(--le-bg);
+  --bg-card: var(--le-bg-elevated);
+  --border: var(--le-border);
+  --text-primary: var(--le-text);
+  --text-secondary: var(--le-text-secondary);
+  --text-muted: var(--le-text-muted);
+  --mobile-nav-h: var(--le-mobile-nav-h);
+
+  font-family: var(--le-font-body);
   font-size: 16px;
   line-height: 1.5;
-  color: var(--text-primary);
-  background: var(--bg);
+  color: var(--le-text);
+  background: var(--le-bg);
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
 }
@@ -20,9 +65,25 @@
   box-sizing: border-box;
 }
 
+html {
+  color-scheme: light;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
+  position: relative;
+  background-color: var(--le-bg);
+  color: var(--le-text);
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: var(--le-paper-grain), var(--le-ambient);
+  pointer-events: none;
 }
 
 button {
@@ -30,22 +91,42 @@ button {
   cursor: pointer;
 }
 
-input, textarea {
+input, textarea, select {
   font-family: inherit;
+  color: inherit;
 }
 
 a {
-  color: var(--primary);
+  color: var(--le-primary);
 }
 
 #app {
   min-height: 100vh;
 }
 
-:root {
-  --mobile-nav-h: 56px;
+.page-with-nav {
+  padding-bottom: calc(var(--le-mobile-nav-h) + env(safe-area-inset-bottom, 0) + 16px);
 }
 
-.page-with-nav {
-  padding-bottom: calc(var(--mobile-nav-h) + env(safe-area-inset-bottom, 0) + 16px);
+.le-paper {
+  position: relative;
+  background-color: rgba(255, 255, 255, 0.92);
+  background-image: var(--le-paper-grain);
+  border: 1px solid var(--le-border);
+  border-radius: 2px 10px 10px 2px;
+  box-shadow: var(--le-shadow-sm);
+}
+
+.le-btn-primary {
+  background: var(--le-gradient);
+  color: #fff;
+  border: none;
+  border-radius: var(--le-radius-sm);
+}
+
+.le-btn-ghost {
+  background: var(--le-bg-elevated);
+  color: var(--le-text-secondary);
+  border: 1px solid var(--le-border-strong);
+  border-radius: var(--le-radius-sm);
 }

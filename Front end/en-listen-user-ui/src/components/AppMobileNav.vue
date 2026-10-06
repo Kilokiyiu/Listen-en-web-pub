@@ -16,7 +16,7 @@
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router'
-import { HomeFilled, Headset, Reading, Collection, User } from '@element-plus/icons-vue'
+import { HomeFilled, Headset, Reading, Collection, InfoFilled, User } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -24,8 +24,9 @@ const route = useRoute()
 const navItems = [
   { path: '/', label: '首页', icon: HomeFilled, match: ['home'] },
   { path: '/exams', label: '听力', icon: Headset, match: ['exams', 'examDetail'] },
-  { path: '/daily', label: '阅读', icon: Reading, match: ['dailyArticle', 'bbcNews'] },
+  { path: '/daily', label: '阅读', icon: Reading, match: ['dailyArticle', 'bbcNews', 'kaoyan', 'kaoyanPaper'] },
   { path: '/word-roots', label: '单词', icon: Collection, match: ['wordRoots', 'wordRootDetail', 'myWords', 'wordReview'] },
+  { path: '/about', label: '关于', icon: InfoFilled, match: ['about'] },
   { path: '/profile', label: '我的', icon: User, match: ['profile', 'history', 'login'] },
 ]
 
@@ -48,9 +49,9 @@ const go = (path) => {
   left: 0;
   right: 0;
   height: var(--le-mobile-nav-h);
-  background: rgba(12, 18, 34, 0.94);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
   border-top: 1px solid var(--le-border);
   z-index: 200;
   padding: 0 4px;

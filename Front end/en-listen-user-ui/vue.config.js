@@ -33,6 +33,11 @@ module.exports = defineConfig({
         target: 'http://localhost:5215',
         changeOrigin: true,
         pathRewrite: { '^/api/word': '' }
+      },
+      '/api/kaoyan': {
+        target: 'http://localhost:5301',
+        changeOrigin: true,
+        pathRewrite: { '^/api/kaoyan': '' }
       }
     }
   }

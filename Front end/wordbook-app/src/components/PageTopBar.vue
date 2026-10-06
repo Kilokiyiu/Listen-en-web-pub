@@ -61,10 +61,10 @@ const handleBack = async () => {
   min-height: 48px;
   padding: 8px 12px;
   padding-top: calc(8px + env(safe-area-inset-top, 0));
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  border-bottom: 1px solid var(--le-border);
 }
 
 .bar-left,
@@ -84,7 +84,7 @@ const handleBack = async () => {
   padding: 6px 4px;
   background: none;
   border: none;
-  color: var(--primary);
+  color: var(--le-primary);
   font-size: 15px;
   font-weight: 500;
   -webkit-tap-highlight-color: transparent;

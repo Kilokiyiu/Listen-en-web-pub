@@ -6,6 +6,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();  // 注册 HttpClientFactory
+builder.Services.AddMemoryCache();
+
+// 文章服务保持独立；考研英语走 KaoyanService，勿再往 DailyArticle 加 Category
 
 builder.Services.AddDbContext<ArticleDbContext>(options =>
 {
