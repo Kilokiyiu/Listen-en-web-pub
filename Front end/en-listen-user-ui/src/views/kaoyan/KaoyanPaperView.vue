@@ -6,17 +6,13 @@
     </div>
 
     <template v-else-if="paper">
-      <div class="section-tabs">
-        <el-radio-group v-model="activeSectionId" size="default">
-          <el-radio-button
-            v-for="s in sections"
-            :key="s.id"
-            :label="s.id"
-          >
-            {{ s.title }}
-          </el-radio-button>
-        </el-radio-group>
-      </div>
+      <QuizSectionTabs
+        v-if="sectionTabs.length"
+        v-model="activeSectionId"
+        :items="sectionTabs"
+        label="题目分区"
+        aria-label="考研大题切换"
+      />
 
       <template v-if="activeSection">
         <ClozeQuizPanel
@@ -53,11 +49,13 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import PageShell from '../../components/PageShell.vue'
+import QuizSectionTabs from '../../components/QuizSectionTabs.vue'
 import OnlineQuizPanel from '../../components/OnlineQuizPanel.vue'
 import ClozeQuizPanel from '../../components/ClozeQuizPanel.vue'
 import { getKaoyanPaperDetail, submitKaoyanAnswers } from '../../api/Kaoyan.js'
 import { recordStudyActivity } from '../../api/Study.js'
 import { trackEvent } from '../../api/Analytics.js'
+import { getPageCache, setPageCache } from '../../utils/pageCache.js'
 
 const route = useRoute()
 const paperId = route.query.paperId
@@ -70,6 +68,25 @@ const sessionStartedAt = Date.now()
 const paperTitle = computed(() => paper.value?.title || '考研英语')
 const activeSection = computed(() =>
   sections.value.find((s) => s.id === activeSectionId.value) || null
+)
+
+const formatSectionLabel = (s) => {
+  if (s.sectionType === 'cloze') return '完形填空'
+  const m =
+    /Text\s*(\d+)/i.exec(s.title || '') ||
+    /阅读\s*Text\s*(\d+)/i.exec(s.title || '') ||
+    /阅读.*?(\d+)/.exec(s.title || '')
+  if (m) return `阅读 ${m[1]}`
+  return s.title || '阅读'
+}
+
+const sectionTabs = computed(() =>
+  sections.value.map((s) => ({
+    value: s.id,
+    label: formatSectionLabel(s),
+    title: s.title,
+    badge: s.questions?.length || undefined,
+  }))
 )
 
 const normalize = (detail) => {
@@ -127,28 +144,34 @@ const onSubmitted = async (res) => {
   ElMessage.success(`答题完成：${res.correctCount} 题正确`)
 }
 
+const applyDetail = (detail, { preferKeepSection = false } = {}) => {
+  const n = normalize(detail)
+  paper.value = n.paper
+  sections.value = n.sections
+  if (!preferKeepSection || !n.sections.some((s) => s.id === activeSectionId.value)) {
+    activeSectionId.value = n.sections[0]?.id || ''
+  }
+}
+
 onMounted(async () => {
   if (!paperId) {
     loading.value = false
     return
   }
+  const cacheKey = `kaoyan:paper:${paperId}`
+  const cached = getPageCache(cacheKey)
+  if (cached) {
+    applyDetail(cached)
+    loading.value = false
+  }
   try {
     const detail = await getKaoyanPaperDetail(paperId)
-    const n = normalize(detail)
-    paper.value = n.paper
-    sections.value = n.sections
-    activeSectionId.value = n.sections[0]?.id || ''
+    setPageCache(cacheKey, detail, 5 * 60 * 1000)
+    applyDetail(detail, { preferKeepSection: !!cached })
   } catch {
-    paper.value = null
+    if (!cached) paper.value = null
   } finally {
     loading.value = false
   }
 })
 </script>
-
-<style scoped>
-.section-tabs {
-  margin-bottom: 8px;
-  max-width: 720px;
-}
-</style>

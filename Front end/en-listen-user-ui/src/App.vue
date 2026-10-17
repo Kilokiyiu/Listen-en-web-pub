@@ -4,7 +4,9 @@
     <main class="le-app-main" :class="{ 'has-mobile-nav': showMobileNav }">
       <router-view v-slot="{ Component }">
         <transition name="le-route" mode="out-in">
-          <component :is="Component" />
+          <keep-alive :include="keepAlivePages">
+            <component :is="Component" />
+          </keep-alive>
         </transition>
       </router-view>
     </main>
@@ -24,6 +26,8 @@ import WordSearchFloat from './components/WordSearchFloat.vue'
 
 const route = useRoute()
 const showMobileNav = computed(() => route.name !== 'login')
+/** 单词本等：返回时保留页面状态，避免整页重载 */
+const keepAlivePages = ['MyWordsView']
 </script>
 
 <style>

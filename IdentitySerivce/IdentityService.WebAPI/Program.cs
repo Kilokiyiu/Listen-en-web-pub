@@ -1,3 +1,4 @@
+using CommonInit;
 using MyEventController;
 using MyJWT;
 using MyCache;
@@ -41,6 +42,7 @@ builder.Services.AddDbContext<IdentityDbContext>(options =>
         ?? builder.Configuration.GetConnectionString("DatabaseConnStr");
     options.UseSqlServer(connStr);
 });
+builder.Services.AddSqlConnectionKeepAlive();
 
 IdentityBuilder idBuilder = builder.Services.AddIdentityCore<User>(options =>
 {

@@ -161,3 +161,23 @@ export const deleteWordPackEntry = (packId, entryId) =>
 
 export const importWordPackEntries = (id, data) =>
   wordRequest.post(`/Admin/WordPacks/${id}/entries/import`, data, { timeout: 180000 })
+
+// ========== 平台公告 / 站点运行状态 ==========
+export const getAnnouncements = () => listenRequest.get('/Admin/GetAnnouncements')
+
+export const createAnnouncement = (data) =>
+  listenRequest.post('/Admin/CreateAnnouncement', data)
+
+export const updateAnnouncement = (data) =>
+  listenRequest.post('/Admin/UpdateAnnouncement', data)
+
+export const toggleAnnouncementPublish = (id) =>
+  listenRequest.post('/Admin/ToggleAnnouncementPublish', { id })
+
+export const deleteAnnouncement = (id) =>
+  listenRequest.post('/Admin/DeleteAnnouncement', { id })
+
+export const getSiteRuntime = () => listenRequest.get('/Admin/GetSiteRuntime')
+
+export const updateSiteRuntime = (data) =>
+  listenRequest.post('/Admin/UpdateSiteRuntime', data)

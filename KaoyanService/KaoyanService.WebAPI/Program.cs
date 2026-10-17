@@ -1,5 +1,7 @@
+using CommonInit;
 using KaoyanService.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using MyCache;
 using MyJWT;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,7 +15,9 @@ builder.Services.AddDbContext<KaoyanDbContext>(options =>
                   ?? builder.Configuration.GetConnectionString("DatabaseConnStr");
     options.UseSqlServer(connStr);
 });
+builder.Services.AddSqlConnectionKeepAlive();
 
+builder.Services.AddMemoryCacheService(builder.Configuration);
 builder.Services.ServiceInit();
 builder.ConfigureInfrastructureServices();
 

@@ -14,10 +14,12 @@ namespace KaoyanService.WebAPI.Controllers;
 public class AdminController : ControllerBase
 {
     private readonly KaoyanDbContext db;
+    private readonly KaoyanCacheInvalidator cacheInvalidator;
 
-    public AdminController(KaoyanDbContext db)
+    public AdminController(KaoyanDbContext db, KaoyanCacheInvalidator cacheInvalidator)
     {
         this.db = db;
+        this.cacheInvalidator = cacheInvalidator;
     }
 
     [HttpGet]
@@ -106,6 +108,7 @@ public class AdminController : ControllerBase
         if (paper.IsVisible) paper.Hide();
         else paper.Show();
         await db.SaveChangesAsync();
+        await cacheInvalidator.InvalidatePaperAsync(paper.Id);
         return Ok(new { message = paper.IsVisible ? "已显示" : "已隐藏", isVisible = paper.IsVisible });
     }
 
@@ -124,7 +127,7 @@ public class AdminController : ControllerBase
             return BadRequest($"已存在 {request.Year} 年{ExamPaper.SeriesDisplayName(series)}");
 
         var title = string.IsNullOrWhiteSpace(request.Title)
-            ? $"{request.Year}年考研{ExamPaper.SeriesDisplayName(series)}（模拟）"
+            ? $"{request.Year}年考研{ExamPaper.SeriesDisplayName(series)}"
             : request.Title!.Trim();
 
         var paper = new ExamPaper(request.Year, series, title, 0);
@@ -132,6 +135,7 @@ public class AdminController : ControllerBase
         db.ExamSections.Add(new ExamSection(paper.Id, ExamSection.TypeCloze, "完形填空", "", 1));
         db.ExamSections.Add(new ExamSection(paper.Id, ExamSection.TypeReading, "阅读理解", "", 2));
         await db.SaveChangesAsync();
+        await cacheInvalidator.InvalidateAllAsync();
         return Ok(new { message = "已创建", paperId = paper.Id });
     }
 
@@ -150,8 +154,10 @@ public class AdminController : ControllerBase
         var questions = await db.ExamQuestions.Where(q => sectionIds.Contains(q.SectionId)).ToListAsync();
         db.ExamQuestions.RemoveRange(questions);
         db.ExamSections.RemoveRange(sections);
+        var paperId = paper.Id;
         db.ExamPapers.Remove(paper);
         await db.SaveChangesAsync();
+        await cacheInvalidator.InvalidatePaperAsync(paperId);
         return Ok(new { message = "已删除" });
     }
 
@@ -219,6 +225,7 @@ public class AdminController : ControllerBase
         }
 
         await db.SaveChangesAsync();
+        await cacheInvalidator.InvalidatePaperAsync(paper.Id);
         return Ok(new { message = "保存成功", paperId = paper.Id });
     }
 
@@ -298,6 +305,7 @@ public class AdminController : ControllerBase
         }
 
         await db.SaveChangesAsync();
+        await cacheInvalidator.InvalidatePaperAsync(paper.Id);
         return Ok(new { message = "导入成功", paperId = paper.Id });
     }
 }

@@ -202,6 +202,7 @@
       v-model="quizDialogVisible"
       :album-id="quizAlbumId"
       :album-name="quizAlbumName"
+      :category-code="quizCategoryCode"
       @saved="loadAlbums"
     />
 
@@ -261,6 +262,7 @@ const saving = ref(false)
 const quizDialogVisible = ref(false)
 const quizAlbumId = ref('')
 const quizAlbumName = ref('')
+const quizCategoryCode = ref('')
 
 const pdfInputRef = ref(null)
 const pendingUpload = ref({ albumId: null, documentType: null })
@@ -388,6 +390,7 @@ const handleUpload = async () => {
 const openQuizEditor = (row) => {
   quizAlbumId.value = row.id
   quizAlbumName.value = row.nameChinese || ''
+  quizCategoryCode.value = categoryShort(row)
   quizDialogVisible.value = true
 }
 

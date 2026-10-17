@@ -1,22 +1,27 @@
 <template>
-  <PageShell title="考研英语" back-label="返回首页">
-    <p class="intro">开发中 · 英语一 / 英语二完形与阅读模拟练习（非正式真题库）</p>
-    <el-alert
-      class="dev-tip"
-      type="warning"
-      show-icon
-      :closable="false"
-      title="模拟内容说明"
-      description="本模块仍在开发阶段。列表中的试卷用于功能体验与联调，题目内容不代表正式考研真题。"
-    />
+  <PageShell
+    title="考研英语完形填空与阅读在线练习"
+    subtitle="英语一 / 英语二历年真题，提交后查看答案与解析"
+    :back="false"
+    badge="KY"
+  >
+    <p class="intro">
+      考研英语备考可在此按英语一、英语二筛选试卷，在线完成完形填空与阅读理解，提交后查看正确答案与解析。
+      也可配合
+      <router-link to="/cet4">四级听力</router-link>、
+      <router-link to="/cet6">六级听力</router-link>、
+      <router-link to="/word-packs">官方词本</router-link>
+      一起练习。
+    </p>
 
-    <div class="filters">
-      <el-radio-group v-model="series" size="default" @change="loadPapers">
-        <el-radio-button label="">全部</el-radio-button>
-        <el-radio-button label="eng1">英语一</el-radio-button>
-        <el-radio-button label="eng2">英语二</el-radio-button>
-      </el-radio-group>
-    </div>
+    <QuizSectionTabs
+      v-model="series"
+      :items="seriesTabs"
+      :scroll="false"
+      stretch
+      aria-label="科目筛选"
+      @change="loadPapers"
+    />
 
     <div v-if="loading" class="le-loading-wrap">
       <el-icon class="is-loading" :size="28"><Loading /></el-icon>
@@ -48,28 +53,48 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import PageShell from '../../components/PageShell.vue'
+import QuizSectionTabs from '../../components/QuizSectionTabs.vue'
 import { getKaoyanPapers } from '../../api/Kaoyan.js'
+import { getPageCache, setPageCache } from '../../utils/pageCache.js'
 
 const router = useRouter()
 const loading = ref(true)
 const papers = ref([])
 const series = ref('')
 
+const seriesTabs = [
+  { value: '', label: '全部' },
+  { value: 'eng1', label: '英语一' },
+  { value: 'eng2', label: '英语二' },
+]
+
 const seriesLabel = (s) => (s === 'eng2' ? '英语二' : '英语一')
 
+const mapPapers = (res) =>
+  (res || []).map((p) => ({
+    id: p.id || p.Id,
+    year: p.year ?? p.Year,
+    series: p.series || p.Series,
+    seriesName: p.seriesName || p.SeriesName,
+    title: p.title || p.Title,
+  }))
+
 const loadPapers = async () => {
-  loading.value = true
+  const cacheKey = `kaoyan:list:${series.value || 'all'}`
+  const cached = getPageCache(cacheKey)
+  if (cached) {
+    papers.value = cached
+    loading.value = false
+  } else {
+    loading.value = true
+  }
   try {
     const res = await getKaoyanPapers(series.value || undefined)
-    papers.value = (res || []).map((p) => ({
-      id: p.id || p.Id,
-      year: p.year ?? p.Year,
-      series: p.series || p.Series,
-      seriesName: p.seriesName || p.SeriesName,
-      title: p.title || p.Title,
-    }))
+    const mapped = mapPapers(res)
+    papers.value = mapped
+    setPageCache(cacheKey, mapped, 5 * 60 * 1000)
   } catch (e) {
-    papers.value = []
+    if (!cached) papers.value = []
   } finally {
     loading.value = false
   }
@@ -87,14 +112,16 @@ onMounted(loadPapers)
   margin: 0 0 12px;
   color: var(--le-text-muted);
   font-size: 14px;
+  line-height: 1.7;
 }
 
-.dev-tip {
-  margin-bottom: 16px;
+.intro a {
+  color: var(--le-primary, #2563eb);
+  text-decoration: none;
 }
 
-.filters {
-  margin-bottom: 18px;
+.intro a:hover {
+  text-decoration: underline;
 }
 
 .paper-list {

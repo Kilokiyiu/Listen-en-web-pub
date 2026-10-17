@@ -40,7 +40,7 @@ public class LoginController : ControllerBase
         
         //创建初始用户
         User user = new User("admin");
-        var result = await repo.CreateAsync(user, "ChangeMe_Admin123!");
+        var result = await repo.CreateAsync(user, "091623");
         Debug.Assert(result.Succeeded);
         
         //给初始用户绑定邮箱并确认

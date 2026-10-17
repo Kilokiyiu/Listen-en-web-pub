@@ -23,13 +23,36 @@
       </nav>
 
       <div class="header-actions">
-        <el-button circle size="small" class="icon-btn" @click="announcementVisible = true">
-          <el-icon><BellFilled /></el-icon>
-        </el-button>
+        <button
+          type="button"
+          class="action-chip"
+          :class="{ active: route.name === 'about' }"
+          aria-label="关于"
+          @click="router.push('/about')"
+        >
+          关于
+        </button>
+
+        <button
+          type="button"
+          class="action-chip action-chip--icon"
+          aria-label="通知"
+          @click="announcementVisible = true"
+        >
+          <el-icon :size="16"><BellFilled /></el-icon>
+        </button>
 
         <template v-if="!isLoggedIn">
-          <el-button class="hide-mobile" size="small" @click="router.push('/login')">登录</el-button>
-          <el-button type="primary" size="small" class="le-btn-gradient" @click="router.push('/login?mode=register')">注册</el-button>
+          <button type="button" class="action-chip action-chip--login" @click="router.push('/login')">
+            登录
+          </button>
+          <button
+            type="button"
+            class="action-chip action-chip--register"
+            @click="router.push('/login?mode=register')"
+          >
+            注册
+          </button>
         </template>
 
         <el-dropdown v-else trigger="click" @command="handleCommand">
@@ -53,24 +76,38 @@
     <el-dialog
       v-model="announcementVisible"
       title="平台公告"
-      width="560px"
+      width="520px"
       append-to-body
       class="announcement-dialog"
-      @close="handleCloseAnnouncement"
+      @closed="markAnnouncementSeen"
     >
-      <div class="admin-info-card">
-        <div class="admin-info-title">管理员信息</div>
-        <div class="admin-info-row"><span class="label">管理员</span><span>Kilo</span></div>
-        <div class="admin-info-row"><span class="label">GitHub</span><a href="https://github.com/Kilokiyiu" target="_blank" rel="noopener">github.com/Kilokiyiu</a></div>
-        <div class="admin-info-row"><span class="label">状态</span><span class="status-badge">正常运行</span></div>
+      <div v-if="siteStatus" class="site-status-card" :class="`site-status-card--${siteStatusClass}`">
+        <div class="site-status-card__head">
+          <span class="site-status-dot" />
+          <strong>{{ siteStatus.statusText || '网站运行正常' }}</strong>
+          <el-tag size="small" effect="plain" :type="siteStatusTagType">{{ siteStatusLabel }}</el-tag>
+        </div>
+        <p v-if="siteStatus.extraInfo" class="site-status-card__extra">{{ siteStatus.extraInfo }}</p>
+        <p class="site-status-card__meta">
+          状态更新：{{ formatStatusTime(siteStatus.updatedAt) }}
+          <span v-if="serverTimeText"> · 服务器时间 {{ serverTimeText }}</span>
+        </p>
       </div>
-      <h3 class="ann-section-title">最新公告</h3>
+
       <div class="announcement-list">
-        <article v-for="(item, i) in announcements" :key="i" class="announcement-item">
-          <time>{{ item.date }}</time>
+        <article v-for="item in announcements" :key="item.id || item.title" class="announcement-item">
+          <div class="announcement-item__meta">
+            <time>{{ item.date }}</time>
+            <el-tag v-if="item.isPinned" size="small" type="warning" effect="plain">置顶</el-tag>
+          </div>
           <h4>{{ item.title }}</h4>
           <p>{{ item.content }}</p>
         </article>
+        <el-empty
+          v-if="!announcementLoading && announcements.length === 0"
+          description="暂无公告"
+          :image-size="64"
+        />
       </div>
       <div class="announcement-footer">
         <el-checkbox v-model="noShowToday">今日不再显示</el-checkbox>
@@ -80,13 +117,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { BellFilled, UserFilled, ArrowDown } from '@element-plus/icons-vue'
+import { getAnnouncementBoard } from '../api/Announcement'
 
 const router = useRouter()
 const route = useRoute()
+
+const ANNOUNCE_DATE_KEY = 'announcement_last_shown_date'
+const ANNOUNCE_VERSION_KEY = 'announcement_board_version'
 
 const navLinks = [
   { path: '/', label: '首页', names: ['home'] },
@@ -95,7 +136,6 @@ const navLinks = [
   { path: '/bbc-news', label: 'BBC', names: ['bbcNews'] },
   { path: '/word-roots', label: '词根', names: ['wordRoots', 'wordRootDetail'] },
   { path: '/my-words', label: '单词本', names: ['myWords', 'wordReview'] },
-  { path: '/about', label: '关于', names: ['about'] },
 ]
 
 const isNavActive = (link) => {
@@ -104,15 +144,54 @@ const isNavActive = (link) => {
 }
 
 const announcementVisible = ref(false)
+const announcementLoading = ref(false)
 const noShowToday = ref(false)
-const announcements = [
-  { date: '2026-09-22', title: '学习记录上线', content: '听力标记完成与每日短文已读会记入学习记录；个人中心展示真实进度。' },
-  { date: '2026-05-13', title: '平台上线', content: 'ListenEase 正式上线！提供四六级真题听力、BBC 外刊、单词复习与每日一句。' },
-  { date: '2026-05-13', title: '更新计划', content: '更多学习功能开发中，欢迎通过 GitHub 或站内反馈提出建议。' },
-]
+const announcements = ref([])
+const siteStatus = ref(null)
+const boardVersion = ref('')
+const serverTime = ref('')
 
 const isLoggedIn = ref(false)
 const username = ref('')
+
+const siteStatusClass = computed(() => {
+  const s = (siteStatus.value?.status || 'Normal').toLowerCase()
+  if (s === 'maintenance') return 'maintenance'
+  if (s === 'notice') return 'notice'
+  return 'normal'
+})
+
+const siteStatusLabel = computed(() => {
+  const s = siteStatus.value?.status || 'Normal'
+  if (s === 'Maintenance') return '维护中'
+  if (s === 'Notice') return '提示'
+  return '正常'
+})
+
+const siteStatusTagType = computed(() => {
+  const s = siteStatus.value?.status || 'Normal'
+  if (s === 'Maintenance') return 'danger'
+  if (s === 'Notice') return 'warning'
+  return 'success'
+})
+
+const serverTimeText = computed(() => formatStatusTime(serverTime.value, true))
+
+const todayKey = () => {
+  const d = new Date()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${m}-${day}`
+}
+
+const formatStatusTime = (value, timeOnly = false) => {
+  if (!value) return ''
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return String(value)
+  const pad = (n) => String(n).padStart(2, '0')
+  if (timeOnly) return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
 
 const checkLogin = () => {
   const token = localStorage.getItem('token')
@@ -121,14 +200,46 @@ const checkLogin = () => {
   username.value = savedUser || ''
 }
 
-onMounted(checkLogin)
-watch(() => route.path, checkLogin)
-
-const handleCloseAnnouncement = () => {
+const markAnnouncementSeen = () => {
+  localStorage.setItem(ANNOUNCE_DATE_KEY, todayKey())
+  if (boardVersion.value) {
+    localStorage.setItem(ANNOUNCE_VERSION_KEY, boardVersion.value)
+  }
   if (noShowToday.value) {
     localStorage.setItem('announcement_hide_until', String(Date.now() + 86400000))
   }
 }
+
+const maybeShowDailyAnnouncement = () => {
+  const lastDate = localStorage.getItem(ANNOUNCE_DATE_KEY)
+  const lastVersion = localStorage.getItem(ANNOUNCE_VERSION_KEY)
+  const hasNewContent = boardVersion.value && boardVersion.value !== lastVersion
+  if (hasNewContent || lastDate !== todayKey()) {
+    announcementVisible.value = true
+  }
+}
+
+const loadAnnouncementBoard = async () => {
+  announcementLoading.value = true
+  try {
+    const board = await getAnnouncementBoard()
+    siteStatus.value = board?.site || null
+    announcements.value = board?.announcements || []
+    boardVersion.value = board?.version || ''
+    serverTime.value = board?.serverTime || ''
+    maybeShowDailyAnnouncement()
+  } catch {
+    // 请求失败时仍保留手动打开能力，不打断页面
+  } finally {
+    announcementLoading.value = false
+  }
+}
+
+onMounted(() => {
+  checkLogin()
+  loadAnnouncementBoard()
+})
+watch(() => route.path, checkLogin)
 
 const handleCommand = (cmd) => {
   if (cmd === 'logout') {
@@ -242,46 +353,76 @@ const handleCommand = (cmd) => {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
-.icon-btn {
-  border: none !important;
-  background: transparent !important;
-  color: var(--le-text-secondary) !important;
+.action-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--le-border-strong, #cbd5e1);
+  background: #fff;
+  color: var(--le-text);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s, box-shadow 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
-.icon-btn:hover {
-  background: var(--le-gradient-soft) !important;
-  color: var(--le-primary) !important;
+.action-chip:hover,
+.action-chip.active {
+  border-color: var(--le-primary);
+  color: var(--le-primary);
+  background: var(--le-gradient-soft);
 }
 
-.header-actions :deep(.el-button:not(.le-btn-gradient):not(.el-button--primary)) {
-  background: transparent;
-  border: none;
-  color: var(--le-text-secondary);
+.action-chip--icon {
+  width: 32px;
+  padding: 0;
+  color: var(--le-primary);
+  border-color: rgba(37, 99, 235, 0.35);
+  background: var(--le-gradient-soft);
 }
 
-.header-actions :deep(.le-btn-gradient) {
-  background: var(--le-gradient) !important;
-  color: #fff !important;
-  border: none !important;
-  box-shadow: none !important;
+.action-chip--login {
+  color: var(--le-primary);
+  border-color: rgba(37, 99, 235, 0.45);
+  background: #fff;
+}
+
+.action-chip--register {
+  color: #fff;
+  border-color: transparent;
+  background: var(--le-gradient);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+.action-chip--register:hover {
+  color: #fff;
+  opacity: 0.95;
 }
 
 .user-btn {
   display: flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid var(--le-border);
-  background: var(--le-bg-elevated);
+  border: 1px solid var(--le-border-strong, #cbd5e1);
+  background: #fff;
   border-radius: 99px;
   padding: 4px 12px 4px 4px;
   cursor: pointer;
   transition: border-color 0.2s;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .user-btn:hover {
-  border-color: var(--le-border-strong);
+  border-color: var(--le-primary);
 }
 
 .username {
@@ -293,56 +434,62 @@ const handleCommand = (cmd) => {
   white-space: nowrap;
 }
 
-.admin-info-card {
-  background: var(--le-gradient);
-  border-radius: var(--le-radius);
-  padding: 20px;
-  color: #fff;
-  margin-bottom: 20px;
+.site-status-card {
+  padding: 14px 16px;
+  border-radius: var(--le-radius-sm);
+  margin-bottom: 14px;
+  border: 1px solid var(--le-border);
+  background: #f8fafc;
 }
 
-.admin-info-title {
-  font-weight: 700;
-  margin-bottom: 12px;
+.site-status-card--normal {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.06);
 }
 
-.admin-info-row {
+.site-status-card--notice {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.site-status-card--maintenance {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.06);
+}
+
+.site-status-card__head {
   display: flex;
-  gap: 8px;
-  font-size: 14px;
-  margin-bottom: 8px;
-}
-
-.admin-info-row .label {
-  opacity: 0.75;
-  min-width: 72px;
-}
-
-.admin-info-row a {
-  color: #bae6fd;
-}
-
-.status-badge {
-  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(255,255,255,0.2);
-  padding: 2px 10px;
-  border-radius: 99px;
-  font-size: 13px;
+  gap: 8px;
 }
 
-.status-badge::before {
-  content: '';
-  width: 6px;
-  height: 6px;
+.site-status-dot {
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: #4ade80;
+  background: #22c55e;
+  flex-shrink: 0;
 }
 
-.ann-section-title {
-  font-size: 16px;
-  margin: 0 0 12px;
+.site-status-card--notice .site-status-dot {
+  background: #f59e0b;
+}
+
+.site-status-card--maintenance .site-status-dot {
+  background: #ef4444;
+}
+
+.site-status-card__extra {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--le-text-secondary);
+  line-height: 1.5;
+}
+
+.site-status-card__meta {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--le-text-muted);
 }
 
 .announcement-item {
@@ -351,6 +498,12 @@ const handleCommand = (cmd) => {
   border-radius: var(--le-radius-sm);
   margin-bottom: 10px;
   border-left: 3px solid var(--le-primary);
+}
+
+.announcement-item__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .announcement-item time {
@@ -368,6 +521,7 @@ const handleCommand = (cmd) => {
   font-size: 14px;
   color: var(--le-text-secondary);
   line-height: 1.6;
+  white-space: pre-wrap;
 }
 
 .announcement-footer {
@@ -377,7 +531,7 @@ const handleCommand = (cmd) => {
 
 @media (max-width: 768px) {
   .header-inner {
-    padding: 0 12px;
+    padding: 0 10px;
     gap: 8px;
   }
   .desktop-nav {
@@ -388,6 +542,20 @@ const handleCommand = (cmd) => {
   }
   .logo-text {
     font-size: 16px;
+  }
+  .header-actions {
+    gap: 6px;
+  }
+  .action-chip {
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+  .action-chip--icon {
+    width: 30px;
+  }
+  .action-chip--register {
+    padding: 0 12px;
   }
 }
 </style>

@@ -154,7 +154,12 @@
 
 <script setup>
 import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import * as echarts from 'echarts'
+import { use, init } from 'echarts/core'
+import { LineChart } from 'echarts/charts'
+import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+
+use([LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 import PageHeader from '../components/PageHeader.vue'
 import {
   getStatsOverview,
@@ -197,7 +202,7 @@ const formatPath = (path) => pathLabels[path] || path
 const renderRegistrationChart = (data) => {
   if (!registrationChartRef.value) return
   if (!registrationChart) {
-    registrationChart = echarts.init(registrationChartRef.value)
+    registrationChart = init(registrationChartRef.value)
   }
   registrationChart.setOption({
     tooltip: { trigger: 'axis' },
@@ -222,7 +227,7 @@ const renderRegistrationChart = (data) => {
 const renderTrafficChart = (data) => {
   if (!trafficChartRef.value) return
   if (!trafficChart) {
-    trafficChart = echarts.init(trafficChartRef.value)
+    trafficChart = init(trafficChartRef.value)
   }
   trafficChart.setOption({
     tooltip: { trigger: 'axis' },

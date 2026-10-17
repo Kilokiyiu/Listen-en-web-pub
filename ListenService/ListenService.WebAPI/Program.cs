@@ -1,3 +1,4 @@
+using CommonInit;
 using ListenService.Infrastrucure;
 using ListenService.WebAPI;
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +35,7 @@ builder.Services.AddDbContext<ListenDbContext>(options =>
         ?? builder.Configuration.GetConnectionString("DatabaseConnStr");
     options.UseSqlServer(connStr);
 });
+builder.Services.AddSqlConnectionKeepAlive();
 
 builder.Services.AddMemoryCacheService(builder.Configuration);
 builder.Services.ServiceInit();
@@ -91,6 +93,16 @@ try
 catch (Exception ex)
 {
     app.Logger.LogError(ex, "ListenService dev mock quiz seed failed.");
+    throw;
+}
+
+try
+{
+    await AnnouncementSeeder.SeedAsync(app.Services, app.Logger);
+}
+catch (Exception ex)
+{
+    app.Logger.LogError(ex, "ListenService announcement seed failed.");
     throw;
 }
 

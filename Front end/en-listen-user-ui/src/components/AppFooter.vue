@@ -24,6 +24,10 @@
             <el-icon :size="14"><Link /></el-icon>
             GitHub 源码
           </a>
+          <a href="mailto:" class="footer-link">
+            <el-icon :size="14"><Message /></el-icon>
+            联系邮箱
+          </a>
           <a href="https://mywebpage-f2u.pages.dev/" target="_blank" rel="noopener noreferrer" class="footer-link">
             <el-icon :size="14"><User /></el-icon>
             作者主页

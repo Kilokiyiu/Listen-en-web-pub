@@ -16,7 +16,7 @@
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router'
-import { HomeFilled, Headset, Reading, Collection, InfoFilled, User } from '@element-plus/icons-vue'
+import { HomeFilled, Headset, Reading, School, Collection, User } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -24,16 +24,32 @@ const route = useRoute()
 const navItems = [
   { path: '/', label: '首页', icon: HomeFilled, match: ['home'] },
   { path: '/exams', label: '听力', icon: Headset, match: ['exams', 'examDetail'] },
-  { path: '/daily', label: '阅读', icon: Reading, match: ['dailyArticle', 'bbcNews', 'kaoyan', 'kaoyanPaper'] },
-  { path: '/word-roots', label: '单词', icon: Collection, match: ['wordRoots', 'wordRootDetail', 'myWords', 'wordReview'] },
-  { path: '/about', label: '关于', icon: InfoFilled, match: ['about'] },
+  {
+    path: '/reading',
+    label: '阅读',
+    icon: Reading,
+    match: ['readingHub', 'dailyArticle', 'bbcNews'],
+  },
+  {
+    path: '/kaoyan',
+    label: '考研',
+    icon: School,
+    match: ['kaoyan', 'kaoyanPaper'],
+  },
+  {
+    path: '/words',
+    label: '单词',
+    icon: Collection,
+    match: ['wordsHub', 'wordRoots', 'wordRootDetail', 'myWords', 'wordReview', 'wordPacks'],
+  },
   { path: '/profile', label: '我的', icon: User, match: ['profile', 'history', 'login'] },
 ]
 
 const isActive = (item) => {
   if (item.path === '/' && route.path === '/') return true
+  if (item.match.includes(route.name)) return true
   if (item.path !== '/' && route.path.startsWith(item.path.split('?')[0])) return true
-  return item.match.includes(route.name)
+  return false
 }
 
 const go = (path) => {

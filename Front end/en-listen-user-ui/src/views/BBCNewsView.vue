@@ -3,11 +3,13 @@
     <!-- 顶部导航 -->
     <div class="page-header">
       <el-button text @click="goBack" class="back-btn">
-        <el-icon><ArrowLeft /></el-icon> {{ showDetail ? '返回列表' : '返回' }}
+        <el-icon><ArrowLeft /></el-icon> {{ showDetail ? '返回列表' : '阅读' }}
       </el-button>
       <div class="page-title">BBC 每日新闻</div>
       <div class="placeholder"></div>
     </div>
+
+    <SectionSubNav v-if="!showDetail" :tabs="readingTabs" aria-label="阅读栏目" />
 
     <!-- 新闻列表页面 -->
     <template v-if="!showDetail">
@@ -138,6 +140,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getBBCNews, getBBCCategories, getBBCArticleDetail } from '../api/DailyArticle.js'
+import SectionSubNav from '../components/SectionSubNav.vue'
+import { readingTabs } from '../utils/sectionTabs'
 
 const router = useRouter()
 
@@ -239,7 +243,7 @@ const goBack = () => {
     articleDetail.value = null
     currentNewsTitle.value = ''
   } else {
-    router.back()
+    router.push('/reading')
   }
 }
 

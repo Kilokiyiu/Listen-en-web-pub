@@ -3,6 +3,8 @@
     title="我的单词本"
     subtitle="书架上的每一本，都是你的词汇积累"
     :back="true"
+    back-label="单词"
+    back-to="/words"
     badge="WORDS"
   >
     <template #header-extra>
@@ -20,6 +22,8 @@
         <span class="btn-label">添加单词</span>
       </el-button>
     </template>
+
+    <SectionSubNav :tabs="wordsTabs" aria-label="单词栏目" />
 
     <!-- 书架：实体书本选择 -->
     <section class="bookshelf le-paper-flip">
@@ -361,11 +365,17 @@
   </PageShell>
 </template>
 
+<script>
+export default { name: 'MyWordsView' }
+</script>
+
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onActivated, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import PageShell from '../components/PageShell.vue'
+import SectionSubNav from '../components/SectionSubNav.vue'
+import { wordsTabs } from '../utils/sectionTabs'
 import { promptGoReviewAfterAdd } from '../utils/promptGoReview.js'
 import {
   getUserWords,
@@ -678,13 +688,29 @@ watch(showAddDialog, (open) => {
   if (open) newWord.value.wordBookId = currentBookId.value
 })
 
-onMounted(async () => {
+const bootstrapped = ref(false)
+
+const bootstrap = async ({ quiet = false } = {}) => {
   try {
-    await loadBooks()
-    await Promise.all([loadWords(), loadStats(), loadOfficialPacks()])
+    if (!quiet) {
+      await loadBooks()
+      await Promise.all([loadWords(), loadStats(), loadOfficialPacks()])
+    } else if (currentBookId.value) {
+      // 返回单词本：静默刷新统计/词数，不打断当前列表
+      await Promise.all([loadStats(), refreshBookWordCounts()])
+    } else {
+      await loadBooks()
+      await Promise.all([loadWords(), loadStats(), loadOfficialPacks()])
+    }
+    bootstrapped.value = true
   } catch (e) {
     console.error(e)
   }
+}
+
+onMounted(() => bootstrap({ quiet: false }))
+onActivated(() => {
+  if (bootstrapped.value) bootstrap({ quiet: true })
 })
 </script>
 

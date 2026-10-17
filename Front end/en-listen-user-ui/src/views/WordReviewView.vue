@@ -12,6 +12,8 @@
       </el-button>
     </div>
 
+    <SectionSubNav v-if="!currentWord || isComplete" :tabs="wordsTabs" aria-label="单词栏目" />
+
     <!-- 没有单词时 -->
     <el-empty
       v-if="!loading && !isComplete && dueWords.length === 0"
@@ -131,6 +133,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getDueWords, getRandomWords, reviewWord, getCurrentWordBookId } from '../api/Word.js'
 import { trackEvent } from '../api/Analytics.js'
+import SectionSubNav from '../components/SectionSubNav.vue'
+import { wordsTabs } from '../utils/sectionTabs'
 
 const router = useRouter()
 const route = useRoute()

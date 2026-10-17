@@ -2,7 +2,7 @@
   <div class="admin-page">
     <PageHeader
       title="考研内容"
-      description="开发中 · 当前试卷仅用于功能模拟与联调，非正式历年真题库"
+      description="英语一 / 英语二试卷管理 · 完形填空题目编辑与可见性控制"
     >
       <template #extra>
         <el-button type="primary" @click="openCreate">
@@ -11,15 +11,6 @@
         </el-button>
       </template>
     </PageHeader>
-
-    <el-alert
-      class="dev-alert"
-      type="warning"
-      show-icon
-      :closable="false"
-      title="模块仍在开发阶段"
-      description="列表中的年份卷壳与演示题仅供模拟练习；正式内容请自行新增试卷并在「编辑题目」中录入。可随时删除不需要的模拟卷。"
-    />
 
     <div class="admin-card admin-table-card">
       <div class="admin-card__header">
@@ -51,7 +42,7 @@
       </div>
     </div>
 
-    <el-dialog v-model="createVisible" title="新增模拟试卷" width="480px" destroy-on-close>
+    <el-dialog v-model="createVisible" title="新增试卷" width="480px" destroy-on-close>
       <el-form label-position="top">
         <el-form-item label="年份" required>
           <el-input-number v-model="createForm.year" :min="2000" :max="2100" style="width: 100%" />
@@ -63,7 +54,7 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item label="标题（可选）">
-          <el-input v-model="createForm.title" placeholder="默认：XXXX年考研英语一（模拟）" />
+          <el-input v-model="createForm.title" placeholder="默认：XXXX年考研英语一" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -195,10 +186,6 @@ onMounted(load)
 </script>
 
 <style scoped>
-.dev-alert {
-  margin-bottom: 16px;
-}
-
 .table-body {
   padding: 0;
 }

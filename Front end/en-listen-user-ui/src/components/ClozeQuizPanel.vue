@@ -68,9 +68,9 @@
           <span v-if="!feedbackMap[q.id].isCorrect" class="answer-key">
             正确答案：{{ (q.options || [])[feedbackMap[q.id].correctAnswer] }}
           </span>
-          <p v-if="feedbackMap[q.id].explanation" class="explain">
+          <div v-if="feedbackMap[q.id].explanation" class="explain">
             {{ feedbackMap[q.id].explanation }}
-          </p>
+          </div>
         </div>
       </div>
     </div>
@@ -117,9 +117,9 @@
           <span v-if="!feedbackMap[activeQ.id].isCorrect" class="answer-key">
             正确答案：{{ (activeQ.options || [])[feedbackMap[activeQ.id].correctAnswer] }}
           </span>
-          <p v-if="feedbackMap[activeQ.id].explanation" class="explain">
+          <div v-if="feedbackMap[activeQ.id].explanation" class="explain">
             {{ feedbackMap[activeQ.id].explanation }}
-          </p>
+          </div>
         </div>
         <div class="drawer-actions">
           <el-button @click="drawerOpen = false">关闭</el-button>
@@ -413,7 +413,14 @@ const onReset = () => {
 .ok { color: #16a34a; font-weight: 600; }
 .bad { color: #dc2626; font-weight: 600; }
 .answer-key { color: var(--le-text); }
-.explain { margin: 4px 0 0; color: var(--le-text-muted); line-height: 1.55; }
+.explain {
+  margin: 6px 0 0;
+  color: var(--le-text-muted);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 13px;
+}
 
 .submit-row {
   margin-top: 18px;

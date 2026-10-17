@@ -51,6 +51,12 @@ const routes = [
         component: () => import('../views/UserManageView.vue'),
         meta: { title: '用户管理' },
       },
+      {
+        path: 'announcements',
+        name: 'announcements',
+        component: () => import('../views/AnnouncementManageView.vue'),
+        meta: { title: '公告管理' },
+      },
     ],
   },
 ]

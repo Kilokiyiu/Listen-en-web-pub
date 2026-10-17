@@ -46,6 +46,15 @@ public class KaoyanRepo : IKaoyanRepo
             .ToArrayAsync();
     }
 
+    public Task<ExamQuestion[]> GetQuestionsByPaperIdAsync(Guid paperId) =>
+        (
+            from q in db.ExamQuestions.AsNoTracking()
+            join s in db.ExamSections.AsNoTracking() on q.SectionId equals s.Id
+            where s.PaperId == paperId
+            orderby s.SequenceNumber, q.SequenceNumber, q.Number
+            select q
+        ).ToArrayAsync();
+
     public Task<ExamPaper[]> GetAllPapersAsync() =>
         db.ExamPapers.AsNoTracking()
             .OrderByDescending(p => p.Year)

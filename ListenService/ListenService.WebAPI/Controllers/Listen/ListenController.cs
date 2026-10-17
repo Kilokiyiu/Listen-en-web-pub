@@ -1,7 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using ListenService.Domain;
+using ListenService.Domain.Entity;
+using ListenService.Infrastrucure;
 using ListenService.WebAPI.Controllers.Listen.DTO;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace ListenService.WebAPI.Controllers.Listen;
 
@@ -11,10 +14,12 @@ namespace ListenService.WebAPI.Controllers.Listen;
 public class ListenController : ControllerBase
 {
     private readonly IListenRepo repo;
+    private readonly ListenDbContext dbContext;
 
-    public ListenController(IListenRepo repo)
+    public ListenController(IListenRepo repo, ListenDbContext dbContext)
     {
         this.repo = repo;
+        this.dbContext = dbContext;
     }
 
     /// <summary>
@@ -223,5 +228,52 @@ public class ListenController : ControllerBase
             ScorePercent = total == 0 ? 0 : Math.Round(correctCount * 100.0 / total, 1),
             Results = results
         };
+    }
+
+    /// <summary>
+    /// 用户端公告板：站点运行状态 + 已发布公告
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult> GetAnnouncementBoard()
+    {
+        var runtime = await dbContext.SiteRuntimeInfos.FindAsync(SiteRuntimeInfo.DefaultId)
+                      ?? SiteRuntimeInfo.CreateDefault();
+
+        var announcements = await dbContext.Announcements
+            .Where(a => a.IsPublished)
+            .OrderByDescending(a => a.IsPinned)
+            .ThenBy(a => a.SortOrder)
+            .ThenByDescending(a => a.PublishDate)
+            .ThenByDescending(a => a.UpdatedAt)
+            .Select(a => new
+            {
+                a.Id,
+                a.Title,
+                a.Content,
+                date = a.PublishDate.ToString("yyyy-MM-dd"),
+                a.IsPinned,
+                updatedAt = a.UpdatedAt
+            })
+            .ToListAsync();
+
+        var latestUpdated = announcements.Count == 0
+            ? runtime.UpdatedAt
+            : announcements.Max(a => a.updatedAt);
+        if (runtime.UpdatedAt > latestUpdated)
+            latestUpdated = runtime.UpdatedAt;
+
+        return Ok(new
+        {
+            version = latestUpdated.ToString("O"),
+            serverTime = DateTime.Now.ToString("O"),
+            site = new
+            {
+                status = runtime.Status,
+                statusText = runtime.StatusText,
+                extraInfo = runtime.ExtraInfo,
+                updatedAt = runtime.UpdatedAt
+            },
+            announcements
+        });
     }
 }

@@ -31,7 +31,7 @@ export const homeCategoryMeta = {
   },
   kaoyan: {
     title: '考研英语',
-    subtitle: '开发中 · 模拟完形 / 阅读练习',
+    subtitle: '英语一 / 英语二 · 完形填空在线练习',
     listTitle: '考研英语',
     color: '#ef4444',
     blessing: '考研路上不孤单。先把长难句啃下来，一步一步来。',
@@ -54,8 +54,7 @@ export const homeExtraCategories = [
     code: 'kaoyan',
     name: { chinese: '考研英语', english: 'Kaoyan' },
     kind: 'kaoyan',
-    /** 开发中：可体验模拟做题，非正式真题库 */
-    comingSoon: true,
+    comingSoon: false,
     entryRoute: { name: 'kaoyan' },
   },
 ]

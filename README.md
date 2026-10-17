@@ -25,6 +25,7 @@
 | 🖥️ **后台管理** | 用户、试卷、文章、词根、官方词本、考研试卷、数据看板 |
 | 📊 **学习追踪** | Study Activity + Analytics 埋点 |
 | 💬 **用户反馈** | Web/App 反馈，SMTP 或 SendCloud |
+| 📣 **公告** | 用户端公告板与站点状态，管理端发布 |
 | 📱 **多端支持** | 用户端、管理端、微信小程序、EaseWord Android（0.9.10） |
 
 ---
@@ -80,7 +81,8 @@
 ### 基础设施
 
 - **容器化**：Docker + Docker Compose
-- **反向代理**：Nginx（HTTP/2 + TLS 1.3 + gzip）
+- **反向代理**：Nginx（HTTP/2 + TLS 1.3 + gzip）。公开听力查询可缓存，过期后先返回旧内容
+- **首次打开**：用户端字体不阻塞首屏，两端按需加载界面组件，背景图单独压缩。各 API 会定时保持数据库连接，避免闲置过夜后第一次请求变慢
 - **HTTPS 证书**：Let's Encrypt / Certbot 自动续期
 - **邮件服务**：SMTP（推荐 Outlook 587）或 SendCloud
 - **CI/CD**：GitHub Actions

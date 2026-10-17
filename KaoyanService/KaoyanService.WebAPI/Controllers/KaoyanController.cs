@@ -69,7 +69,7 @@ public class KaoyanController : ControllerBase
             return NotFound("试卷不存在");
 
         var sections = await repo.GetSectionsByPaperIdAsync(paperId);
-        var questions = await repo.GetQuestionsBySectionIdsAsync(sections.Select(s => s.Id));
+        var questions = await repo.GetQuestionsByPaperIdAsync(paperId);
         var qBySection = questions.GroupBy(q => q.SectionId).ToDictionary(g => g.Key, g => g.ToArray());
 
         return Ok(new

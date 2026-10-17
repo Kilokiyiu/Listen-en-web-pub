@@ -16,7 +16,11 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
+    <!-- 不阻塞首屏。Google 字体样式默认缓存约 1 天，放在 head 里会让每天第一次打开一直白屏。 -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400&family=Space+Grotesk:wght@500;700&display=swap" media="print" onload="this.media='all'">
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400&family=Space+Grotesk:wght@500;700&display=swap">
+    </noscript>
 
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="shortcut icon" href="/LE.ico">
@@ -27,6 +31,10 @@
     <link rel="alternate" hreflang="x-default" href="https://your-domain.com/">
 
     <title>ListenEase - 英语听力练习与学习资料 | 四六级雅思托福真题</title>
+
+    <meta name="google-site-verification" content="3E_fzYoOyagfr6dfe4yjDe2q2fOFcAaeaFKPlORYOck" />
+    <meta name="baidu-site-verification" content="codeva-yF7mUFgF8E" />
+    <meta name="msvalidate.01" content="F6D3D95FFE5662896CADF8FA5FEC2B50" />
 
     <meta name="description" content="ListenEase 专注英语听力练习与英语学习资料：大学英语四级/六级、雅思、托福历年真题听力在线练，真题试卷与答案 PDF 下载，每日英语短文、BBC 新闻阅读、词根词缀与单词本，一站备考提升听力与词汇。">
     <meta name="keywords" content="英语听力,英语听力练习,英语学习资料,听力学习资料,四六级听力,英语四级听力,英语六级听力,四六级真题,雅思听力,托福听力,听力真题下载,试卷下载,听力原文,每日英语短文,BBC英语,词根词缀,单词本,ListenEase,listenease">
@@ -100,25 +108,25 @@
               "@type": "ListItem",
               "position": 1,
               "name": "四六级雅思托福听力真题",
-              "url": "https://your-domain.com/#/exams"
+              "url": "https://your-domain.com/exams"
             },
             {
               "@type": "ListItem",
               "position": 2,
               "name": "每日英语短文",
-              "url": "https://your-domain.com/#/daily"
+              "url": "https://your-domain.com/daily"
             },
             {
               "@type": "ListItem",
               "position": 3,
               "name": "BBC 英语新闻",
-              "url": "https://your-domain.com/#/bbc-news"
+              "url": "https://your-domain.com/bbc-news"
             },
             {
               "@type": "ListItem",
               "position": 4,
               "name": "词根词缀学习",
-              "url": "https://your-domain.com/#/word-roots"
+              "url": "https://your-domain.com/word-roots"
             }
           ]
         }
@@ -154,20 +162,20 @@
   <body>
     <h1 class="seo-page-heading">ListenEase - 英语听力练习与英语学习资料平台</h1>
     <nav class="seo-crawl-links" aria-label="网站主要栏目">
-      <a href="/#/exams">听力真题练习</a>
-      <a href="/#/daily">每日英语短文</a>
-      <a href="/#/bbc-news">BBC 英语新闻</a>
-      <a href="/#/word-roots">词根词缀学习</a>
-      <a href="/#/about">关于 ListenEase</a>
+      <a href="/exams">听力真题练习</a>
+      <a href="/daily">每日英语短文</a>
+      <a href="/bbc-news">BBC 英语新闻</a>
+      <a href="/word-roots">词根词缀学习</a>
+      <a href="/about">关于 ListenEase</a>
     </nav>
     <noscript>
       <strong>ListenEase 需要启用 JavaScript 才能正常使用，请在浏览器设置中开启后刷新页面。</strong>
       <p>ListenEase 提供英语听力练习与英语学习资料：四六级、雅思、托福历年真题听力，支持试卷与答案 PDF 下载，以及每日短文、BBC 新闻与词根词汇学习。</p>
       <ul>
-        <li><a href="/#/exams">听力真题列表</a></li>
-        <li><a href="/#/daily">每日一篇短文</a></li>
-        <li><a href="/#/bbc-news">BBC 每日新闻</a></li>
-        <li><a href="/#/word-roots">词根学习</a></li>
+        <li><a href="/exams">听力真题列表</a></li>
+        <li><a href="/daily">每日一篇短文</a></li>
+        <li><a href="/bbc-news">BBC 每日新闻</a></li>
+        <li><a href="/word-roots">词根学习</a></li>
       </ul>
     </noscript>
     <div id="app">

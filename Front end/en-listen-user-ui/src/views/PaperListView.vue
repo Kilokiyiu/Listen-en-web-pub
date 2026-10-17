@@ -75,6 +75,7 @@ import { ArrowLeft } from '@element-plus/icons-vue'
 import PageShell from '../components/PageShell.vue'
 import { getAlbumsByCategoryId, getCategories } from '../api/Listen.js'
 import { listCategoryMeta } from '../utils/categoryMeta.js'
+import { LISTENING_CODE_TO_PATH } from '../utils/seoHubs.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -122,6 +123,12 @@ const handlePageChange = (page) => {
 const goDetail = (albumId) => router.push({ name: 'examDetail', query: { albumId } })
 
 const selectCategory = (id) => {
+  const cat = categories.value.find((c) => c.id === id)
+  const hubPath = LISTENING_CODE_TO_PATH[cat?.code]
+  if (hubPath) {
+    router.push(hubPath)
+    return
+  }
   router.push({ name: 'exams', query: { categoryId: id } })
 }
 

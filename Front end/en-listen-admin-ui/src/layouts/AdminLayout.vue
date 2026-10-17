@@ -73,6 +73,7 @@ import {
   ArrowDown,
   SwitchButton,
   Notebook,
+  Bell,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -80,6 +81,7 @@ const router = useRouter()
 
 const menuItems = [
   { path: '/', title: '数据概览', icon: DataAnalysis },
+  { path: '/announcements', title: '公告管理', icon: Bell },
   { path: '/listen', title: '听力内容', icon: FolderOpened },
   { path: '/kaoyan', title: '考研内容', icon: Reading },
   { path: '/article', title: '每日一篇', icon: Document },

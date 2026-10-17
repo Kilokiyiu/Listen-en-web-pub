@@ -535,6 +535,156 @@ public class AdminController : ControllerBase
         return Ok(new { url = relativeUrl, sectionId });
     }
 
+    // ========== 平台公告 / 站点运行状态 ==========
+
+    [HttpGet]
+    public async Task<ActionResult> GetAnnouncements()
+    {
+        var list = await dbContext.Announcements
+            .OrderByDescending(a => a.IsPinned)
+            .ThenBy(a => a.SortOrder)
+            .ThenByDescending(a => a.PublishDate)
+            .ThenByDescending(a => a.UpdatedAt)
+            .Select(a => new
+            {
+                a.Id,
+                a.Title,
+                a.Content,
+                publishDate = a.PublishDate.ToString("yyyy-MM-dd"),
+                a.IsPublished,
+                a.IsPinned,
+                a.SortOrder,
+                creationTime = a.CreationTime,
+                updatedAt = a.UpdatedAt
+            })
+            .ToListAsync();
+        return Ok(list);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult> CreateAnnouncement([FromBody] UpsertAnnouncementRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Title) || string.IsNullOrWhiteSpace(request.Content))
+            return BadRequest("标题和内容不能为空");
+
+        var publishDate = ParsePublishDate(request.PublishDate);
+        var entity = new Announcement(
+            request.Title,
+            request.Content,
+            publishDate,
+            request.IsPinned,
+            request.SortOrder);
+        if (!request.IsPublished)
+            entity.Unpublish();
+
+        dbContext.Announcements.Add(entity);
+        await dbContext.SaveChangesAsync();
+        return Ok(new { id = entity.Id });
+    }
+
+    [HttpPost]
+    public async Task<ActionResult> UpdateAnnouncement([FromBody] UpsertAnnouncementRequest request)
+    {
+        if (request.Id == null || request.Id == Guid.Empty)
+            return BadRequest("缺少公告 Id");
+        if (string.IsNullOrWhiteSpace(request.Title) || string.IsNullOrWhiteSpace(request.Content))
+            return BadRequest("标题和内容不能为空");
+
+        var entity = await dbContext.Announcements.FindAsync(request.Id.Value);
+        if (entity == null)
+            return NotFound("公告不存在");
+
+        entity.Update(
+            request.Title,
+            request.Content,
+            ParsePublishDate(request.PublishDate),
+            request.IsPinned,
+            request.SortOrder);
+
+        if (request.IsPublished)
+            entity.Publish();
+        else
+            entity.Unpublish();
+
+        await dbContext.SaveChangesAsync();
+        return Ok(new { id = entity.Id });
+    }
+
+    [HttpPost]
+    public async Task<ActionResult> ToggleAnnouncementPublish([FromBody] IdRequest request)
+    {
+        var entity = await dbContext.Announcements.FindAsync(request.Id);
+        if (entity == null)
+            return NotFound("公告不存在");
+
+        if (entity.IsPublished)
+            entity.Unpublish();
+        else
+            entity.Publish();
+
+        await dbContext.SaveChangesAsync();
+        return Ok(new { id = entity.Id, isPublished = entity.IsPublished });
+    }
+
+    [HttpPost]
+    public async Task<ActionResult> DeleteAnnouncement([FromBody] IdRequest request)
+    {
+        var entity = await dbContext.Announcements.FindAsync(request.Id);
+        if (entity == null)
+            return NotFound("公告不存在");
+
+        dbContext.Announcements.Remove(entity);
+        await dbContext.SaveChangesAsync();
+        return Ok(new { id = request.Id });
+    }
+
+    [HttpGet]
+    public async Task<ActionResult> GetSiteRuntime()
+    {
+        var info = await EnsureSiteRuntimeAsync();
+        return Ok(ToSiteRuntimeDto(info));
+    }
+
+    [HttpPost]
+    public async Task<ActionResult> UpdateSiteRuntime([FromBody] UpdateSiteRuntimeRequest request)
+    {
+        var status = request.Status?.Trim() ?? SiteRuntimeInfo.StatusNormal;
+        if (status is not (SiteRuntimeInfo.StatusNormal or SiteRuntimeInfo.StatusNotice or SiteRuntimeInfo.StatusMaintenance))
+            return BadRequest("状态只能是 Normal / Notice / Maintenance");
+
+        var info = await EnsureSiteRuntimeAsync();
+        info.Update(status, request.StatusText ?? "", request.ExtraInfo);
+        await dbContext.SaveChangesAsync();
+        return Ok(ToSiteRuntimeDto(info));
+    }
+
+    private async Task<SiteRuntimeInfo> EnsureSiteRuntimeAsync()
+    {
+        var info = await dbContext.SiteRuntimeInfos.FindAsync(SiteRuntimeInfo.DefaultId);
+        if (info != null)
+            return info;
+
+        info = SiteRuntimeInfo.CreateDefault();
+        dbContext.SiteRuntimeInfos.Add(info);
+        await dbContext.SaveChangesAsync();
+        return info;
+    }
+
+    private static object ToSiteRuntimeDto(SiteRuntimeInfo info) => new
+    {
+        status = info.Status,
+        statusText = info.StatusText,
+        extraInfo = info.ExtraInfo,
+        updatedAt = info.UpdatedAt
+    };
+
+    private static DateTime ParsePublishDate(string? value)
+    {
+        if (DateTime.TryParse(value, out var date))
+            return date.Date;
+        return DateTime.Today;
+    }
+
     private void TryDeleteWebFile(string? relativeUrl)
     {
         if (string.IsNullOrWhiteSpace(relativeUrl))
@@ -543,6 +693,48 @@ public class AdminController : ControllerBase
         if (System.IO.File.Exists(filePath))
             System.IO.File.Delete(filePath);
     }
+}
+
+public class UpsertAnnouncementRequest
+{
+    [JsonPropertyName("id")]
+    public Guid? Id { get; set; }
+
+    [JsonPropertyName("title")]
+    public string? Title { get; set; }
+
+    [JsonPropertyName("content")]
+    public string? Content { get; set; }
+
+    [JsonPropertyName("publishDate")]
+    public string? PublishDate { get; set; }
+
+    [JsonPropertyName("isPublished")]
+    public bool IsPublished { get; set; } = true;
+
+    [JsonPropertyName("isPinned")]
+    public bool IsPinned { get; set; }
+
+    [JsonPropertyName("sortOrder")]
+    public int SortOrder { get; set; }
+}
+
+public class UpdateSiteRuntimeRequest
+{
+    [JsonPropertyName("status")]
+    public string? Status { get; set; }
+
+    [JsonPropertyName("statusText")]
+    public string? StatusText { get; set; }
+
+    [JsonPropertyName("extraInfo")]
+    public string? ExtraInfo { get; set; }
+}
+
+public class IdRequest
+{
+    [JsonPropertyName("id")]
+    public Guid Id { get; set; }
 }
 
 public record UpdateSubtitleRequest(

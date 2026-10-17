@@ -2,12 +2,14 @@
   <div class="daily-page le-page">
     <!-- 顶部导航 -->
     <div class="page-header">
-      <el-button text @click="router.back()" class="back-btn">
-        <el-icon><ArrowLeft /></el-icon> 返回
+      <el-button text @click="router.push('/reading')" class="back-btn">
+        <el-icon><ArrowLeft /></el-icon> 阅读
       </el-button>
       <div class="page-title">每日一篇短文</div>
       <div class="placeholder"></div>
     </div>
+
+    <SectionSubNav :tabs="readingTabs" aria-label="阅读栏目" />
 
     <!-- 日期切换 -->
     <div class="date-nav">
@@ -111,6 +113,8 @@ import { getDailyArticle, markArticleRead, toggleFavorite as toggleFavoriteApi }
 import { useAudioPlayer } from '../composables/useAudioPlayer.js'
 import { recordStudyActivity } from '../api/Study.js'
 import { trackEvent } from '../api/Analytics.js'
+import SectionSubNav from '../components/SectionSubNav.vue'
+import { readingTabs } from '../utils/sectionTabs'
 import dayjs from 'dayjs'
 
 const router = useRouter()

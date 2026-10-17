@@ -44,14 +44,14 @@ public class SitemapController : ControllerBase
                 new XDeclaration("1.0", "utf-8", "yes"),
                 new XElement(ns + "urlset",
                     roots.Select(r => new XElement(ns + "url",
-                        new XElement(ns + "loc", $"{SiteUrl}/#/word-roots/{r.Id}"),
+                        new XElement(ns + "loc", $"{SiteUrl}/word-roots/{r.Id}"),
                         new XElement(ns + "lastmod", r.CreationTime.ToUniversalTime().ToString("yyyy-MM-dd")),
                         new XElement(ns + "changefreq", "monthly"),
                         new XElement(ns + "priority", "0.5")))));
             var sb = new StringBuilder();
             using var writer = new StringWriter(sb);
             doc.Save(writer, SaveOptions.DisableFormatting);
-            return sb.ToString();
+            return sb.ToString().Replace("encoding=\"utf-16\"", "encoding=\"utf-8\"", StringComparison.OrdinalIgnoreCase);
         });
 
         Response.Headers.CacheControl = "public, max-age=900";

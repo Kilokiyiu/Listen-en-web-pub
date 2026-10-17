@@ -131,8 +131,14 @@ def clean_transcript_lines(block: str) -> str:
         cjk = len(HAS_CJK.findall(line))
         if cjk >= 8 and cjk >= len(re.findall(r"[A-Za-z]", line)) * 0.35:
             continue
-        # strip leading "1 " / "2 " paragraph numbers from transcript
-        line = re.sub(r"^\d{1,2}\s+", "", line)
+        # strip leading "1 " / "2 " paragraph numbers; keep as paragraph break
+        para_num = re.match(r"^(\d{1,2})\s+", line)
+        if para_num:
+            line = line[para_num.end() :].strip()
+            if not line:
+                continue
+            if out and out[-1] != "":
+                out.append("")
         if re.match(r"^https?://", line, re.I):
             continue
         out.append(line)
@@ -342,7 +348,22 @@ def _associate_marker_to_block(
     return None
 
 
-def split_passages(section_text: str, group_name: str) -> list[dict]:
+def _passage_kind(group_name: str, level: str) -> str:
+    """四级：短篇新闻/长对话/听力篇章；六级：长对话/听力篇章/讲座讲话。"""
+    if level == "cet6":
+        return {
+            "Section A": "Long Conversation",
+            "Section B": "Passage",
+            "Section C": "Lecture",
+        }.get(group_name, "Passage")
+    return {
+        "Section A": "News Report",
+        "Section B": "Long Conversation",
+        "Section C": "Passage",
+    }.get(group_name, "Passage")
+
+
+def split_passages(section_text: str, group_name: str, level: str = "cet4") -> list[dict]:
     """
     Split one Section into passages by 'Questions X and Y are based on'.
 
@@ -353,10 +374,11 @@ def split_passages(section_text: str, group_name: str) -> list[dict]:
     markers = list(QUESTIONS_BASED_RE.finditer(section_text))
     if not markers:
         qs = extract_questions(section_text)
+        kind = _passage_kind(group_name, level)
         return [
             {
                 "groupName": group_name,
-                "title": f"{group_name} Passage 1",
+                "title": f"{kind} 1",
                 "transcript": clean_transcript_lines(section_text),
                 "questions": qs,
             }
@@ -408,11 +430,7 @@ def split_passages(section_text: str, group_name: str) -> list[dict]:
         if not qs:
             qs = all_qs
 
-        kind = {
-            "Section A": "News Report",
-            "Section B": "Long Conversation",
-            "Section C": "Passage",
-        }.get(group_name, "Passage")
+        kind = _passage_kind(group_name, level)
         title = f"{kind} {i + 1}（{start_q}-{end_q}）"
 
         passages.append(
@@ -443,11 +461,12 @@ def parse_document(text: str, meta: dict) -> dict:
         content = parts[i + 1] if i + 1 < len(parts) else ""
         sections_map[f"Section {letter}"] = content
 
+    level = meta.get("level") or "cet4"
     passages = []
     for g in ("Section A", "Section B", "Section C"):
         if g not in sections_map:
             continue
-        passages.extend(split_passages(sections_map[g], g))
+        passages.extend(split_passages(sections_map[g], g, level))
 
     # Fix question numbers globally: re-extract all questions from full text as source of truth for counts
     all_qs = extract_questions(text)

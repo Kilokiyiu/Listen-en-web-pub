@@ -27,6 +27,7 @@ const props = defineProps({
   badge: { type: String, default: '' },
   back: { type: Boolean, default: true },
   backLabel: { type: String, default: '返回' },
+  backTo: { type: [String, Object], default: '' },
   showHeader: { type: Boolean, default: true },
   showBar: { type: Boolean, default: true },
 })
@@ -34,6 +35,10 @@ const props = defineProps({
 const router = useRouter()
 
 const onBack = () => {
+  if (props.backTo) {
+    router.push(props.backTo)
+    return
+  }
   if (window.history.length > 1) router.back()
   else router.push('/')
 }

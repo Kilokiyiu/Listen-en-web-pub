@@ -13,6 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\Commons\CommonInit\CommonInit.csproj" />
       <ProjectReference Include="..\..\Commons\MyJWT\MyJWT.csproj" />
       <ProjectReference Include="..\ArticleService.Infrastructure\ArticleService.Infrastructure.csproj" />
     </ItemGroup>

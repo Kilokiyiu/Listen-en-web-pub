@@ -25,27 +25,7 @@
           </div>
         </div>
 
-        <aside class="hero-app-card le-paper-flip le-paper-flip-delay-1">
-          <div class="app-card-top">
-            <span class="app-badge">ANDROID</span>
-            <span class="app-badge app-badge--version">v0.9.10</span>
-          </div>
-          <div class="app-title-row">
-            <h2 class="app-name">EaseWord</h2>
-          </div>
-          <p class="app-cn">听易词</p>
-          <p class="app-desc">官方单词本 · 与网站同账号</p>
-          <a
-            class="app-download"
-            href="/downloads/EaseWord-0.9.10.apk"
-            download="EaseWord-0.9.10.apk"
-          >
-            下载 APK
-          </a>
-          <p class="app-note" title="旧签名版本（如 0.8.0）需先上传云端并卸载后再安装；之后可直接覆盖更新。">
-            仅 Android · 旧版需先卸载再装
-          </p>
-        </aside>
+        <EaseWordDownload class="hero-app-desktop le-paper-flip le-paper-flip-delay-1" variant="hero" />
       </div>
     </section>
 
@@ -131,13 +111,13 @@
         >查看全部 →</a>
       </div>
 
-      <div v-if="isKaoyanCategory" class="coming-soon-panel le-paper">
-        <p class="coming-soon-title">考研英语 · 开发中（模拟）</p>
-        <p class="coming-soon-desc">
-          当前试卷与题目仅用于功能模拟练习，非正式历年真题库。可体验完形填空与阅读理解在线做题。
+      <div v-if="isKaoyanCategory" class="kaoyan-entry-panel le-paper">
+        <p class="kaoyan-entry-title">考研英语已上线</p>
+        <p class="kaoyan-entry-desc">
+          英语一 / 英语二历年完形填空，在线作答，提交后查看正确答案与解析。
         </p>
         <button type="button" class="kaoyan-cta" @click="goKaoyan">
-          进入模拟练习
+          进入考研英语
         </button>
       </div>
 
@@ -192,6 +172,14 @@
           </div>
         </el-col>
       </el-row>
+    </section>
+
+    <!-- 手机端：听易词下载放在页面底部 -->
+    <section class="le-section app-download-mobile le-paper-flip le-paper-flip-delay-5">
+      <div class="le-section-header">
+        <h2><el-icon color="var(--le-accent)"><Iphone /></el-icon> 听易词 App</h2>
+      </div>
+      <EaseWordDownload variant="section" />
     </section>
 
     <!-- 单词详情弹窗 -->
@@ -331,6 +319,8 @@ import { getCategories, getAlbumsByCategoryId } from '../api/Listen.js'
 import { queryEnglishWord, addUserWordToCurrentBook, getDailyEnglish, isValidEnglishQuery } from '../api/Word.js'
 import { promptGoReviewAfterAdd } from '../utils/promptGoReview.js'
 import { homeCategoryMeta, mergeHomeCategoriesWithExtras } from '../utils/categoryMeta.js'
+import { LISTENING_CODE_TO_PATH } from '../utils/seoHubs.js'
+import EaseWordDownload from '../components/EaseWordDownload.vue'
 
 const router = useRouter()
 const searchWord = ref('')
@@ -684,6 +674,11 @@ const goExamList = () => {
     goKaoyan()
     return
   }
+  const hubPath = LISTENING_CODE_TO_PATH[activeCategory.value]
+  if (hubPath) {
+    router.push(hubPath)
+    return
+  }
   const cat = categories.value.find(c => c.code === activeCategory.value)
   if (cat) {
     router.push({ name: 'exams', query: { categoryId: cat.id } })
@@ -883,90 +878,8 @@ const quickLinks = [
   box-shadow: 0 0 0 1px var(--le-primary) inset !important;
 }
 
-.hero-app-card {
-  justify-self: stretch;
-  width: 100%;
-  max-width: none;
-  background: rgba(255, 255, 255, 0.94);
-  background-image: var(--le-paper-grain);
-  border: 1px solid var(--le-border);
-  border-radius: 4px 8px 8px 4px;
-  padding: 18px;
-  box-shadow: var(--le-shadow-sm);
-}
-
-.app-card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.app-badge {
-  font-family: var(--le-font-mono);
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--le-primary);
-  background: rgba(37, 99, 235, 0.08);
-  border: 1px solid rgba(37, 99, 235, 0.18);
-  padding: 3px 8px;
-  border-radius: 4px;
-  letter-spacing: 0.04em;
-}
-
-.app-badge--version {
-  color: var(--le-text-muted);
-  background: var(--le-bg-muted);
-  border-color: var(--le-border);
-}
-
-.app-name {
-  margin: 0 0 4px;
-  font-family: var(--le-font-display);
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--le-text);
-}
-
-.app-cn {
-  margin: 0 0 10px;
-  color: var(--le-text-secondary);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.app-desc {
-  margin: 0 0 16px;
-  font-size: 13px;
-  color: var(--le-text-secondary);
-}
-
-.app-download {
-  display: block;
-  text-align: center;
-  text-decoration: none;
-  background: var(--le-primary);
-  color: #fff;
-  font-weight: 700;
-  font-size: 14px;
-  padding: 10px;
-  border-radius: 8px;
-  transition: opacity 0.15s ease, background 0.15s ease;
-}
-
-.app-download:hover {
-  opacity: 0.92;
-  background: var(--le-primary-light);
-  color: #fff;
-}
-
-.app-note {
-  margin: 10px 0 0;
-  font-size: 11px;
-  color: var(--le-text-muted);
-  text-align: center;
-  line-height: 1.35;
+.app-download-mobile {
+  display: none;
 }
 
 .category-tabs-wrap {
@@ -1036,20 +949,20 @@ const quickLinks = [
   border: 1px solid rgba(217, 119, 6, 0.2);
 }
 
-.coming-soon-panel {
+.kaoyan-entry-panel {
   padding: 36px 24px;
   text-align: center;
   margin-bottom: 8px;
 }
 
-.coming-soon-title {
+.kaoyan-entry-title {
   margin: 0 0 8px;
   font-size: 16px;
   font-weight: 600;
   color: var(--le-text);
 }
 
-.coming-soon-desc {
+.kaoyan-entry-desc {
   margin: 0 0 18px;
   font-size: 14px;
   line-height: 1.6;
@@ -1422,9 +1335,6 @@ const quickLinks = [
     grid-template-columns: 1fr;
     gap: 24px;
   }
-  .hero-app-card {
-    max-width: none;
-  }
 }
 
 @media (max-width: 768px) {
@@ -1433,6 +1343,12 @@ const quickLinks = [
   }
   .hero-title {
     font-size: 1.65rem;
+  }
+  .hero-app-desktop {
+    display: none;
+  }
+  .app-download-mobile {
+    display: block;
   }
   .quote-card {
     padding: 18px 16px 18px 44px;

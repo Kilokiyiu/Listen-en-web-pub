@@ -57,9 +57,9 @@
           <span v-if="!resultMap[q.id].isCorrect" class="answer-key">
             正确答案：{{ (q.options || [])[resultMap[q.id].correctAnswer] }}
           </span>
-          <p v-if="resultMap[q.id].explanation" class="explain">
+          <div v-if="resultMap[q.id].explanation" class="explain">
             {{ resultMap[q.id].explanation }}
-          </p>
+          </div>
         </div>
       </div>
     </div>
@@ -212,6 +212,7 @@ defineExpose({ submitted, correctCount, scorePercent })
 
 .passage-body {
   white-space: pre-wrap;
+  word-break: break-word;
   line-height: 1.8;
   font-size: 15px;
   color: var(--le-text);
@@ -283,7 +284,14 @@ defineExpose({ submitted, correctCount, scorePercent })
 .quiz-feedback .ok { color: #16a34a; font-weight: 600; }
 .quiz-feedback .bad { color: #dc2626; font-weight: 600; }
 .answer-key { color: var(--le-text); }
-.explain { margin: 4px 0 0; color: var(--le-text-muted); line-height: 1.55; }
+.explain {
+  margin: 6px 0 0;
+  color: var(--le-text-muted);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 13px;
+}
 
 .quiz-actions {
   margin-top: 18px;

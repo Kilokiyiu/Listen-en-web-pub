@@ -8,6 +8,7 @@ public interface IKaoyanRepo
     Task<ExamPaper?> GetPaperByIdAsync(Guid paperId);
     Task<ExamSection[]> GetSectionsByPaperIdAsync(Guid paperId);
     Task<ExamQuestion[]> GetQuestionsBySectionIdsAsync(IEnumerable<Guid> sectionIds);
+    Task<ExamQuestion[]> GetQuestionsByPaperIdAsync(Guid paperId);
     Task<ExamPaper[]> GetAllPapersAsync();
     Task<ExamQuestion?> GetQuestionByIdAsync(Guid questionId);
 }

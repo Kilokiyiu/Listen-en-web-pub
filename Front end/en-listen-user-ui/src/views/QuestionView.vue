@@ -56,32 +56,26 @@
 <!--          题干已隐藏，选项仍可作答。需要时可点「显示题干」。-->
 <!--        </p>-->
 
-        <el-radio-group v-model="activeGroupName" size="default" class="section-tabs">
-          <el-radio-button
-            v-for="g in availableGroups"
-            :key="g"
-            :label="g"
-          >
-            {{ g }}
-          </el-radio-button>
-        </el-radio-group>
+        <QuizSectionTabs
+          v-model="activeGroupName"
+          :items="groupTabs"
+          :scroll="false"
+          stretch
+          label="听力大题"
+          aria-label="听力 Section 切换"
+        />
 
-        <el-radio-group
+        <QuizSectionTabs
           v-if="passagesInActiveGroup.length > 1"
           v-model="activeQuizSectionId"
-          size="small"
-          class="passage-tabs"
-        >
-          <el-radio-button
-            v-for="s in passagesInActiveGroup"
-            :key="s.id"
-            :label="s.id"
-          >
-            {{ s.title }}
-          </el-radio-button>
-        </el-radio-group>
+          :items="passageTabs"
+          size="sm"
+          label="本段材料"
+          aria-label="听力材料切换"
+        />
         <p v-else-if="activeQuizSection" class="passage-single-label">
-          {{ activeQuizSection.title }}
+          {{ formatPassageLabel(activeQuizSection.title, 0, activeGroupName, categoryCode) }}
+          <span class="passage-single-en">（{{ activeQuizSection.title }}）</span>
         </p>
 
         <div v-if="activeQuizSection" class="section-body le-card">
@@ -99,7 +93,7 @@
           <OnlineQuizPanel
             v-if="activeQuizSection.questions.length"
             :key="activeQuizSection.id"
-            :title="`${activeGroupName} · ${activeQuizSection.title}`"
+            :title="`${activeGroupTypeLabel} · ${activeQuizSection.title}`"
             subtitle="请听上方听力音频作答；全部选完后提交，即可查看答案、解析与本段原文"
             :questions="activeQuizSection.questions"
             :show-stem="showStems"
@@ -123,7 +117,7 @@
               <div v-show="showSectionText" class="subtitle-card le-card section-transcript-card">
                 <div class="subtitle-header">
                   <el-icon><Document /></el-icon>
-                  本段原文 · {{ activeGroupName }} · {{ activeQuizSection?.title }}
+                  本段原文 · {{ activeGroupTypeLabel }} · {{ activeQuizSection?.title }}
                 </div>
                 <div class="subtitle-content">
                   <p
@@ -245,10 +239,19 @@ import PageShell from '../components/PageShell.vue'
 import PdfViewer from '../components/PdfViewer.vue'
 import FeedbackEntry from '../components/FeedbackEntry.vue'
 import OnlineQuizPanel from '../components/OnlineQuizPanel.vue'
+import QuizSectionTabs from '../components/QuizSectionTabs.vue'
 import { getEpisodesByAlbumId, getAlbumById, getCategories, getQuizByAlbumId, submitQuiz } from '../api/Listen.js'
 import { recordStudyActivity } from '../api/Study.js'
 import { trackEvent } from '../api/Analytics.js'
 import { useAudioPlayer } from '../composables/useAudioPlayer.js'
+import {
+  GROUP_ORDER,
+  formatGroupTabLabel,
+  formatGroupBadge,
+  formatPassageLabel,
+  sectionTypeLabels,
+  inferGroupName,
+} from '../utils/cetListeningSections.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -257,6 +260,7 @@ const audioRef = ref(null)
 
 const albumTitle = ref('听力真题')
 const categoryLabel = ref('听力')
+const categoryCode = ref('')
 const audioUrl = ref('')
 const paperFileUrl = ref('')
 const answerFileUrl = ref('')
@@ -275,8 +279,6 @@ const activeQuizSectionId = ref('')
 const submittedBySection = reactive({})
 const sessionStartedAt = Date.now()
 
-const GROUP_ORDER = ['Section A', 'Section B', 'Section C']
-
 const categoryMeta = {
   cet4: 'CET-4',
   cet6: 'CET-6',
@@ -284,28 +286,34 @@ const categoryMeta = {
 
 const toFileUrl = (path) => (path ? `/api/listen${path}` : '')
 
-const inferGroupName = (groupName, title) => {
-  const raw = String(groupName || '').trim()
-  const hit = GROUP_ORDER.find((g) => g.toLowerCase() === raw.toLowerCase())
-  if (hit) return hit
-
-  const t = String(title || '')
-  const m = t.match(/section\s*([abc])/i)
-  if (m) return `Section ${m[1].toUpperCase()}`
-
-  if (/news\s*report|short\s*news/i.test(t)) return 'Section A'
-  if (/long\s*conversation|conversation|dialogue/i.test(t)) return 'Section B'
-  if (/passage|lecture|talk/i.test(t)) return 'Section C'
-
-  return 'Section A'
-}
-
 const availableGroups = computed(() =>
   GROUP_ORDER.filter((g) => quizSections.value.some((s) => s.groupName === g))
 )
 
+const groupTabs = computed(() =>
+  availableGroups.value.map((g) => ({
+    value: g,
+    label: formatGroupTabLabel(g, categoryCode.value),
+    badge: formatGroupBadge(g),
+    title: formatGroupTabLabel(g, categoryCode.value),
+  }))
+)
+
+const activeGroupTypeLabel = computed(
+  () => sectionTypeLabels(categoryCode.value)[activeGroupName.value] || activeGroupName.value
+)
+
 const passagesInActiveGroup = computed(() =>
   quizSections.value.filter((s) => s.groupName === activeGroupName.value)
+)
+
+const passageTabs = computed(() =>
+  passagesInActiveGroup.value.map((s, i) => ({
+    value: s.id,
+    label: formatPassageLabel(s.title, i, s.groupName, categoryCode.value),
+    title: s.title,
+    badge: String(i + 1),
+  }))
 )
 
 const activeQuizSection = computed(() =>
@@ -345,10 +353,53 @@ const isDialogueTranscript = (lines) => {
   return speakerHits >= 2 && speakerHits / nonEmpty.length >= 0.4
 }
 
+/** 篇章/新闻：新段常见起首（无空行时用） */
+const PROSE_PARA_START_RE =
+  /^(?:So |But |Yet |Still |However[, ]|Meanwhile[, ]|Moreover[, ]|Furthermore[, ]|In fact[, ]|In reality[, ]|The reality is|Actually[, ]|Finally[, ]|First[, ]|Second[, ]|Third[, ]|Then |Next |Also[, ]|And yet |On the other hand|For example[, ]|For instance[, ]|As a result[, ]|In addition[, ]|In other words[, ]|Of course[, ]|Honestly[, ]|Unfortunately[, ]|Interestingly[, ]|[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3}\s+(?:(?:has|have|once)\s+)?(?:also\s+)?(?:said|remarked|noted|added|explained|observed|wrote|argued|pointed out)\b)/
+
+/**
+ * 将无空行的英文篇章按句切成若干段（约 2–4 句/段，遇话语标记另起一段）
+ */
+const splitFlatProseIntoParagraphs = (flat) => {
+  const text = String(flat || '').replace(/\s+/g, ' ').trim()
+  if (!text) return []
+  // 按句末切分，保留引号内句号尽量不误切：简化版按 .!? 后跟空格+大写
+  const sentences = []
+  const re = /[^.!?]+(?:[.!?]+["']?|(?=$))/g
+  let m
+  while ((m = re.exec(text)) !== null) {
+    const s = m[0].trim()
+    if (s) sentences.push(s)
+  }
+  if (sentences.length <= 2) return [text]
+
+  const paras = []
+  let buf = []
+  const flush = () => {
+    if (buf.length) {
+      paras.push(buf.join(' ').replace(/\s+/g, ' ').trim())
+      buf = []
+    }
+  }
+
+  for (let i = 0; i < sentences.length; i++) {
+    const s = sentences[i]
+    const startNew =
+      buf.length > 0 &&
+      (PROSE_PARA_START_RE.test(s) ||
+        buf.length >= 3 ||
+        (buf.length >= 2 && s.length > 120))
+    if (startNew) flush()
+    buf.push(s)
+  }
+  flush()
+  return paras.filter(Boolean)
+}
+
 /**
  * 原文排版：
  * - 男女对话：每句一行，保留换行
- * - 普通短文：合并粘贴产生的软换行，按空行分段
+ * - 普通短文：有空行则按空行分段；整段无换行时按句/话语标记自动分段
  */
 const formatTranscriptParagraphs = (raw) => {
   if (!raw || !String(raw).trim()) return []
@@ -384,10 +435,26 @@ const formatTranscriptParagraphs = (raw) => {
     return out.filter((l, i, arr) => l !== '' || (i > 0 && arr[i - 1] !== ''))
   }
 
-  return text
-    .split(/\n\s*\n/)
-    .map((para) => para.replace(/\s*\n\s*/g, ' ').replace(/[ \t]+/g, ' ').trim())
-    .filter(Boolean)
+  // 已有空行分段
+  if (/\n\s*\n/.test(text)) {
+    return text
+      .split(/\n\s*\n/)
+      .map((para) => para.replace(/\s*\n\s*/g, ' ').replace(/[ \t]+/g, ' ').trim())
+      .filter(Boolean)
+  }
+
+  // 多行但无空行：每行已是独立段（如导入保留的编号段）
+  const nonEmptyLines = lines.map((l) => l.trim()).filter(Boolean)
+  if (nonEmptyLines.length >= 2) {
+    const avgLen =
+      nonEmptyLines.reduce((n, l) => n + l.length, 0) / nonEmptyLines.length
+    // 行均较长 → 当作已分段；较短可能是软换行，先合并再自动切
+    if (avgLen >= 80) return nonEmptyLines
+    return splitFlatProseIntoParagraphs(nonEmptyLines.join(' '))
+  }
+
+  // 整段无换行（库里新闻/篇章常见）→ 自动分段
+  return splitFlatProseIntoParagraphs(text)
 }
 
 const isDialogueLine = (line) => SPEAKER_LINE_RE.test(String(line || '').trim())
@@ -437,7 +504,12 @@ const resolveCategory = async (categoryId) => {
     const categories = await getCategories()
     const cat = (categories || []).find(c => c.id === categoryId)
     if (cat?.code) {
+      categoryCode.value = cat.code
       categoryLabel.value = categoryMeta[cat.code] || cat.name?.chinese || cat.name || cat.code
+    } else if (cat?.name?.chinese || cat?.name) {
+      const name = cat.name?.chinese || cat.name
+      categoryCode.value = String(name).includes('六') ? 'cet6' : String(name).includes('四') ? 'cet4' : ''
+      categoryLabel.value = name
     }
   } catch {
     /* ignore */
@@ -486,7 +558,7 @@ const markComplete = async (fromAuto = false) => {
 const normalizeQuizSections = (raw) =>
   (raw || []).map((s) => ({
     id: s.id || s.Id,
-    groupName: inferGroupName(s.groupName || s.GroupName, s.title || s.Title),
+    groupName: inferGroupName(s.groupName || s.GroupName, s.title || s.Title, categoryCode.value),
     title: s.title || s.Title || 'Passage',
     transcript: s.transcript || s.Transcript || '',
     audioUrl: s.audioUrl || s.AudioUrl || '',
@@ -816,20 +888,16 @@ useAudioPlayer(audioRef, {
   color: var(--le-text-muted);
 }
 
-.section-tabs {
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-}
-
-.passage-tabs {
-  margin-bottom: 14px;
-  flex-wrap: wrap;
-}
-
 .passage-single-label {
-  margin: 0 0 12px;
+  margin: 0 0 14px;
   font-size: 13px;
+  font-weight: 500;
   color: var(--le-text-muted);
+}
+
+.passage-single-en {
+  font-weight: 400;
+  opacity: 0.75;
 }
 
 .section-body {

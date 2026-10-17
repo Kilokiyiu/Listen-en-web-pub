@@ -1,6 +1,7 @@
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import { setPageMeta, DEFAULT_TITLE, DEFAULT_DESCRIPTION } from '../utils/seo'
+import { SEO_HUBS } from '../utils/seoHubs'
 import { trackPageView } from '../api/Analytics.js'
 
 const routes = [
@@ -14,12 +15,48 @@ const routes = [
     }
   },
   {
+    path: '/listening',
+    name: 'listeningHub',
+    component: () => import('../views/CategoryHubView.vue'),
+    meta: {
+      title: SEO_HUBS.listening.title,
+      description: SEO_HUBS.listening.description
+    }
+  },
+  {
+    path: '/si-liu-ji',
+    name: 'siLiuJiHub',
+    component: () => import('../views/CategoryHubView.vue'),
+    meta: {
+      title: SEO_HUBS.siLiuJi.title,
+      description: SEO_HUBS.siLiuJi.description
+    }
+  },
+  {
+    path: '/cet4',
+    name: 'cet4Hub',
+    component: () => import('../views/CategoryHubView.vue'),
+    meta: {
+      title: SEO_HUBS.cet4.title,
+      description: SEO_HUBS.cet4.description
+    }
+  },
+  {
+    path: '/cet6',
+    name: 'cet6Hub',
+    component: () => import('../views/CategoryHubView.vue'),
+    meta: {
+      title: SEO_HUBS.cet6.title,
+      description: SEO_HUBS.cet6.description
+    }
+  },
+  {
     path: '/exams',
     name: 'exams',
     component: () => import('../views/PaperListView.vue'),
     meta: {
-      title: '英语听力真题与学习资料 - ListenEase',
-      description: '浏览四六级、雅思、托福英语听力历年真题与学习资料，在线练习并下载试卷、答案 PDF。'
+      title: SEO_HUBS.exams.title,
+      description: SEO_HUBS.exams.description
     }
   },
   {
@@ -50,12 +87,21 @@ const routes = [
     meta: { noindex: true, title: '学习记录 - ListenEase' }
   },
   {
+    path: '/reading',
+    name: 'readingHub',
+    component: () => import('../views/ReadingHubView.vue'),
+    meta: {
+      title: SEO_HUBS.reading.title,
+      description: SEO_HUBS.reading.description
+    }
+  },
+  {
     path: '/daily',
     name: 'dailyArticle',
     component: () => import('../views/DailyArticleView.vue'),
     meta: {
-      title: '每日英语短文学习资料 - ListenEase',
-      description: '每天一篇精选英语短文学习资料，英汉对照阅读，配合听力练习保持学习节奏。'
+      title: SEO_HUBS.daily.title,
+      description: SEO_HUBS.daily.description
     }
   },
   {
@@ -63,8 +109,8 @@ const routes = [
     name: 'kaoyan',
     component: () => import('../views/kaoyan/KaoyanPaperListView.vue'),
     meta: {
-      title: '考研英语模拟练习（开发中）- ListenEase',
-      description: '考研英语模块开发中，提供英语一/英语二完形填空与阅读理解模拟在线练习。'
+      title: SEO_HUBS.kaoyan.title,
+      description: SEO_HUBS.kaoyan.description
     }
   },
   {
@@ -77,12 +123,21 @@ const routes = [
     }
   },
   {
+    path: '/words',
+    name: 'wordsHub',
+    component: () => import('../views/WordsHubView.vue'),
+    meta: {
+      title: '单词学习 - ListenEase',
+      description: '个人单词本、词根学习与间隔复习，集中管理英语词汇学习。'
+    }
+  },
+  {
     path: '/word-roots',
     name: 'wordRoots',
     component: () => import('../views/WordRootsView.vue'),
     meta: {
-      title: '词根词缀学习资料 - ListenEase',
-      description: '系统学习英语词根词缀，积累词汇学习资料，扩大词汇量、提升记忆效率。'
+      title: SEO_HUBS.wordRoots.title,
+      description: SEO_HUBS.wordRoots.description
     }
   },
   {
@@ -105,8 +160,8 @@ const routes = [
     name: 'wordPacks',
     component: () => import('../views/WordPacksView.vue'),
     meta: {
-      title: '官方词本 - 四六级考研高频词 - ListenEase',
-      description: '领取四级、六级、考研官方高频词本，一键加入个人单词本，用间隔复习背单词。'
+      title: SEO_HUBS.wordPacks.title,
+      description: SEO_HUBS.wordPacks.description
     }
   },
   {
@@ -120,8 +175,8 @@ const routes = [
     name: 'bbcNews',
     component: () => import('../views/BBCNewsView.vue'),
     meta: {
-      title: 'BBC 英语新闻学习资料 - ListenEase',
-      description: '精选 BBC 英语新闻阅读与听力学习资料，提升语感与阅读理解能力。'
+      title: SEO_HUBS.bbcNews.title,
+      description: SEO_HUBS.bbcNews.description
     }
   },
   {
@@ -141,6 +196,10 @@ const routes = [
       title: '关于我们 - ListenEase 英语听力与学习资料',
       description: '了解 ListenEase：专注英语听力练习与英语学习资料，服务四六级、雅思、托福备考。'
     }
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/'
   }
 ]
 
@@ -151,7 +210,7 @@ const scrollToTop = () => {
 }
 
 const router = createRouter({
-  history: createWebHashHistory(process.env.BASE_URL),
+  history: createWebHistory(process.env.BASE_URL),
   routes,
   scrollBehavior (to, from, savedPosition) {
     if (savedPosition) return savedPosition
@@ -165,7 +224,7 @@ const authRoutes = ['/profile', '/history', '/my-words', '/word-review']
 router.beforeEach((to, from, next) => {
   const isLoggedIn = localStorage.getItem('token') && localStorage.getItem('userId')
   if (authRoutes.includes(to.path) && !isLoggedIn) {
-    next('/login')
+    next({ path: '/login', query: { redirect: to.fullPath } })
   } else {
     next()
   }
@@ -173,14 +232,15 @@ router.beforeEach((to, from, next) => {
 
 router.afterEach((to) => {
   scrollToTop()
-  const hashPath = to.path || '/'
+  // 栏目页用干净 path 做 canonical；带查询的练习页保留 fullPath
+  const pagePath = Object.keys(to.query || {}).length ? (to.fullPath || to.path) : (to.path || '/')
   setPageMeta({
     title: to.meta.title,
     description: to.meta.description,
-    path: hashPath === '/' ? '/' : `/#${hashPath}`,
+    path: pagePath,
     noindex: !!to.meta.noindex
   })
-  trackPageView(hashPath)
+  trackPageView(to.path || '/')
 })
 
 export default router

@@ -28,7 +28,8 @@ export function trackEvent(eventType, path) {
 
   let resolvedPath = path
   if (!resolvedPath || typeof resolvedPath !== 'string') {
-    resolvedPath = window.location.hash?.replace(/^#/, '') || window.location.pathname || '/'
+    resolvedPath = window.location.pathname || '/'
+    if (window.location.search) resolvedPath += window.location.search
   }
   if (!resolvedPath.startsWith('/')) resolvedPath = `/${resolvedPath}`
   if (resolvedPath.length > 200) resolvedPath = resolvedPath.slice(0, 200)

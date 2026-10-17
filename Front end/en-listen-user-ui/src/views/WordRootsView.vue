@@ -8,6 +8,8 @@
       <p class="subtitle">掌握词根词缀，轻松记忆单词</p>
     </div>
 
+    <SectionSubNav :tabs="wordsTabs" aria-label="单词栏目" />
+
     <!-- 学习进度 -->
     <el-card class="progress-card" v-if="progress">
       <div class="progress-header">
@@ -106,6 +108,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getWordRoots, getWordRootProgress, getNextWordRoot } from '../api/Word.js'
+import SectionSubNav from '../components/SectionSubNav.vue'
+import { wordsTabs } from '../utils/sectionTabs'
 
 const router = useRouter()
 

@@ -1,4 +1,5 @@
 using ArticleService.Infrastructure;
+using CommonInit;
 using Microsoft.EntityFrameworkCore;
 using MyJWT;
 
@@ -16,6 +17,7 @@ builder.Services.AddDbContext<ArticleDbContext>(options =>
                   ?? builder.Configuration.GetConnectionString("DatabaseConnStr");
     options.UseSqlServer(connStr);
 });
+builder.Services.AddSqlConnectionKeepAlive();
 
 builder.Services.ServiceInit();
 

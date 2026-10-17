@@ -1,3 +1,4 @@
+using CommonInit;
 using Microsoft.EntityFrameworkCore;
 using MyJWT;
 using WordService.Infrastructure;
@@ -18,6 +19,7 @@ builder.Services.AddDbContext<WordDbContext>(options =>
                   ?? builder.Configuration.GetConnectionString("DatabaseConnStr");
     options.UseSqlServer(connStr);
 });
+builder.Services.AddSqlConnectionKeepAlive();
 
 // CORS
 builder.Services.AddCors(options =>

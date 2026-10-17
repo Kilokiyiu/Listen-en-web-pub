@@ -162,6 +162,7 @@
       v-model="quizDialogVisible"
       :album-id="quizAlbumId"
       :album-name="quizAlbumName"
+      :category-code="quizCategoryCode"
       @saved="loadAlbums"
     />
 
@@ -202,6 +203,14 @@ const pendingUpload = ref({ albumId: null, documentType: null })
 const quizDialogVisible = ref(false)
 const quizAlbumId = ref('')
 const quizAlbumName = ref('')
+const quizCategoryCode = ref('')
+
+const categoryCodeOf = (row) => {
+  const name = (row.categoryNameChinese || row.categoryNameEnglish || '').toString()
+  if (name.includes('四') || /CET-?4/i.test(name)) return 'CET4'
+  if (name.includes('六') || /CET-?6/i.test(name)) return 'CET6'
+  return ''
+}
 
 const stats = computed(() => ({
   total: albums.value.length,
@@ -256,6 +265,7 @@ const openEdit = async (row) => {
 const openQuizEditor = (row) => {
   quizAlbumId.value = row.id
   quizAlbumName.value = row.nameChinese || ''
+  quizCategoryCode.value = categoryCodeOf(row)
   quizDialogVisible.value = true
 }
 

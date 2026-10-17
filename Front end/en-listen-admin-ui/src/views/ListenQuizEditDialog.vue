@@ -9,7 +9,7 @@
   >
     <p class="album-name">{{ albumName }}</p>
     <p class="tip">
-      按四六级结构录入：先选 Section A / B / C，再在该 Section 下添加多段材料。
+      {{ structureTip }}
       若录错分区，可在材料里用「所属 Section」直接调整。
     </p>
 
@@ -17,13 +17,15 @@
       <el-tab-pane
         v-for="g in GROUP_NAMES"
         :key="g"
-        :label="`${g}（${passagesOf(g).length}）`"
+        :label="`${formatGroupTabLabel(g, categoryCode)}（${passagesOf(g).length}）`"
         :name="g"
       />
     </el-tabs>
 
     <div class="toolbar">
-      <el-button type="primary" @click="addPassage">在 {{ activeGroup }} 添加材料</el-button>
+      <el-button type="primary" @click="addPassage">
+        在 {{ formatGroupTabLabel(activeGroup, categoryCode) }} 添加材料
+      </el-button>
     </div>
 
     <el-collapse v-if="passagesOf(activeGroup).length" v-model="activeNames">
@@ -46,10 +48,15 @@
             <div class="group-move-row">
               <el-select
                 :model-value="sec.groupName"
-                style="width: 180px"
+                style="width: 240px"
                 @update:model-value="(v) => changePassageGroup(sec, v)"
               >
-                <el-option v-for="g in GROUP_NAMES" :key="g" :label="g" :value="g" />
+                <el-option
+                  v-for="g in GROUP_NAMES"
+                  :key="g"
+                  :label="formatGroupTabLabel(g, categoryCode)"
+                  :value="g"
+                />
               </el-select>
               <span class="hint-sm">录错分区时可直接改到 A / B / C，改完记得点下方「保存全部」</span>
             </div>
@@ -114,7 +121,7 @@
 
     <el-empty
       v-else
-      :description="`${activeGroup} 还没有材料，点击上方添加（如 News Report / Long Conversation / Passage）`"
+      :description="emptyGroupHint"
       :image-size="64"
     />
 
@@ -126,16 +133,24 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getQuizSections, saveQuizSections, uploadSectionAudio, moveQuizSectionGroup } from '../api/Admin'
-
-const GROUP_NAMES = ['Section A', 'Section B', 'Section C']
+import {
+  GROUP_ORDER as GROUP_NAMES,
+  formatGroupTabLabel,
+  sectionTypeLabels,
+  defaultPassageTitle as defaultTitleByLevel,
+  inferGroupName,
+  normalizeGroupName,
+} from '../utils/cetListeningSections'
 
 const props = defineProps({
   modelValue: Boolean,
   albumId: { type: String, default: '' },
   albumName: { type: String, default: '' },
+  /** cet4 / cet6 / CET4 / CET6 */
+  categoryCode: { type: String, default: '' },
 })
 const emit = defineEmits(['update:modelValue', 'saved'])
 
@@ -146,6 +161,24 @@ const saving = ref(false)
 let keySeq = 1
 const nextKey = () => `k${keySeq++}`
 
+const structureTip = computed(() => {
+  const labels = sectionTypeLabels(props.categoryCode)
+  return `按${normalizeCetLabel(props.categoryCode)}结构录入：Section A ${labels['Section A']}、Section B ${labels['Section B']}、Section C ${labels['Section C']}。`
+})
+
+const emptyGroupHint = computed(() => {
+  const type = sectionTypeLabels(props.categoryCode)[activeGroup.value] || '材料'
+  const sample = defaultPassageTitle(activeGroup.value, 1)
+  return `${formatGroupTabLabel(activeGroup.value, props.categoryCode)} 还没有材料，点击上方添加（如 ${type} / ${sample}）`
+})
+
+function normalizeCetLabel(code) {
+  const raw = String(code || '').toLowerCase()
+  if (raw.includes('6') || String(code || '').includes('六')) return '六级'
+  if (raw.includes('4') || String(code || '').includes('四')) return '四级'
+  return '四六级'
+}
+
 const emptyQuestion = (n = 1) => ({
   _key: nextKey(),
   number: n,
@@ -155,40 +188,13 @@ const emptyQuestion = (n = 1) => ({
   explanation: '',
 })
 
-/** 显式 groupName 优先；否则按标题启发式推断（兼容旧数据） */
-const inferGroup = (rawGroup, title) => {
-  const fromField = normalizeGroup(rawGroup)
-  if (fromField) return fromField
+const inferGroup = (rawGroup, title) =>
+  inferGroupName(rawGroup, title, props.categoryCode)
 
-  const t = String(title || '')
-  const m = t.match(/section\s*([abc])/i)
-  if (m) return `Section ${m[1].toUpperCase()}`
+const normalizeGroup = (name) => normalizeGroupName(name)
 
-  // 常见四六级材料名
-  if (/news\s*report|short\s*news/i.test(t)) return 'Section A'
-  if (/long\s*conversation|conversation|dialogue/i.test(t)) return 'Section B'
-  if (/passage|lecture|talk/i.test(t)) return 'Section C'
-
-  return 'Section A'
-}
-
-const normalizeGroup = (name) => {
-  const raw = String(name || '').trim()
-  if (!raw) return ''
-  const hit = GROUP_NAMES.find((g) => g.toLowerCase() === raw.toLowerCase())
-  if (hit) return hit
-  const compact = raw.replace(/\s+/g, '').toUpperCase()
-  if (compact === 'A' || compact === 'SECTIONA') return 'Section A'
-  if (compact === 'B' || compact === 'SECTIONB') return 'Section B'
-  if (compact === 'C' || compact === 'SECTIONC') return 'Section C'
-  return ''
-}
-
-const defaultPassageTitle = (group, index) => {
-  if (group === 'Section A') return `News Report ${index}`
-  if (group === 'Section B') return `Long Conversation ${index}`
-  return `Passage ${index}`
-}
+const defaultPassageTitle = (group, index) =>
+  defaultTitleByLevel(group, index, props.categoryCode)
 
 const passagePlaceholder = (group, sIdx) => defaultPassageTitle(group, sIdx + 1)
 

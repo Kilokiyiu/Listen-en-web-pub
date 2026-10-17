@@ -51,12 +51,20 @@ public class SitemapController : ControllerBase
         var urls = new (string Loc, string Lastmod, string Changefreq, string Priority)[]
         {
             ($"{SiteUrl}/", today, "daily", "1.0"),
-            ($"{SiteUrl}/#/exams", today, "weekly", "0.9"),
-            ($"{SiteUrl}/#/daily", today, "daily", "0.8"),
-            ($"{SiteUrl}/#/bbc-news", today, "daily", "0.8"),
-            ($"{SiteUrl}/#/word-roots", today, "weekly", "0.7"),
-            ($"{SiteUrl}/#/about", today, "monthly", "0.5"),
-            ($"{SiteUrl}/#/feedback", today, "monthly", "0.3"),
+            ($"{SiteUrl}/listening", today, "weekly", "0.95"),
+            ($"{SiteUrl}/si-liu-ji", today, "weekly", "0.95"),
+            ($"{SiteUrl}/cet4", today, "weekly", "0.95"),
+            ($"{SiteUrl}/cet6", today, "weekly", "0.95"),
+            ($"{SiteUrl}/exams", today, "weekly", "0.9"),
+            ($"{SiteUrl}/kaoyan", today, "weekly", "0.9"),
+            ($"{SiteUrl}/reading", today, "weekly", "0.8"),
+            ($"{SiteUrl}/daily", today, "daily", "0.8"),
+            ($"{SiteUrl}/bbc-news", today, "daily", "0.8"),
+            ($"{SiteUrl}/word-packs", today, "weekly", "0.75"),
+            ($"{SiteUrl}/word-roots", today, "weekly", "0.7"),
+            ($"{SiteUrl}/words", today, "weekly", "0.65"),
+            ($"{SiteUrl}/about", today, "monthly", "0.5"),
+            ($"{SiteUrl}/feedback", today, "monthly", "0.3"),
         };
         Response.Headers.CacheControl = "public, max-age=900";
         return Xml(BuildUrlSet(urls));
@@ -71,7 +79,7 @@ public class SitemapController : ControllerBase
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
             var albums = await repo.GetVisibleAlbumSitemapItemsAsync();
             var urls = albums.Select(a => (
-                Loc: $"{SiteUrl}/#/exam?albumId={a.Id}",
+                Loc: $"{SiteUrl}/exam?albumId={a.Id}",
                 Lastmod: a.CreationTime.ToUniversalTime().ToString("yyyy-MM-dd"),
                 Changefreq: "monthly",
                 Priority: "0.6"
@@ -110,10 +118,11 @@ public class SitemapController : ControllerBase
 
     private static string ToXmlString(XDocument doc)
     {
+        // StringWriter 会把声明写成 utf-16；强制 utf-8 便于搜索引擎解析
         var sb = new StringBuilder();
         using var writer = new StringWriter(sb);
         doc.Save(writer, SaveOptions.DisableFormatting);
-        return sb.ToString();
+        return sb.ToString().Replace("encoding=\"utf-16\"", "encoding=\"utf-8\"", StringComparison.OrdinalIgnoreCase);
     }
 
     private ContentResult Xml(string xml) => Content(xml, "application/xml", Encoding.UTF8);

@@ -1,17 +1,61 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
-import ElementPlus from 'element-plus'
-import 'element-plus/dist/index.css'
 import './styles/admin.css'
-import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+import {
+  ArrowDown,
+  Bell,
+  DataAnalysis,
+  Document,
+  Files,
+  FolderOpened,
+  Headset,
+  Hide,
+  InfoFilled,
+  Lock,
+  Monitor,
+  Notebook,
+  Plus,
+  Reading,
+  Refresh,
+  Search,
+  SwitchButton,
+  Upload,
+  UploadFilled,
+  User,
+  UserFilled,
+  View,
+} from '@element-plus/icons-vue'
 
 const app = createApp(App)
 
-for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
-  app.component(key, component)
+const icons = {
+  ArrowDown,
+  Bell,
+  DataAnalysis,
+  Document,
+  Files,
+  FolderOpened,
+  Headset,
+  Hide,
+  InfoFilled,
+  Lock,
+  Monitor,
+  Notebook,
+  Plus,
+  Reading,
+  Refresh,
+  Search,
+  SwitchButton,
+  Upload,
+  UploadFilled,
+  User,
+  UserFilled,
+  View,
+}
+for (const [name, component] of Object.entries(icons)) {
+  app.component(name, component)
 }
 
-app.use(ElementPlus)
 app.use(router)
 app.mount('#app')

@@ -82,11 +82,15 @@ public class QuizSection : IEntity, ICreationTime
             var m = System.Text.RegularExpressions.Regex.Match(t, @"section\s*([abc])", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             return NormalizeGroupName($"Section {m.Groups[1].Value.ToUpperInvariant()}");
         }
-        if (System.Text.RegularExpressions.Regex.IsMatch(t, @"news\s*report|short\s*news", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+        // 有显式 groupName 时不会走到这里。无级别信息时：新闻→A；讲座/讲话→C；
+        // 对话/篇章无法区分四六级，仍按四级习惯（对话→B，篇章→C）。
+        if (System.Text.RegularExpressions.Regex.IsMatch(t, @"news\s*report|short\s*news|新闻", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
             return "Section A";
-        if (System.Text.RegularExpressions.Regex.IsMatch(t, @"long\s*conversation|conversation|dialogue", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+        if (System.Text.RegularExpressions.Regex.IsMatch(t, @"lecture|talk|讲座|讲话", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+            return "Section C";
+        if (System.Text.RegularExpressions.Regex.IsMatch(t, @"long\s*conversation|conversation|dialogue|对话", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
             return "Section B";
-        if (System.Text.RegularExpressions.Regex.IsMatch(t, @"passage|lecture|talk", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+        if (System.Text.RegularExpressions.Regex.IsMatch(t, @"passage|篇章", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
             return "Section C";
         return "Section A";
     }

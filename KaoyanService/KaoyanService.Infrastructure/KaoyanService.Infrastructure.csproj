@@ -4,6 +4,7 @@
     <ProjectReference Include="..\KaoyanService.Domain\KaoyanService.Domain.csproj" />
     <ProjectReference Include="..\..\Commons\CommonInit\CommonInit.csproj" />
     <ProjectReference Include="..\..\Commons\Infrastructure\Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Commons\MyCache\MyCache.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -18,6 +18,8 @@
     "@babel/plugin-transform-private-methods": "^7.29.7",
     "@vue/cli-plugin-babel": "~5.0.0",
     "@vue/cli-plugin-router": "~5.0.0",
-    "@vue/cli-service": "~5.0.0"
+    "@vue/cli-service": "~5.0.0",
+    "unplugin-auto-import": "^19.3.0",
+    "unplugin-vue-components": "^28.8.0"
   }
 }

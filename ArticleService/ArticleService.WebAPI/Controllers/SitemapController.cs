@@ -46,7 +46,7 @@ public class SitemapController : ControllerBase
                             .ToString("yyyy-MM-dd");
                         var date = a.PublicDate.ToString("yyyy-MM-dd");
                         return new XElement(ns + "url",
-                            new XElement(ns + "loc", $"{SiteUrl}/#/daily?date={date}"),
+                            new XElement(ns + "loc", $"{SiteUrl}/daily?date={date}"),
                             new XElement(ns + "lastmod", lastmod),
                             new XElement(ns + "changefreq", "monthly"),
                             new XElement(ns + "priority", "0.6"));
@@ -54,7 +54,7 @@ public class SitemapController : ControllerBase
             var sb = new StringBuilder();
             using var writer = new StringWriter(sb);
             doc.Save(writer, SaveOptions.DisableFormatting);
-            return sb.ToString();
+            return sb.ToString().Replace("encoding=\"utf-16\"", "encoding=\"utf-8\"", StringComparison.OrdinalIgnoreCase);
         });
 
         Response.Headers.CacheControl = "public, max-age=900";

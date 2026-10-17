@@ -7,7 +7,9 @@ public static class InitService
 {
     public static IServiceCollection ServiceInit(this IServiceCollection services)
     {
-        services.AddScoped<IKaoyanRepo, KaoyanRepo>();
+        services.AddScoped<KaoyanRepo>();
+        services.AddScoped<IKaoyanRepo, CachedKaoyanRepo>();
+        services.AddSingleton<KaoyanCacheInvalidator>();
         return services;
     }
 }

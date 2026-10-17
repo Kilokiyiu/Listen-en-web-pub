@@ -11,6 +11,8 @@ public class ListenDbContext : DbContext
     public DbSet<Episode> Episodes { get; private set; }
     public DbSet<QuizSection> QuizSections { get; private set; }
     public DbSet<QuizQuestion> QuizQuestions { get; private set; }
+    public DbSet<Announcement> Announcements { get; private set; }
+    public DbSet<SiteRuntimeInfo> SiteRuntimeInfos { get; private set; }
 
     public ListenDbContext(DbContextOptions<ListenDbContext> options) : base(options)
     {

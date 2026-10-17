@@ -11,7 +11,7 @@
       <el-tab-pane
         v-for="sec in sections"
         :key="sec._key"
-        :label="sec.sectionType === 'cloze' ? '完形填空' : '阅读理解'"
+        :label="sec.sectionType === 'cloze' ? '完形填空' : (sec.title || '阅读理解')"
         :name="sec._key"
       >
         <el-form label-position="top">
@@ -87,34 +87,65 @@ const emptyQ = (n = 1) => ({
   explanation: '',
 })
 
-const ensureSections = (list) => {
-  const byType = Object.fromEntries((list || []).map((s) => [s.sectionType, s]))
-  const make = (type, title, existing) => {
-    const qs = (existing?.questions || []).map((q, i) => {
-      const opts = [...(q.options || [])]
-      while (opts.length < 4) opts.push('')
-      return {
-        _key: nextKey(),
-        number: q.number || i + 1,
-        stem: q.stem || '',
-        options: opts.slice(0, 4),
-        correctAnswer: q.correctAnswer ?? 0,
-        explanation: q.explanation || '',
-      }
-    })
+const mapQuestions = (existing) => {
+  const qs = (existing?.questions || existing?.Questions || []).map((q, i) => {
+    const opts = [...(q.options || q.Options || [])]
+    while (opts.length < 4) opts.push('')
     return {
       _key: nextKey(),
-      sectionType: type,
-      title,
-      passage: existing?.passage || '',
-      sequenceNumber: type === 'cloze' ? 1 : 2,
-      questions: qs.length ? qs : [emptyQ(1)],
+      number: q.number ?? q.Number ?? i + 1,
+      stem: q.stem || q.Stem || '',
+      options: opts.slice(0, 4),
+      correctAnswer: q.correctAnswer ?? q.CorrectAnswer ?? 0,
+      explanation: q.explanation || q.Explanation || '',
     }
-  }
-  return [
-    make('cloze', '完形填空', byType.cloze),
-    make('reading', '阅读理解', byType.reading),
+  })
+  return qs.length ? qs : [emptyQ(1)]
+}
+
+const ensureSections = (list) => {
+  const raw = list || []
+  const cloze = raw.find((s) => (s.sectionType || s.SectionType) === 'cloze')
+  const readings = raw.filter((s) => (s.sectionType || s.SectionType) === 'reading')
+  const out = [
+    {
+      _key: nextKey(),
+      sectionType: 'cloze',
+      title: cloze?.title || cloze?.Title || '完形填空',
+      passage: cloze?.passage || cloze?.Passage || '',
+      sequenceNumber: 1,
+      questions: mapQuestions(cloze),
+    },
   ]
+  if (readings.length) {
+    readings
+      .slice()
+      .sort(
+        (a, b) =>
+          (a.sequenceNumber ?? a.SequenceNumber ?? 0) -
+          (b.sequenceNumber ?? b.SequenceNumber ?? 0)
+      )
+      .forEach((r, i) => {
+        out.push({
+          _key: nextKey(),
+          sectionType: 'reading',
+          title: r.title || r.Title || `阅读 Text${i + 1}`,
+          passage: r.passage || r.Passage || '',
+          sequenceNumber: i + 2,
+          questions: mapQuestions(r),
+        })
+      })
+  } else {
+    out.push({
+      _key: nextKey(),
+      sectionType: 'reading',
+      title: '阅读理解',
+      passage: '',
+      sequenceNumber: 2,
+      questions: [emptyQ(1)],
+    })
+  }
+  return out
 }
 
 const load = async () => {

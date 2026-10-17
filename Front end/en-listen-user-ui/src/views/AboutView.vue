@@ -55,6 +55,10 @@
               或一起改进开源项目。
             </p>
             <div class="author-links">
+              <a class="author-link" href="mailto:">
+                <el-icon><Message /></el-icon>
+                
+              </a>
               <a
                 class="author-link"
                 href="https://github.com/Kilokiyiu"

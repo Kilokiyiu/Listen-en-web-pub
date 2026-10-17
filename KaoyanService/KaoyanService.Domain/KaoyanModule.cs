@@ -7,8 +7,8 @@ public static class KaoyanModule
 {
     public const string Name = "考研英语";
     public const string Code = "kaoyan";
-    /// <summary>仍处开发阶段；当前内容以模拟练习为主。</summary>
-    public const bool ComingSoon = true;
+    /// <summary>已正式上线。</summary>
+    public const bool ComingSoon = false;
     public const string Description =
-        "考研英语模块仍在开发中。当前提供的试卷与题目仅用于功能模拟与联调练习，非正式历年真题库。";
+        "考研英语已上线，提供英语一 / 英语二历年完形填空与阅读理解在线练习，提交后可查看答案与解析。";
 }
