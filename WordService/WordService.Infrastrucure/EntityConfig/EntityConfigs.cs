@@ -144,3 +144,46 @@ public class UserWordPackClaimConfig : IEntityTypeConfiguration<UserWordPackClai
         builder.HasIndex(x => x.UserWordBookId);
     }
 }
+
+public class SharedWordBookConfig : IEntityTypeConfiguration<SharedWordBook>
+{
+    public void Configure(EntityTypeBuilder<SharedWordBook> builder)
+    {
+        builder.ToTable("T_SharedWordBook");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Code).HasMaxLength(16).IsRequired();
+        builder.Property(x => x.Title).HasMaxLength(100).IsRequired();
+        builder.HasIndex(x => x.Code).IsUnique();
+        builder.HasIndex(x => new { x.OwnerUserId, x.SourceWordBookId });
+        builder.HasMany<SharedWordBookEntry>()
+            .WithOne(x => x.SharedWordBook!)
+            .HasForeignKey(x => x.SharedWordBookId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Ignore(x => x.Entries);
+    }
+}
+
+public class SharedWordBookEntryConfig : IEntityTypeConfiguration<SharedWordBookEntry>
+{
+    public void Configure(EntityTypeBuilder<SharedWordBookEntry> builder)
+    {
+        builder.ToTable("T_SharedWordBookEntry");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Word).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.Definition).HasMaxLength(1000);
+        builder.Property(x => x.Example).HasMaxLength(2000);
+        builder.HasIndex(x => new { x.SharedWordBookId, x.Rank });
+        builder.HasIndex(x => new { x.SharedWordBookId, x.Word });
+    }
+}
+
+public class UserAiOrganizeUsageConfig : IEntityTypeConfiguration<UserAiOrganizeUsage>
+{
+    public void Configure(EntityTypeBuilder<UserAiOrganizeUsage> builder)
+    {
+        builder.ToTable("T_UserAiOrganizeUsage");
+        builder.HasKey(x => x.UserId);
+        builder.Property(x => x.LastUsedDate).IsRequired();
+        builder.Property(x => x.LastUsedAt).IsRequired();
+    }
+}

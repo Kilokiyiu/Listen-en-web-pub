@@ -15,7 +15,7 @@ if (typeof window !== 'undefined' && window.location.hash.startsWith('#/')) {
 const applyBackground = () => {
   document.documentElement.style.setProperty(
     '--le-bg-image',
-    `url('${process.env.BASE_URL || '/'}background.jpg')`
+    `url('${process.env.BASE_URL || '/'}background.webp')`
   )
 }
 if (document.readyState === 'complete') applyBackground()

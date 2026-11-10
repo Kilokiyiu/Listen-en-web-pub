@@ -18,7 +18,13 @@ const routes = [
     path: '/',
     name: 'words',
     component: () => import('../views/WordsView.vue'),
-    meta: { topBar: { title: '我的单词本', showBack: false } },
+    meta: { topBar: { title: '我的书架', showBack: false }, shelf: true },
+  },
+  {
+    path: '/book',
+    name: 'book',
+    component: () => import('../views/WordsView.vue'),
+    meta: { topBar: { title: '单词本', showBack: true, backTo: '/' }, shelf: false },
   },
   {
     path: '/packs',
@@ -30,13 +36,13 @@ const routes = [
     path: '/add',
     name: 'add',
     component: () => import('../views/AddWordView.vue'),
-    meta: { topBar: { title: '添加单词', showBack: true, backTo: '/' } },
+    meta: { topBar: { title: '添加单词', showBack: true, backTo: '/book' } },
   },
   {
     path: '/review',
     name: 'review',
     component: () => import('../views/ReviewView.vue'),
-    meta: { topBar: { title: '复习', showBack: true, backTo: '/' } },
+    meta: { topBar: { title: '复习', showBack: true, backTo: '/book' } },
   },
   {
     path: '/settings',

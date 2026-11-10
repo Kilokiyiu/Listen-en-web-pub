@@ -125,37 +125,90 @@ public class UserWordBookController : ControllerBase
     }
 
     /// <summary>
-    /// 删除单词本（默认本不可删；有单词时需确认迁移到默认本）
+    /// 生成当前单词本的分享码（快照，默认 30 天有效）
+    /// </summary>
+    [HttpPost("{id:guid}/share")]
+    public async Task<IActionResult> ShareWordBook(
+        [FromHeader(Name = "X-User-Id")] Guid userId,
+        Guid id,
+        CancellationToken ct)
+    {
+        if (userId == Guid.Empty)
+            return Unauthorized("请先登录");
+
+        var book = await _context.UserWordBooks
+            .FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId, ct);
+        if (book == null)
+            return NotFound("单词本不存在");
+
+        try
+        {
+            var (share, wordCount) = await SharedWordBookController.CreateShareAsync(
+                _context, userId, book, ct);
+            return Ok(new
+            {
+                share.Code,
+                share.Title,
+                WordCount = wordCount,
+                share.ExpiresAt,
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// 删除单词本。
+    /// 默认本可删：会清空其单词并自动新建一本空白默认单词本。
+    /// 非默认本：有单词时可迁移到默认本，或随词本一并删除。
     /// </summary>
     [HttpDelete("{id:guid}")]
     public async Task<ActionResult> DeleteWordBook(
         [FromHeader(Name = "X-User-Id")] Guid userId,
         Guid id,
-        [FromQuery] bool moveWordsToDefault = true)
+        [FromQuery] bool moveWordsToDefault = true,
+        [FromQuery] bool deleteWords = false)
     {
         var book = await _context.UserWordBooks
             .FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId);
         if (book == null)
             return NotFound();
 
-        if (book.IsDefault)
-            return BadRequest("默认单词本不能删除");
-
-        var defaultBook = await WordBookHelper.EnsureDefaultBookAsync(_context, userId);
-        if (defaultBook.Id == book.Id)
-            return BadRequest("默认单词本不能删除");
-
         var words = await _context.UserWords
             .Where(x => x.WordBookId == book.Id)
             .ToListAsync();
 
+        // 删除默认本：单词一并删除，再新建空白默认本（不把其它词本提升为默认）
+        if (book.IsDefault)
+        {
+            if (words.Count > 0)
+                _context.UserWords.RemoveRange(words);
+
+            _context.UserWordBooks.Remove(book);
+            await _context.SaveChangesAsync();
+            await WordBookHelper.CreateBlankDefaultBookAsync(_context, userId);
+            return Ok(new { recreatedDefault = true });
+        }
+
+        var defaultBook = await WordBookHelper.EnsureDefaultBookAsync(_context, userId);
+
         if (words.Count > 0)
         {
-            if (!moveWordsToDefault)
-                return BadRequest("单词本中还有单词，请先清空或选择迁移到默认本");
-
-            foreach (var word in words)
-                word.MoveToBook(defaultBook.Id);
+            if (deleteWords)
+            {
+                _context.UserWords.RemoveRange(words);
+            }
+            else if (!moveWordsToDefault)
+            {
+                return BadRequest("单词本中还有单词，请先清空、选择迁移到默认本，或选择一并删除单词");
+            }
+            else
+            {
+                foreach (var word in words)
+                    word.MoveToBook(defaultBook.Id);
+            }
         }
 
         _context.UserWordBooks.Remove(book);
@@ -188,7 +241,19 @@ public static class WordBookHelper
             return book;
         }
 
-        book = new UserWordBook(userId, DefaultBookName, isDefault: true);
+        return await CreateBlankDefaultBookAsync(context, userId);
+    }
+
+    /// <summary>强制新建一本空白默认单词本（不提升已有词本）。</summary>
+    public static async Task<UserWordBook> CreateBlankDefaultBookAsync(WordDbContext context, Guid userId)
+    {
+        var existingDefaults = await context.UserWordBooks
+            .Where(x => x.UserId == userId && x.IsDefault)
+            .ToListAsync();
+        foreach (var b in existingDefaults)
+            b.SetDefault(false);
+
+        var book = new UserWordBook(userId, DefaultBookName, isDefault: true);
         context.UserWordBooks.Add(book);
         await context.SaveChangesAsync();
         return book;

@@ -12,6 +12,8 @@ public class ExamPaperConfig : IEntityTypeConfiguration<ExamPaper>
         builder.HasKey(e => e.Id).IsClustered(false);
         builder.Property(e => e.Series).HasMaxLength(20).IsRequired();
         builder.Property(e => e.Title).HasMaxLength(200).IsRequired();
+        builder.Property(e => e.PaperFileUrl).HasMaxLength(1000).IsRequired(false);
+        builder.Property(e => e.AnswerFileUrl).HasMaxLength(1000).IsRequired(false);
         builder.HasIndex(e => new { e.Year, e.Series }).IsUnique();
         builder.HasIndex(e => e.IsVisible);
     }

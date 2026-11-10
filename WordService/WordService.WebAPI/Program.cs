@@ -44,6 +44,14 @@ builder.Services.Configure<WordService.WebAPI.Options.XxApiOptions>(
     builder.Configuration.GetSection(WordService.WebAPI.Options.XxApiOptions.SectionName));
 builder.Services.AddHttpClient<WordService.WebAPI.Services.IWordLookupService, WordService.WebAPI.Services.XxApiWordLookupService>();
 
+builder.Services.Configure<WordService.WebAPI.Options.DeepSeekOptions>(
+    builder.Configuration.GetSection(WordService.WebAPI.Options.DeepSeekOptions.SectionName));
+builder.Services.AddHttpClient<WordService.WebAPI.Services.IDeepSeekWordImportService, WordService.WebAPI.Services.DeepSeekWordImportService>(
+    client =>
+    {
+        client.Timeout = TimeSpan.FromMinutes(2);
+    });
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

@@ -1,6 +1,12 @@
 <template>
   <div class="feedback-entry">
-    <el-button :type="buttonType" :round="round" :plain="plain" @click="visible = true">
+    <el-button
+      :type="buttonType"
+      :round="round"
+      :plain="plain"
+      :size="size"
+      @click="visible = true"
+    >
       <el-icon v-if="showIcon"><ChatDotRound /></el-icon>
       {{ buttonText }}
     </el-button>
@@ -14,6 +20,10 @@
       @closed="resetForm"
     >
       <p v-if="source" class="feedback-source">当前页面：{{ source }}</p>
+      <div class="feedback-perk">
+        <span class="feedback-perk-badge">福利</span>
+        <p class="feedback-perk-title">反馈获得完整学习资料</p>
+      </div>
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
         <el-form-item label="反馈类型" prop="category">
           <el-select v-model="form.category" placeholder="请选择反馈类型" style="width: 100%">
@@ -37,6 +47,7 @@
           <el-input v-model="form.email" placeholder="方便我们回复你" maxlength="100" />
         </el-form-item>
       </el-form>
+      <BlogCta compact class="feedback-blog" />
       <template #footer>
         <el-button @click="visible = false">取消</el-button>
         <el-button type="primary" :loading="loading" @click="handleSubmit">提交反馈</el-button>
@@ -49,6 +60,7 @@
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ChatDotRound } from '@element-plus/icons-vue'
+import BlogCta from '@/components/BlogCta.vue'
 import { submitFeedback } from '@/api/Feedback'
 
 const props = defineProps({
@@ -58,6 +70,7 @@ const props = defineProps({
   round: { type: Boolean, default: true },
   plain: { type: Boolean, default: true },
   showIcon: { type: Boolean, default: true },
+  size: { type: String, default: 'default' },
 })
 
 const visible = ref(false)
@@ -118,5 +131,42 @@ const handleSubmit = async () => {
   font-size: 13px;
   color: var(--le-text-muted);
   line-height: 1.5;
+}
+
+.feedback-perk {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(5, 150, 105, 0.18);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.08) 0%, rgba(37, 99, 235, 0.04) 100%);
+}
+
+.feedback-perk-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(5, 150, 105, 0.12);
+  color: var(--le-success);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.feedback-perk-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--le-text);
+  line-height: 1.35;
+}
+
+.feedback-blog {
+  display: flex;
+  margin: 8px 0 0;
 }
 </style>

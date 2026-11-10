@@ -43,8 +43,8 @@ export default defineConfig({
         target: 'http://localhost:5301',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/kaoyan/, ''),
-        timeout: 10000,
-        proxyTimeout: 10000
+        timeout: 600000,
+        proxyTimeout: 600000
       }
     }
   }

@@ -72,7 +72,7 @@ jobs:
   build-and-deploy:
     needs: [detect-changes]
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
 
     steps:
     - name: Checkout code
@@ -144,7 +144,7 @@ jobs:
         host: ${{ secrets.SERVER_IP }}
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        command_timeout: 15m
+        command_timeout: 45m
         script: |
           cd /opt/Listen-en-web-production/deploy
 

@@ -16,7 +16,7 @@
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router'
-import { HomeFilled, Headset, Reading, School, Collection, User } from '@element-plus/icons-vue'
+import { HomeFilled, Headset, Reading, School, Collection, InfoFilled, User } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -42,6 +42,7 @@ const navItems = [
     icon: Collection,
     match: ['wordsHub', 'wordRoots', 'wordRootDetail', 'myWords', 'wordReview', 'wordPacks'],
   },
+  { path: '/about', label: '关于', icon: InfoFilled, match: ['about', 'feedback'] },
   { path: '/profile', label: '我的', icon: User, match: ['profile', 'history', 'login'] },
 ]
 
@@ -53,7 +54,9 @@ const isActive = (item) => {
 }
 
 const go = (path) => {
-  if (route.path !== path) router.push(path)
+  if (route.path === path) return
+  // 忽略重复导航 / 被更新跳转打断；chunk 失败由 router.onError 处理
+  router.push(path).catch(() => {})
 }
 </script>
 

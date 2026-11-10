@@ -15,9 +15,9 @@
       "purpose": "any"
     },
     {
-      "src": "/og-cover.png",
+      "src": "/og-cover.webp",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/webp",
       "purpose": "any"
     }
   ]

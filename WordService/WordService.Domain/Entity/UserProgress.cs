@@ -98,6 +98,9 @@ public class UserWord : ICreationTime
     public double EaseFactor { get; private set; } // 难度因子 (默认 2.5)
     public int Interval { get; private set; } // 间隔天数
     public DateTime? NextReview { get; private set; } // 下次复习时间
+    /// <summary>最近一次复习评分：0=忘记, 3=模糊, 5=记住；未复习为 null</summary>
+    public int? LastQuality { get; private set; }
+    public bool IsFavorite { get; private set; }
 
     private UserWord() { }
 
@@ -114,11 +117,24 @@ public class UserWord : ICreationTime
         EaseFactor = 2.5;
         Interval = 0;
         NextReview = null;
+        LastQuality = null;
+        IsFavorite = false;
     }
 
     public void MoveToBook(Guid wordBookId)
     {
         WordBookId = wordBookId;
+    }
+
+    public void SetFavorite(bool isFavorite)
+    {
+        IsFavorite = isFavorite;
+    }
+
+    public bool ToggleFavorite()
+    {
+        IsFavorite = !IsFavorite;
+        return IsFavorite;
     }
 
     /// <summary>
@@ -151,6 +167,7 @@ public class UserWord : ICreationTime
         if (EaseFactor < 1.3) EaseFactor = 1.3;
 
         NextReview = DateTime.Now.AddDays(Interval);
+        LastQuality = quality;
     }
 
     public void UpdateContent(string? definition, string? example)

@@ -8,6 +8,10 @@
   >
     <section class="seo-intro le-paper" aria-label="栏目介绍">
       <p v-for="(p, i) in hub.intro" :key="i">{{ p }}</p>
+      <p class="search-tip">
+        想快速找某一年套卷？去
+        <router-link to="/search?type=listening">搜索四六级试卷</router-link>
+      </p>
       <nav v-if="hub.related?.length" class="related-links" aria-label="相关栏目">
         <router-link v-for="link in hub.related" :key="link.to" :to="link.to" class="related-chip">
           {{ link.label }}
@@ -221,6 +225,16 @@ onMounted(load)
 
 .seo-intro p:last-of-type {
   margin-bottom: 0;
+}
+
+.search-tip a {
+  color: var(--le-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.search-tip a:hover {
+  text-decoration: underline;
 }
 
 .related-links {

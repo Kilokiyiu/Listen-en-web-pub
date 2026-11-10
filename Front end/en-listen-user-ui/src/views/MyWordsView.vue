@@ -13,6 +13,7 @@
         <span class="btn-label">官方词本</span>
       </el-button>
       <el-button
+        v-if="!isFavoritesBook"
         type="primary"
         class="le-btn-gradient add-btn header-btn"
         @click="showAddDialog = true"
@@ -34,12 +35,27 @@
             <el-icon><FolderAdd /></el-icon>
             新建词本
           </el-button>
-          <el-button size="small" :disabled="!currentBook" @click="openRenameBook">重命名</el-button>
+          <el-button
+            size="small"
+            :disabled="!currentBook || isFavoritesBook"
+            @click="openRenameBook"
+          >重命名</el-button>
+          <el-button
+            size="small"
+            :disabled="!currentBookId || isFavoritesBook"
+            @click="openImportDialog"
+          >导入</el-button>
+          <el-button
+            size="small"
+            :disabled="!currentBookId || isFavoritesBook"
+            @click="openShareDialog"
+          >分享</el-button>
+          <el-button size="small" @click="openClaimDialog">用分享码导入</el-button>
           <el-button
             size="small"
             type="danger"
             plain
-            :disabled="!currentBook || currentBook.isDefault"
+            :disabled="!currentBook || isFavoritesBook"
             @click="handleDeleteBook"
           >
             删除
@@ -54,7 +70,7 @@
           type="button"
           class="vocab-book le-paper-flip"
           :class="[
-            `tone-${index % 5}`,
+            book.isFavorites ? 'tone-fav' : `tone-${index % 5}`,
             `le-paper-flip-delay-${Math.min((index % 4) + 1, 5)}`,
             { active: book.id === currentBookId },
           ]"
@@ -63,9 +79,13 @@
           <span class="vocab-book__spine" aria-hidden="true"></span>
           <span class="vocab-book__edge" aria-hidden="true"></span>
           <div class="vocab-book__cover">
-            <span class="vocab-book__badge">{{ book.isDefault ? 'DEFAULT' : 'MINE' }}</span>
+            <span class="vocab-book__badge">{{
+              book.isFavorites ? 'FAV' : (book.isDefault ? 'DEFAULT' : 'MINE')
+            }}</span>
             <h3 class="vocab-book__title">{{ book.name }}</h3>
-            <p class="vocab-book__desc">{{ book.description || '个人词汇本' }}</p>
+            <p class="vocab-book__desc">{{
+              book.description || (book.isFavorites ? '复习时点星加入' : '个人词汇本')
+            }}</p>
             <div class="vocab-book__foot">
               <strong>{{ book.wordCount ?? 0 }}</strong>
               <span>词</span>
@@ -214,13 +234,50 @@
             </el-button>
           </template>
         </el-input>
+        <div class="mark-filter" role="group" aria-label="按复习标记筛选">
+          <button
+            v-for="opt in reviewMarkOptions"
+            :key="opt.value || 'all'"
+            type="button"
+            class="mark-chip"
+            :class="[{ active: reviewMark === opt.value }, opt.cls]"
+            @click="setReviewMark(opt.value)"
+          >{{ opt.label }}</button>
+        </div>
+        <div class="batch-bar">
+          <el-button size="small" @click="toggleSelectMode">
+            {{ selectMode ? '取消多选' : '批量删除' }}
+          </el-button>
+          <template v-if="selectMode">
+            <el-button size="small" @click="toggleSelectPage">
+              {{ isPageAllSelected ? '取消本页' : '全选本页' }}
+            </el-button>
+            <el-button
+              size="small"
+              type="danger"
+              :disabled="!selectedIds.length"
+              :loading="batchDeleting"
+              @click="batchDeleteSelected"
+            >
+              删除所选 ({{ selectedIds.length }})
+            </el-button>
+          </template>
+        </div>
       </div>
 
       <div class="table-sheet desktop-only" v-loading="loading">
-        <el-table :data="wordList" class="words-table" style="width: 100%">
+        <el-table
+          ref="wordTableRef"
+          :data="wordList"
+          class="words-table"
+          style="width: 100%"
+          @selection-change="onTableSelectionChange"
+        >
+          <el-table-column v-if="selectMode" type="selection" width="44" />
           <el-table-column prop="word" label="单词" width="150">
             <template #default="{ row }">
               <span class="word-text">{{ row.word }}</span>
+              <span v-if="row.isFavorite" class="fav-tag" title="已收藏">★</span>
             </template>
           </el-table-column>
           <el-table-column prop="definition" label="释义" min-width="200">
@@ -257,16 +314,33 @@
           v-for="(row, index) in wordList"
           :key="row.id"
           class="word-card le-paper le-paper-flip"
-          :class="`le-paper-flip-delay-${Math.min((index % 4) + 1, 5)}`"
+          :class="[
+            `le-paper-flip-delay-${Math.min((index % 4) + 1, 5)}`,
+            { 'is-selected': selectMode && selectedIdSet.has(row.id) },
+          ]"
+          @click="selectMode ? toggleWordSelected(row.id) : undefined"
         >
           <div class="word-card-top">
             <div class="word-card-title">
+              <el-checkbox
+                v-if="selectMode"
+                :model-value="selectedIdSet.has(row.id)"
+                @click.stop
+                @change="toggleWordSelected(row.id)"
+              />
               <span class="word-text">{{ row.word }}</span>
+              <span v-if="row.isFavorite" class="fav-tag" title="已收藏">★</span>
               <span class="status-pill" :class="getReviewStatus(row).cls">
                 {{ getReviewStatus(row).text }}
               </span>
             </div>
-            <button type="button" class="icon-delete" @click="deleteWord(row.id)" title="删除">
+            <button
+              v-if="!selectMode"
+              type="button"
+              class="icon-delete"
+              @click="deleteWord(row.id)"
+              title="删除"
+            >
               <el-icon :size="18"><Delete /></el-icon>
             </button>
           </div>
@@ -299,7 +373,7 @@
         <el-form-item label="单词本">
           <el-select v-model="newWord.wordBookId" style="width: 100%">
             <el-option
-              v-for="book in wordBooks"
+              v-for="book in realWordBooks"
               :key="book.id"
               :label="book.name"
               :value="book.id"
@@ -362,6 +436,155 @@
         <el-button type="primary" class="le-btn-gradient" @click="submitBookForm">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 批量导入 -->
+    <el-dialog v-model="showImportDialog" title="一键导入单词" width="620px">
+      <div class="import-guide">
+        <p class="import-guide__title">导入格式说明（每次导入请先对照）</p>
+        <div
+          v-for="(item, idx) in importFormatGuide"
+          :key="idx"
+          class="import-guide__item"
+          :class="{ 'is-warn': idx === importFormatGuide.length - 1 }"
+        >
+          <strong>{{ item.title }}</strong>
+          <pre class="import-guide__example">{{ item.example }}</pre>
+          <p>{{ item.note }}</p>
+        </div>
+        <p class="io-hint">也支持 PDF 词表、JSON（words/entries 数组）。</p>
+      </div>
+      <el-form label-width="88px">
+        <el-form-item label="导入到">
+          <el-radio-group v-model="importTargetMode" style="width: 100%; margin-bottom: 8px">
+            <el-radio-button value="existing">已有词本</el-radio-button>
+            <el-radio-button value="new">新建词本</el-radio-button>
+          </el-radio-group>
+          <el-select
+            v-if="importTargetMode === 'existing'"
+            v-model="importBookId"
+            style="width: 100%"
+            placeholder="选择目标词本"
+          >
+            <el-option
+              v-for="book in realWordBooks"
+              :key="book.id"
+              :label="book.name"
+              :value="book.id"
+            />
+          </el-select>
+          <el-input
+            v-else
+            v-model="importNewBookName"
+            maxlength="40"
+            placeholder="新词本名称，如：四级核心词"
+          />
+        </el-form-item>
+        <el-form-item label="选择文件">
+          <input
+            ref="importFileInput"
+            type="file"
+            accept=".json,.txt,.pdf,.docx,application/json,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            @change="onImportFileSelected"
+          />
+        </el-form-item>
+        <el-form-item label="或粘贴">
+          <el-input
+            v-model="importPaste"
+            type="textarea"
+            :rows="8"
+            placeholder="推荐：abandon | 放弃&#10;格式乱也没关系，可点「AI 整理」"
+          />
+        </el-form-item>
+      </el-form>
+      <p class="io-hint">
+        格式搞不定时：先粘贴/选文件，再点「AI 整理」，确认预览后导入。需登录；每位用户每天限用 1 次；音标与词性会写入释义。
+      </p>
+      <p v-if="importPreviewCount != null" class="io-hint">
+        已解析 {{ importPreviewCount }} 个词条
+      </p>
+      <template #footer>
+        <el-button @click="showImportDialog = false">取消</el-button>
+        <el-button :loading="aiOrganizeBusy" :disabled="importBusy" @click="runAiOrganize">
+          AI 整理
+        </el-button>
+        <el-button
+          type="primary"
+          class="le-btn-gradient"
+          :loading="importBusy"
+          :disabled="aiOrganizeBusy"
+          @click="submitImport"
+        >
+          确认导入
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 分享 -->
+    <el-dialog v-model="showShareDialog" title="分享单词本" width="480px">
+      <p class="io-hint">生成分享码发给好友，对方点「用分享码导入」即可导入；也可导出文件自行发送。</p>
+      <div v-if="shareResult" class="share-result">
+        <div class="share-code">{{ shareResult.code }}</div>
+        <p>
+          《{{ shareResult.title }}》· {{ shareResult.wordCount }} 词 ·
+          有效至 {{ formatDate(shareResult.expiresAt) }}
+        </p>
+        <el-button type="primary" class="le-btn-gradient" @click="copyShareCode">复制分享码</el-button>
+      </div>
+      <div class="share-actions">
+        <el-button :loading="shareBusy" :disabled="!currentBookId" @click="generateShareCode">
+          {{ shareResult ? '重新生成分享码' : '生成分享码' }}
+        </el-button>
+        <el-button :disabled="!currentBookId || exportBusy" @click="exportCurrentBook('json')">
+          导出 JSON
+        </el-button>
+        <el-button :disabled="!currentBookId || exportBusy" @click="exportCurrentBook('txt')">
+          导出 TXT
+        </el-button>
+      </div>
+      <template #footer>
+        <el-button @click="showShareDialog = false">关闭</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 用分享码导入 -->
+    <el-dialog v-model="showClaimDialog" title="用分享码导入词本" width="480px">
+      <el-form label-width="88px">
+        <el-form-item label="分享码" required>
+          <el-input
+            v-model="claimCode"
+            maxlength="16"
+            placeholder="输入 6 位分享码"
+            @keyup.enter="previewClaim"
+          />
+        </el-form-item>
+      </el-form>
+      <div v-if="claimPreview" class="claim-preview">
+        <p>
+          <strong>{{ claimPreview.title }}</strong>
+          · {{ claimPreview.wordCount }} 词
+          · 有效至 {{ formatDate(claimPreview.expiresAt) }}
+        </p>
+        <ul v-if="claimPreview.preview?.length" class="claim-preview-list">
+          <li v-for="(w, i) in claimPreview.preview.slice(0, 8)" :key="i">
+            {{ w.word }}
+            <span v-if="w.definition"> — {{ w.definition }}</span>
+          </li>
+        </ul>
+      </div>
+      <template #footer>
+        <el-button @click="showClaimDialog = false">取消</el-button>
+        <el-button @click="previewClaim" :loading="claimBusy">预览</el-button>
+        <el-button
+          type="primary"
+          class="le-btn-gradient"
+          :loading="claimBusy"
+          :disabled="!claimPreview"
+          @click="submitClaim"
+        >
+          领取到新词本
+        </el-button>
+      </template>
+    </el-dialog>
   </PageShell>
 </template>
 
@@ -370,7 +593,7 @@ export default { name: 'MyWordsView' }
 </script>
 
 <script setup>
-import { ref, computed, onMounted, onActivated, watch } from 'vue'
+import { ref, computed, onMounted, onActivated, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import PageShell from '../components/PageShell.vue'
@@ -380,7 +603,10 @@ import { promptGoReviewAfterAdd } from '../utils/promptGoReview.js'
 import {
   getUserWords,
   addUserWord,
+  importUserWords,
+  aiOrganizeUserWords,
   deleteUserWord,
+  batchDeleteUserWords,
   getWordStats,
   getWordBooks,
   createWordBook,
@@ -388,9 +614,21 @@ import {
   deleteWordBook,
   getCurrentWordBookId,
   setCurrentWordBookId,
+  isFavoritesBookId,
+  makeFavoritesBook,
   getOfficialWordPacks,
   claimOfficialWordPack,
+  shareWordBook,
+  getSharedWordBook,
+  claimSharedWordBook,
 } from '../api/Word.js'
+import {
+  parseWordFile,
+  parseImportFile,
+  serializeToJson,
+  serializeToTxt,
+  IMPORT_FORMAT_GUIDE,
+} from '../utils/wordImportParse.js'
 
 const router = useRouter()
 
@@ -404,6 +642,15 @@ const page = ref(1)
 const pageSize = ref(20)
 const total = ref(0)
 const searchKeyword = ref('')
+const reviewMark = ref('')
+const reviewMarkOptions = [
+  { value: '', label: '全部', cls: '' },
+  { value: 'forget', label: '忘记', cls: 'forget' },
+  { value: 'fuzzy', label: '模糊', cls: 'fuzzy' },
+  { value: 'remember', label: '记住', cls: 'remember' },
+  { value: 'unreviewed', label: '未复习', cls: 'unreviewed' },
+  { value: 'favorite', label: '收藏', cls: 'favorite' },
+]
 const loading = ref(false)
 const stats = ref(null)
 const showAddDialog = ref(false)
@@ -413,20 +660,69 @@ const showBookDialog = ref(false)
 const bookDialogMode = ref('create')
 const bookForm = ref({ name: '', description: '' })
 
+const showImportDialog = ref(false)
+const importBookId = ref(null)
+const importTargetMode = ref('existing')
+const importNewBookName = ref('')
+const importPaste = ref('')
+const importFileInput = ref(null)
+const importBusy = ref(false)
+const aiOrganizeBusy = ref(false)
+const importPreviewCount = ref(null)
+const importFormatGuide = IMPORT_FORMAT_GUIDE
+const pendingImportWords = ref(null)
+
+const selectMode = ref(false)
+const selectedIds = ref([])
+const batchDeleting = ref(false)
+const wordTableRef = ref(null)
+const selectedIdSet = computed(() => new Set(selectedIds.value))
+const isPageAllSelected = computed(() => {
+  if (!wordList.value.length) return false
+  return wordList.value.every((w) => selectedIdSet.value.has(w.id))
+})
+
+const showShareDialog = ref(false)
+const shareBusy = ref(false)
+const exportBusy = ref(false)
+const shareResult = ref(null)
+
+const showClaimDialog = ref(false)
+const claimCode = ref('')
+const claimPreview = ref(null)
+const claimBusy = ref(false)
+
 const currentBook = computed(() =>
   wordBooks.value.find(b => b.id === currentBookId.value) || null
 )
+const isFavoritesBook = computed(() => isFavoritesBookId(currentBookId.value))
+const realWordBooks = computed(() => wordBooks.value.filter((b) => !b.isFavorites))
+
+const attachFavoritesBook = async (books) => {
+  let favoriteCount = 0
+  try {
+    const stats = await getWordStats({ favoritesOnly: true })
+    favoriteCount = stats?.totalWords ?? 0
+  } catch {
+    favoriteCount = 0
+  }
+  return [makeFavoritesBook(favoriteCount), ...(books || [])]
+}
 
 const loadBooks = async () => {
   const books = await getWordBooks()
-  wordBooks.value = books || []
-  if (!wordBooks.value.length) return
+  const list = await attachFavoritesBook(books)
+  wordBooks.value = list
+  if (!list.length) return
 
   const saved = getCurrentWordBookId()
-  const match = wordBooks.value.find(b => b.id === saved)
-  currentBookId.value = match?.id || wordBooks.value.find(b => b.isDefault)?.id || wordBooks.value[0].id
+  const match = list.find((b) => b.id === saved)
+  currentBookId.value =
+    match?.id || list.find((b) => b.isDefault)?.id || list.find((b) => !b.isFavorites)?.id || list[0].id
   setCurrentWordBookId(currentBookId.value)
-  newWord.value.wordBookId = currentBookId.value
+  newWord.value.wordBookId = isFavoritesBookId(currentBookId.value)
+    ? realWordBooks.value[0]?.id || null
+    : currentBookId.value
 }
 
 const loadWords = async () => {
@@ -437,7 +733,8 @@ const loadWords = async () => {
       page: page.value,
       pageSize: pageSize.value,
       search: searchKeyword.value,
-      wordBookId: currentBookId.value
+      wordBookId: currentBookId.value,
+      reviewMark: reviewMark.value || undefined,
     })
     wordList.value = res.items || []
     total.value = res.total || 0
@@ -460,7 +757,7 @@ const loadStats = async () => {
 const refreshBookWordCounts = async () => {
   try {
     const books = await getWordBooks()
-    wordBooks.value = books || []
+    wordBooks.value = await attachFavoritesBook(books)
   } catch (e) {
     console.error(e)
   }
@@ -468,8 +765,13 @@ const refreshBookWordCounts = async () => {
 
 const onBookChange = (id) => {
   setCurrentWordBookId(id)
-  newWord.value.wordBookId = id
+  newWord.value.wordBookId = isFavoritesBookId(id)
+    ? realWordBooks.value[0]?.id || null
+    : id
   page.value = 1
+  reviewMark.value = ''
+  clearSelection()
+  selectMode.value = false
   loadWords()
   loadStats()
 }
@@ -532,6 +834,10 @@ const claimPack = async (pack) => {
 }
 
 const getReviewStatus = (word) => {
+  const q = word?.lastQuality
+  if (q === 0) return { type: 'danger', text: '忘记', cls: 'is-forget' }
+  if (q === 3) return { type: 'warning', text: '模糊', cls: 'is-fuzzy' }
+  if (q === 5) return { type: 'success', text: '记住', cls: 'is-remember' }
   if (!word.nextReview) {
     return { type: 'info', text: '新词', cls: 'is-new' }
   }
@@ -573,6 +879,52 @@ const addWord = async () => {
   }
 }
 
+const clearSelection = () => {
+  selectedIds.value = []
+  wordTableRef.value?.clearSelection?.()
+}
+
+const toggleSelectMode = () => {
+  selectMode.value = !selectMode.value
+  clearSelection()
+}
+
+const toggleWordSelected = (id) => {
+  const set = new Set(selectedIds.value)
+  if (set.has(id)) set.delete(id)
+  else set.add(id)
+  selectedIds.value = [...set]
+}
+
+const toggleSelectPage = () => {
+  if (isPageAllSelected.value) {
+    const pageIds = new Set(wordList.value.map((w) => w.id))
+    selectedIds.value = selectedIds.value.filter((id) => !pageIds.has(id))
+  } else {
+    const set = new Set(selectedIds.value)
+    wordList.value.forEach((w) => set.add(w.id))
+    selectedIds.value = [...set]
+  }
+  syncTableSelection()
+}
+
+const onTableSelectionChange = (rows) => {
+  if (!selectMode.value) return
+  const pageIds = new Set(wordList.value.map((w) => w.id))
+  const kept = selectedIds.value.filter((id) => !pageIds.has(id))
+  selectedIds.value = [...kept, ...rows.map((r) => r.id)]
+}
+
+const syncTableSelection = async () => {
+  await nextTick()
+  const table = wordTableRef.value
+  if (!table || !selectMode.value) return
+  table.clearSelection?.()
+  wordList.value.forEach((row) => {
+    if (selectedIdSet.value.has(row.id)) table.toggleRowSelection?.(row, true)
+  })
+}
+
 const deleteWord = async (id) => {
   try {
     await ElMessageBox.confirm('确定要删除这个单词吗？', '提示', {
@@ -581,6 +933,7 @@ const deleteWord = async (id) => {
       type: 'warning'
     })
     await deleteUserWord(id)
+    selectedIds.value = selectedIds.value.filter((x) => x !== id)
     ElMessage.success('删除成功')
     await refreshBookWordCounts()
     loadWords()
@@ -592,6 +945,39 @@ const deleteWord = async (id) => {
   }
 }
 
+const batchDeleteSelected = async () => {
+  const ids = [...selectedIds.value]
+  if (!ids.length) return
+  try {
+    await ElMessageBox.confirm(
+      `确定删除选中的 ${ids.length} 个单词吗？此操作不可恢复。`,
+      '批量删除',
+      {
+        confirmButtonText: '删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    )
+  } catch {
+    return
+  }
+
+  batchDeleting.value = true
+  try {
+    const res = await batchDeleteUserWords(ids)
+    ElMessage.success(`已删除 ${res?.deleted ?? ids.length} 个单词`)
+    clearSelection()
+    selectMode.value = false
+    await refreshBookWordCounts()
+    loadWords()
+    loadStats()
+  } catch (e) {
+    console.error(e)
+  } finally {
+    batchDeleting.value = false
+  }
+}
+
 const openCreateBook = () => {
   bookDialogMode.value = 'create'
   bookForm.value = { name: '', description: '' }
@@ -599,7 +985,7 @@ const openCreateBook = () => {
 }
 
 const openRenameBook = () => {
-  if (!currentBook.value) return
+  if (!currentBook.value || currentBook.value.isFavorites) return
   bookDialogMode.value = 'rename'
   bookForm.value = {
     name: currentBook.value.name,
@@ -639,23 +1025,348 @@ const submitBookForm = async () => {
 }
 
 const handleDeleteBook = async () => {
-  if (!currentBook.value || currentBook.value.isDefault) return
+  if (!currentBook.value || currentBook.value.isFavorites) return
+
+  if (currentBook.value.isDefault) {
+    try {
+      await ElMessageBox.confirm(
+        `删除默认单词本「${currentBook.value.name}」？其中的单词将一并删除，并自动新建一本空白默认单词本。`,
+        '删除默认单词本',
+        { confirmButtonText: '删除并重建', cancelButtonText: '取消', type: 'warning' }
+      )
+      await deleteWordBook(currentBook.value.id, { moveWordsToDefault: false, deleteWords: true })
+      ElMessage.success('已删除，并新建空白默认单词本')
+      clearSelection()
+      selectMode.value = false
+      await loadBooks()
+      onBookChange(currentBookId.value)
+    } catch (e) {
+      if (e !== 'cancel') console.error(e)
+    }
+    return
+  }
+
   try {
     await ElMessageBox.confirm(
-      `确定删除「${currentBook.value.name}」吗？其中的单词会自动移到默认单词本。`,
+      `删除「${currentBook.value.name}」后，词本里的单词如何处理？`,
       '删除单词本',
       {
-        confirmButtonText: '删除并迁移',
-        cancelButtonText: '取消',
-        type: 'warning'
+        distinguishCancelAndClose: true,
+        confirmButtonText: '迁移到默认本',
+        cancelButtonText: '连同单词删除',
+        type: 'warning',
       }
     )
-    await deleteWordBook(currentBook.value.id, { moveWordsToDefault: true })
-    ElMessage.success('已删除')
+    await deleteWordBook(currentBook.value.id, { moveWordsToDefault: true, deleteWords: false })
+    ElMessage.success('词本已删除，单词已移到默认本')
+    clearSelection()
+    selectMode.value = false
     await loadBooks()
     onBookChange(currentBookId.value)
+  } catch (action) {
+    if (action === 'cancel') {
+      try {
+        await ElMessageBox.confirm(
+          `将永久删除「${currentBook.value.name}」及其全部单词，不可恢复。确定吗？`,
+          '连同单词删除',
+          { confirmButtonText: '永久删除', cancelButtonText: '返回', type: 'error' }
+        )
+        await deleteWordBook(currentBook.value.id, { moveWordsToDefault: false, deleteWords: true })
+        ElMessage.success('词本及单词已删除')
+        clearSelection()
+        selectMode.value = false
+        await loadBooks()
+        onBookChange(currentBookId.value)
+      } catch (e) {
+        if (e !== 'cancel') console.error(e)
+      }
+    } else if (action !== 'close') {
+      console.error(action)
+    }
+  }
+}
+
+const formatDate = (iso) => {
+  if (!iso) return ''
+  try {
+    return new Date(iso).toLocaleDateString('zh-CN')
+  } catch {
+    return String(iso)
+  }
+}
+
+const serializeWordsForAi = (words) =>
+  (words || [])
+    .map((w) => {
+      const word = String(w?.word || '').trim()
+      if (!word) return ''
+      const def = String(w?.definition || '').trim()
+      const ex = String(w?.example || '').trim()
+      if (ex) return `${word} | ${def} | ${ex}`
+      if (def) return `${word} | ${def}`
+      return word
+    })
+    .filter(Boolean)
+    .join('\n')
+
+const openImportDialog = () => {
+  importBookId.value = currentBookId.value
+  importTargetMode.value = 'existing'
+  importNewBookName.value = ''
+  importPaste.value = ''
+  importPreviewCount.value = null
+  pendingImportWords.value = null
+  showImportDialog.value = true
+}
+
+const fillImportPreview = (words, label = '解析') => {
+  pendingImportWords.value = words
+  importPreviewCount.value = words.length
+  importPaste.value = words
+    .slice(0, 100)
+    .map((w) => {
+      const def = w.definition || ''
+      const ex = w.example || ''
+      if (ex) return `${w.word} | ${def} | ${ex}`
+      if (def) return `${w.word} | ${def}`
+      return w.word
+    })
+    .join('\n')
+  if (words.length > 100) {
+    importPaste.value += `\n# …共 ${words.length} 词，点导入将导入全部${label}结果（AI 整理也会使用全部）`
+  }
+}
+
+const onImportFileSelected = async (e) => {
+  const file = e.target?.files?.[0]
+  if (!file) return
+  importBusy.value = true
+  try {
+    const words = await parseImportFile(file)
+    const lower = (file.name || '').toLowerCase()
+    if (lower.endsWith('.pdf') || lower.endsWith('.docx') || lower.endsWith('.json')) {
+      fillImportPreview(words)
+    } else {
+      importPreviewCount.value = words.length
+      const { readFileAsText } = await import('../utils/wordImportParse.js')
+      importPaste.value = await readFileAsText(file)
+      pendingImportWords.value = words
+    }
+    ElMessage.success(`已读取文件，解析到 ${words.length} 个词`)
+  } catch (err) {
+    pendingImportWords.value = null
+    ElMessage.error(err?.message || '文件解析失败')
+  } finally {
+    importBusy.value = false
+    if (importFileInput.value) importFileInput.value.value = ''
+  }
+}
+
+const runAiOrganize = async () => {
+  const expected = pendingImportWords.value?.length || 0
+  const text = pendingImportWords.value?.length
+    ? serializeWordsForAi(pendingImportWords.value)
+    : (importPaste.value || '').trim()
+  if (!text) {
+    ElMessage.warning('请先粘贴内容或选择文件')
+    return
+  }
+  aiOrganizeBusy.value = true
+  try {
+    const res = await aiOrganizeUserWords(text)
+    const entries = res?.entries || []
+    if (!entries.length) {
+      ElMessage.warning('AI 未整理出有效词条，请检查原文或稍后重试')
+      return
+    }
+    fillImportPreview(entries, 'AI 整理')
+    if (expected > 0 && entries.length < expected) {
+      ElMessage.success(`AI 已整理 ${entries.length}/${expected} 个词，请确认后导入`)
+    } else {
+      ElMessage.success(`AI 已整理 ${entries.length} 个词，请确认后导入`)
+    }
   } catch (e) {
-    if (e !== 'cancel') console.error(e)
+    console.error(e)
+  } finally {
+    aiOrganizeBusy.value = false
+  }
+}
+
+const submitImport = async () => {
+  let targetBookId = importBookId.value
+  if (importTargetMode.value === 'new') {
+    const name = (importNewBookName.value || '').trim()
+    if (!name) {
+      ElMessage.warning('请填写新建词本名称')
+      return
+    }
+  } else if (!targetBookId) {
+    ElMessage.warning('请选择目标词本')
+    return
+  }
+
+  let words
+  try {
+    words = pendingImportWords.value?.length
+      ? pendingImportWords.value
+      : parseWordFile(importPaste.value)
+  } catch (err) {
+    ElMessage.error(err?.message || '解析失败')
+    return
+  }
+  importBusy.value = true
+  try {
+    if (importTargetMode.value === 'new') {
+      const book = await createWordBook({
+        name: (importNewBookName.value || '').trim(),
+      })
+      targetBookId = book.id || book.Id
+    }
+    const r = await importUserWords({
+      wordBookId: targetBookId,
+      entries: words.map((w) => ({
+        word: w.word,
+        definition: w.definition || '',
+        example: w.example || '',
+      })),
+    })
+    ElMessage.success(`导入完成：新增 ${r.added}，跳过 ${r.skipped}${r.failed ? `，失败 ${r.failed}` : ''}`)
+    showImportDialog.value = false
+    pendingImportWords.value = null
+    await loadBooks()
+    if (targetBookId === currentBookId.value) {
+      await Promise.all([loadWords(), loadStats(), refreshBookWordCounts()])
+    } else {
+      selectBook(targetBookId)
+      await refreshBookWordCounts()
+    }
+  } catch (e) {
+    console.error(e)
+  } finally {
+    importBusy.value = false
+  }
+}
+
+const openShareDialog = () => {
+  shareResult.value = null
+  showShareDialog.value = true
+}
+
+const generateShareCode = async () => {
+  if (!currentBookId.value) return
+  shareBusy.value = true
+  try {
+    shareResult.value = await shareWordBook(currentBookId.value)
+    ElMessage.success('分享码已生成')
+  } catch (e) {
+    console.error(e)
+  } finally {
+    shareBusy.value = false
+  }
+}
+
+const copyShareCode = async () => {
+  const code = shareResult.value?.code
+  if (!code) return
+  try {
+    await navigator.clipboard.writeText(code)
+    ElMessage.success('已复制分享码')
+  } catch {
+    ElMessage.info(`分享码：${code}`)
+  }
+}
+
+const fetchAllWordsInBook = async (wordBookId) => {
+  const all = []
+  let p = 1
+  const size = 200
+  for (;;) {
+    const res = await getUserWords({ page: p, pageSize: size, wordBookId })
+    const items = res.items || []
+    all.push(...items)
+    if (all.length >= (res.total || 0) || items.length === 0) break
+    p += 1
+    if (p > 100) break
+  }
+  return all
+}
+
+const downloadText = (filename, content) => {
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
+const exportCurrentBook = async (format) => {
+  if (!currentBookId.value) return
+  exportBusy.value = true
+  try {
+    const words = await fetchAllWordsInBook(currentBookId.value)
+    if (!words.length) {
+      ElMessage.warning('当前词本没有单词可导出')
+      return
+    }
+    const stamp = new Date().toISOString().slice(0, 10)
+    const name = `wordbook_${stamp}.${format === 'txt' ? 'txt' : 'json'}`
+    const content =
+      format === 'txt'
+        ? serializeToTxt(words)
+        : serializeToJson(words, { source: currentBook.value?.name || 'web' })
+    downloadText(name, content)
+    ElMessage.success(`已导出 ${words.length} 个单词`)
+  } catch (e) {
+    console.error(e)
+    ElMessage.error('导出失败')
+  } finally {
+    exportBusy.value = false
+  }
+}
+
+const openClaimDialog = () => {
+  claimCode.value = ''
+  claimPreview.value = null
+  showClaimDialog.value = true
+}
+
+const previewClaim = async () => {
+  const code = claimCode.value.trim()
+  if (!code) {
+    ElMessage.warning('请输入分享码')
+    return
+  }
+  claimBusy.value = true
+  try {
+    claimPreview.value = await getSharedWordBook(code)
+  } catch (e) {
+    claimPreview.value = null
+    console.error(e)
+  } finally {
+    claimBusy.value = false
+  }
+}
+
+const submitClaim = async () => {
+  const code = claimCode.value.trim()
+  if (!code || !claimPreview.value) return
+  claimBusy.value = true
+  try {
+    const res = await claimSharedWordBook(code)
+    ElMessage.success(
+      `已领取到「${res.userWordBookName}」：新增 ${res.added}，跳过 ${res.skipped}`
+    )
+    showClaimDialog.value = false
+    await loadBooks()
+    if (res?.userWordBookId) selectBook(res.userWordBookId)
+  } catch (e) {
+    console.error(e)
+  } finally {
+    claimBusy.value = false
   }
 }
 
@@ -672,17 +1383,34 @@ const goToFreeReview = () => {
 
 const handleSearch = () => {
   page.value = 1
+  clearSelection()
+  loadWords()
+}
+
+const setReviewMark = (value) => {
+  reviewMark.value = reviewMark.value === value ? '' : value
+  page.value = 1
+  clearSelection()
   loadWords()
 }
 
 const handleSizeChange = (size) => {
   pageSize.value = size
+  clearSelection()
   loadWords()
 }
 
 const handlePageChange = () => {
-  loadWords()
+  loadWords().then(() => syncTableSelection())
 }
+
+watch(selectMode, () => {
+  if (selectMode.value) syncTableSelection()
+})
+
+watch(wordList, () => {
+  if (selectMode.value) syncTableSelection()
+})
 
 watch(showAddDialog, (open) => {
   if (open) newWord.value.wordBookId = currentBookId.value
@@ -740,6 +1468,102 @@ onActivated(() => {
 
 .shelf-tools { display: flex; flex-wrap: wrap; gap: 8px; }
 
+.io-hint {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--le-text-muted, #6b7280);
+  line-height: 1.5;
+}
+
+.import-guide {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--le-surface-soft, #f8fafc);
+  border: 1px solid var(--le-border, rgba(55, 75, 105, 0.12));
+}
+.import-guide__title {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--le-text, #1e293b);
+}
+.import-guide__item {
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed rgba(55, 75, 105, 0.12);
+}
+.import-guide__item:last-of-type { border-bottom: none; margin-bottom: 4px; }
+.import-guide__item strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+.import-guide__item p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--le-text-muted, #6b7280);
+  line-height: 1.5;
+}
+.import-guide__item.is-warn {
+  background: rgba(220, 38, 38, 0.04);
+  border: 1px solid rgba(220, 38, 38, 0.15);
+  border-radius: 8px;
+  padding: 10px;
+}
+.import-guide__example {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid rgba(55, 75, 105, 0.1);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  color: #334155;
+}
+
+.batch-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.word-card.is-selected {
+  outline: 2px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 1px;
+}
+.share-result {
+  text-align: center;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--le-surface-soft, #f8fafc);
+  border-radius: 8px;
+}
+.share-code {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  font-family: ui-monospace, monospace;
+  margin-bottom: 8px;
+}
+.share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.claim-preview {
+  margin-top: 8px;
+  font-size: 14px;
+}
+.claim-preview-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--le-text-muted, #6b7280);
+  font-size: 13px;
+}
+
 .shelf-rail {
   display: flex;
   gap: 14px;
@@ -777,7 +1601,7 @@ onActivated(() => {
   text-align: left;
   scroll-snap-align: start;
   transform-origin: left bottom;
-  transition: transform 0.25s ease, filter 0.25s ease;
+  transition: transform 0.2s ease;
   filter: drop-shadow(0 6px 10px rgba(30, 41, 59, 0.12));
 }
 
@@ -834,6 +1658,8 @@ onActivated(() => {
 .vocab-book.tone-3 .vocab-book__spine { background: linear-gradient(180deg, #4a5aa8, #5b6abf); }
 .vocab-book.tone-4 .vocab-book__cover { background-color: #f7f0ef; border-color: rgba(201,120,120,0.28); }
 .vocab-book.tone-4 .vocab-book__spine { background: linear-gradient(180deg, #b45a5a, #c97878); }
+.vocab-book.tone-fav .vocab-book__cover { background-color: #fff8eb; border-color: rgba(245,158,11,0.35); }
+.vocab-book.tone-fav .vocab-book__spine { background: linear-gradient(180deg, #d97706, #f59e0b); }
 
 .vocab-book__badge {
   font-family: var(--le-font-mono);
@@ -1015,6 +1841,7 @@ onActivated(() => {
 
 .toolbar-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .search-bar { margin-bottom: 14px; }
+.search-input { width: 100%; }
 .search-input { width: min(360px, 100%); }
 .search-input :deep(.el-input__wrapper) {
   background: #fff;
@@ -1087,6 +1914,67 @@ onActivated(() => {
   color: var(--le-primary);
   background: rgba(37, 99, 235, 0.08);
   border-color: rgba(37, 99, 235, 0.18);
+}
+.status-pill.is-forget {
+  color: var(--le-danger, #dc2626);
+  background: rgba(220, 38, 38, 0.08);
+  border-color: rgba(220, 38, 38, 0.22);
+}
+.status-pill.is-fuzzy {
+  color: var(--le-warning);
+  background: rgba(217, 119, 6, 0.08);
+  border-color: rgba(217, 119, 6, 0.22);
+}
+.status-pill.is-remember {
+  color: var(--le-success);
+  background: rgba(5, 150, 105, 0.08);
+  border-color: rgba(5, 150, 105, 0.22);
+}
+
+.mark-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.mark-chip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--le-border);
+  background: var(--le-bg, #fff);
+  color: var(--le-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+}
+.mark-chip.active {
+  border-color: var(--le-primary);
+  color: var(--le-primary);
+  background: rgba(37, 99, 235, 0.08);
+}
+.mark-chip.forget.active {
+  border-color: var(--le-danger, #dc2626);
+  color: var(--le-danger, #dc2626);
+  background: rgba(220, 38, 38, 0.08);
+}
+.mark-chip.fuzzy.active {
+  border-color: var(--le-warning);
+  color: var(--le-warning);
+  background: rgba(217, 119, 6, 0.1);
+}
+.mark-chip.remember.active {
+  border-color: var(--le-success);
+  color: var(--le-success);
+  background: rgba(5, 150, 105, 0.1);
+}
+.mark-chip.favorite.active {
+  border-color: #f59e0b;
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.12);
+}
+.fav-tag {
+  margin-left: 4px;
+  color: #f59e0b;
+  font-size: 13px;
 }
 
 .icon-delete {

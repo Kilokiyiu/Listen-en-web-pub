@@ -7,22 +7,18 @@
         <div class="hero-content">
           <p class="hero-tag">今日学习</p>
           <h1 class="hero-title">ListenEase</h1>
-          <p class="hero-desc">查词、练听力、记单词——从这里开始今天的学习</p>
-          <div class="hero-search">
-            <el-input
+          <p class="hero-desc">四六级备考刷题、查词记单词——四级真题与六级听力打开即练</p>
+          <form class="hero-search" @submit.prevent="doSearch">
+            <input
               v-model="searchWord"
-              placeholder="输入单词，即点即查释义与例句"
-              size="large"
               class="search-input"
-              @keyup.enter="doSearch"
-            >
-              <template #append>
-                <el-button type="primary" class="search-btn" @click="doSearch" :loading="searchLoading">
-                  <el-icon><Search /></el-icon>
-                </el-button>
-              </template>
-            </el-input>
-          </div>
+              placeholder="输入单词，即点即查释义与例句"
+              :disabled="searchLoading"
+            />
+            <button type="submit" class="search-btn" :disabled="searchLoading">
+              {{ searchLoading ? '…' : '查' }}
+            </button>
+          </form>
         </div>
 
         <EaseWordDownload class="hero-app-desktop le-paper-flip le-paper-flip-delay-1" variant="hero" />
@@ -99,10 +95,7 @@
     <!-- 试卷列表 / 考研精读入口 -->
     <section class="le-section le-paper-flip le-paper-flip-delay-3">
       <div class="le-section-header">
-        <h2>
-          <el-icon color="var(--le-accent)"><Document /></el-icon>
-          {{ currentCategory.listTitle }}
-        </h2>
+        <h2>{{ currentCategory.listTitle }}</h2>
         <a
           v-if="!isKaoyanCategory"
           class="view-all"
@@ -123,113 +116,93 @@
 
       <template v-else>
         <div v-if="albumsLoading" class="le-loading-wrap">
-          <el-icon class="is-loading" :size="28"><Loading /></el-icon>
           <span>加载试卷中...</span>
         </div>
 
-        <el-row v-else :gutter="16">
-          <el-col v-for="(item, index) in currentList" :key="item.id" :xs="12" :sm="8" :md="6">
-            <div
-              class="exam-card le-paper-flip"
-              :class="`le-paper-flip-delay-${Math.min(index % 4 + 1, 5)}`"
-              @click="goAlbum(item.id)"
-            >
-              <div class="exam-tags">
-                <span class="exam-tag" :class="activeCategory">{{ item.tag }}</span>
-              </div>
-              <h3 class="exam-title">{{ item.title }}</h3>
-              <div class="exam-meta">
-                <span class="exam-meta-text">听力练习</span>
-                <span class="start-btn">开始练习 →</span>
-              </div>
+        <div v-else class="exam-grid">
+          <div
+            v-for="(item, index) in currentList"
+            :key="item.id"
+            class="exam-card le-paper-flip"
+            :class="`le-paper-flip-delay-${Math.min(index % 4 + 1, 5)}`"
+            @click="goAlbum(item.id)"
+          >
+            <div class="exam-tags">
+              <span class="exam-tag" :class="activeCategory">{{ item.tag }}</span>
             </div>
-          </el-col>
-        </el-row>
+            <h3 class="exam-title">{{ item.title }}</h3>
+            <div class="exam-meta">
+              <span class="exam-meta-text">听力练习</span>
+              <span class="start-btn">开始练习 →</span>
+            </div>
+          </div>
+        </div>
 
-        <el-empty v-if="!albumsLoading && currentList.length === 0" description="暂无试卷" />
+        <p v-if="!albumsLoading && currentList.length === 0" class="empty-hint">暂无试卷</p>
       </template>
     </section>
 
     <!-- 快捷入口 -->
     <section class="le-section le-paper-flip le-paper-flip-delay-4">
       <div class="le-section-header">
-        <h2><el-icon color="var(--le-accent)"><Star /></el-icon> 快捷入口</h2>
+        <h2>快捷入口</h2>
       </div>
-      <el-row :gutter="16">
-        <el-col v-for="(item, index) in quickLinks" :key="item.title" :xs="12" :sm="6">
-          <div
-            class="quick-card le-paper-flip"
-            :class="`le-paper-flip-delay-${Math.min(index + 1, 5)}`"
-            @click="item.action?.()"
-          >
-            <div class="quick-icon">
-              <el-icon :size="22"><component :is="item.icon" /></el-icon>
-            </div>
-            <div class="quick-info">
-              <h3>{{ item.title }}</h3>
-              <p>{{ item.desc }}</p>
-            </div>
+      <div class="quick-grid">
+        <div
+          v-for="(item, index) in quickLinks"
+          :key="item.title"
+          class="quick-card le-paper-flip"
+          :class="`le-paper-flip-delay-${Math.min(index + 1, 5)}`"
+          @click="item.action?.()"
+        >
+          <div class="quick-info">
+            <h3>{{ item.title }}</h3>
+            <p>{{ item.desc }}</p>
           </div>
-        </el-col>
-      </el-row>
+        </div>
+      </div>
     </section>
 
     <!-- 手机端：听易词下载放在页面底部 -->
     <section class="le-section app-download-mobile le-paper-flip le-paper-flip-delay-5">
       <div class="le-section-header">
-        <h2><el-icon color="var(--le-accent)"><Iphone /></el-icon> 听易词 App</h2>
+        <h2>听易词 App</h2>
       </div>
       <EaseWordDownload variant="section" />
     </section>
 
     <!-- 单词详情弹窗 -->
-    <el-dialog v-model="wordDialogVisible" :title="wordDetail?.word || '单词详情'" width="90%" class="word-detail-dialog">
+    <div v-if="wordDialogVisible" class="word-modal" @click.self="wordDialogVisible = false">
+      <div class="word-modal__panel" role="dialog" :aria-label="wordDetail?.word || '单词详情'">
+        <h3 class="word-modal__title">{{ wordDetail?.word || '单词详情' }}</h3>
       <div v-if="wordDetail" class="word-detail-content">
         <!-- 音标和发音 -->
         <div class="phonetic-section">
           <div class="phonetic-item" v-if="wordDetail.ukphone">
             <span class="phonetic-label">英</span>
             <span class="phonetic-text">/{{ wordDetail.ukphone }}/</span>
-            <el-button
-              v-if="wordDetail.ukspeech"
-              link
-              type="primary"
-              @click="playAudio(wordDetail.ukspeech)"
-            >
-              <el-icon><VideoPlay /></el-icon>
-            </el-button>
+            <button v-if="wordDetail.ukspeech" type="button" class="audio-btn" @click="playAudio(wordDetail.ukspeech)">播放</button>
           </div>
           <div class="phonetic-item" v-if="wordDetail.usphone">
             <span class="phonetic-label">美</span>
             <span class="phonetic-text">/{{ wordDetail.usphone }}/</span>
-            <el-button
-              v-if="wordDetail.usspeech"
-              link
-              type="primary"
-              @click="playAudio(wordDetail.usspeech)"
-            >
-              <el-icon><VideoPlay /></el-icon>
-            </el-button>
+            <button v-if="wordDetail.usspeech" type="button" class="audio-btn" @click="playAudio(wordDetail.usspeech)">播放</button>
           </div>
         </div>
 
         <!-- 翻译 -->
         <div class="detail-section" v-if="wordDetail.translations?.length">
-          <h4><el-icon><Collection /></el-icon> 释义</h4>
+          <h4>释义</h4>
           <div class="translation-list">
-            <el-tag
-              v-for="(t, i) in wordDetail.translations"
-              :key="i"
-              class="translation-tag"
-            >
+            <span v-for="(t, i) in wordDetail.translations" :key="i" class="translation-tag">
               {{ t.pos }}. {{ t.tran_cn }}
-            </el-tag>
+            </span>
           </div>
         </div>
 
         <!-- 例句 -->
         <div class="detail-section" v-if="wordDetail.sentences?.length">
-          <h4><el-icon><Document /></el-icon> 例句</h4>
+          <h4>例句</h4>
           <div
             v-for="(s, i) in wordDetail.sentences"
             :key="i"
@@ -242,28 +215,23 @@
 
         <!-- 短语 -->
         <div class="detail-section" v-if="wordDetail.phrases?.length">
-          <h4><el-icon><Link /></el-icon> 短语</h4>
+          <h4>短语</h4>
           <div class="phrase-list">
-            <el-tag
-              v-for="(p, i) in wordDetail.phrases.slice(0, 10)"
-              :key="i"
-              type="info"
-              class="phrase-tag"
-            >
+            <span v-for="(p, i) in wordDetail.phrases.slice(0, 10)" :key="i" class="phrase-tag">
               {{ p.p_content }}
-            </el-tag>
+            </span>
           </div>
         </div>
 
         <!-- 同根词 -->
         <div class="detail-section" v-if="wordDetail.relWords?.length">
-          <h4><el-icon><Connection /></el-icon> 同根词</h4>
+          <h4>同根词</h4>
           <div
             v-for="(group, i) in wordDetail.relWords"
             :key="i"
             class="relword-group"
           >
-            <el-tag size="small" type="warning">{{ group.Pos }}</el-tag>
+            <span class="pos-tag">{{ group.Pos }}</span>
             <span
               v-for="(w, j) in group.Hwds"
               :key="j"
@@ -277,13 +245,13 @@
 
         <!-- 近义词 -->
         <div class="detail-section" v-if="wordDetail.synonyms?.length">
-          <h4><el-icon><Share /></el-icon> 近义词</h4>
+          <h4>近义词</h4>
           <div
             v-for="(group, i) in wordDetail.synonyms"
             :key="i"
             class="synonym-group"
           >
-            <el-tag size="small" type="success">{{ group.pos }}</el-tag>
+            <span class="pos-tag">{{ group.pos }}</span>
             <span
               v-for="(w, j) in group.Hwds"
               :key="j"
@@ -295,29 +263,22 @@
         </div>
       </div>
 
-      <template #footer>
-        <el-button @click="wordDialogVisible = false">关闭</el-button>
-        <el-button
-          type="primary"
-          @click="addToWordBook"
-          :loading="addingWord"
-          :disabled="!isLoggedIn"
-        >
-          <el-icon><Plus /></el-icon>
-          {{ isLoggedIn ? '加入单词本' : '请先登录' }}
-        </el-button>
-      </template>
-    </el-dialog>
+      <div class="word-modal__footer">
+        <button type="button" class="audio-btn" @click="wordDialogVisible = false">关闭</button>
+        <button type="button" class="search-btn" :disabled="!isLoggedIn || addingWord" @click="addToWordBook">
+          {{ addingWord ? '加入中…' : (isLoggedIn ? '加入单词本' : '请先登录') }}
+        </button>
+      </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import { getCategories, getAlbumsByCategoryId } from '../api/Listen.js'
 import { queryEnglishWord, addUserWordToCurrentBook, getDailyEnglish, isValidEnglishQuery } from '../api/Word.js'
-import { promptGoReviewAfterAdd } from '../utils/promptGoReview.js'
 import { homeCategoryMeta, mergeHomeCategoriesWithExtras } from '../utils/categoryMeta.js'
 import { LISTENING_CODE_TO_PATH } from '../utils/seoHubs.js'
 import EaseWordDownload from '../components/EaseWordDownload.vue'
@@ -596,7 +557,7 @@ const doSearch = async () => {
   if (!word) return
 
   if (!isValidEnglishQuery(word)) {
-    ElMessage.warning('请输入有效的英语单词、短语或句子')
+    toast('warning', '请输入有效的英语单词、短语或句子')
     return
   }
 
@@ -607,10 +568,10 @@ const doSearch = async () => {
       wordDetail.value = res.data
       wordDialogVisible.value = true
     } else {
-      ElMessage.warning('未找到相关释义')
+      toast('warning', '未找到相关释义')
     }
   } catch (e) {
-    ElMessage.error('查询失败，请稍后重试')
+    toast('error', '查询失败，请稍后重试')
   } finally {
     searchLoading.value = false
   }
@@ -619,13 +580,13 @@ const doSearch = async () => {
 const playAudio = (url) => {
   const audio = new Audio(url)
   audio.play().catch(() => {
-    ElMessage.warning('音频播放失败')
+    toast('warning', '音频播放失败')
   })
 }
 
 const addToWordBook = async () => {
   if (!isLoggedIn.value) {
-    ElMessage.warning('请先登录')
+    toast('warning', '请先登录')
     router.push({ name: 'login' })
     return
   }
@@ -645,12 +606,13 @@ const addToWordBook = async () => {
   try {
     await addUserWordToCurrentBook({ word, definition, example })
     wordDialogVisible.value = false
+    const { promptGoReviewAfterAdd } = await import('../utils/promptGoReview.js')
     await promptGoReviewAfterAdd(router, word, '/')
   } catch (e) {
     if (e.response?.status === 409) {
-      ElMessage.warning('该单词已在单词本中')
+      toast('warning', '该单词已在单词本中')
     } else {
-      ElMessage.error('添加失败，请稍后重试')
+      toast('error', '添加失败，请稍后重试')
     }
   } finally {
     addingWord.value = false
@@ -689,17 +651,123 @@ const goKaoyan = () => {
   router.push(activeDisplayCategory.value?.entryRoute || { name: 'kaoyan' })
 }
 
+const toast = async (type, message) => {
+  const [{ ElMessage }] = await Promise.all([
+    import('element-plus/es/components/message/index.mjs'),
+    import('element-plus/es/components/message/style/css.mjs'),
+  ])
+  ElMessage[type](message)
+}
+
 const quickLinks = [
-  { title: '每日短文', desc: '10 分钟保持语感', icon: 'Microphone', action: goDailyArticle },
-  { title: '官方词本', desc: '四六级 / 考研高频', icon: 'Notebook', action: () => router.push({ name: 'wordPacks' }) },
-  { title: '词根学习', desc: '系统扩展词汇', icon: 'Collection', action: () => router.push({ name: 'wordRoots' }) },
-  { title: '单词复习', desc: '智能间隔复习', icon: 'Reading', action: () => router.push('/word-review') },
+  { title: '每日短文', desc: '10 分钟保持语感', action: goDailyArticle },
+  { title: '官方词本', desc: '四六级 / 考研高频', action: () => router.push({ name: 'wordPacks' }) },
+  { title: '词根学习', desc: '系统扩展词汇', action: () => router.push({ name: 'wordRoots' }) },
+  { title: '单词复习', desc: '智能间隔复习', action: () => router.push('/word-review') },
 ]
 </script>
 
 <style scoped>
 .home-page {
   padding-top: 8px;
+}
+
+.hero-search {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--le-border);
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+}
+
+.search-btn,
+.audio-btn {
+  height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--le-primary, #2563eb);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.audio-btn {
+  height: 32px;
+  background: transparent;
+  color: var(--le-primary, #2563eb);
+}
+
+.exam-grid,
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .exam-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .quick-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (min-width: 992px) {
+  .exam-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+.empty-hint {
+  margin: 12px 0 0;
+  color: var(--le-text-muted);
+}
+
+.word-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(30, 41, 59, 0.35);
+}
+
+.word-modal__panel {
+  width: min(720px, 100%);
+  max-height: min(80vh, 760px);
+  overflow: auto;
+  padding: 20px;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.word-modal__title {
+  margin: 0 0 12px;
+}
+
+.word-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.translation-tag,
+.phrase-tag,
+.pos-tag {
+  display: inline-block;
+  margin: 0 8px 8px 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eef2f7;
+  font-size: 13px;
 }
 
 .hero {
@@ -1116,11 +1184,10 @@ const quickLinks = [
   box-shadow: var(--le-shadow-sm);
   cursor: pointer;
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  transform-origin: left center;
 }
 
 .exam-card:hover {
-  transform: translateY(-2px) rotateY(-2deg);
+  transform: translateY(-2px);
   border-color: var(--le-border-strong);
   box-shadow: var(--le-shadow);
 }
@@ -1230,11 +1297,10 @@ const quickLinks = [
   cursor: pointer;
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   text-align: left;
-  transform-origin: left center;
 }
 
 .quick-card:hover {
-  transform: translateY(-2px) rotateY(-2deg);
+  transform: translateY(-2px);
   border-color: var(--le-border-strong);
   box-shadow: var(--le-shadow);
 }

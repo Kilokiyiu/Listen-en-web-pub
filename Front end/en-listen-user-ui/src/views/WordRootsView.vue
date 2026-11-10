@@ -40,9 +40,9 @@
     <!-- 筛选和搜索 -->
     <div class="filter-bar">
       <el-radio-group v-model="filterOrigin" @change="handleFilterChange">
-        <el-radio-button label="">全部</el-radio-button>
-        <el-radio-button label="Latin">拉丁语</el-radio-button>
-        <el-radio-button label="Greek">希腊语</el-radio-button>
+        <el-radio-button value="">全部</el-radio-button>
+        <el-radio-button value="Latin">拉丁语</el-radio-button>
+        <el-radio-button value="Greek">希腊语</el-radio-button>
       </el-radio-group>
       <el-input
         v-model="searchKeyword"

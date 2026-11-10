@@ -30,10 +30,22 @@ export function updateReview(word, quality) {
     easeFactor,
     interval,
     nextReview: nextReview.toISOString(),
+    lastQuality: quality,
   }
 }
 
+/** 最近一次复习标记文案 */
+export function getLastReviewMark(word) {
+  const q = word?.lastQuality
+  if (q === 0) return { type: 'forget', text: '忘记' }
+  if (q === 3) return { type: 'fuzzy', text: '模糊' }
+  if (q === 5) return { type: 'remember', text: '记住' }
+  return null
+}
+
 export function getReviewStatus(word) {
+  const mark = getLastReviewMark(word)
+  if (mark) return mark
   if (!word.nextReview) return { type: 'new', text: '新词' }
   const now = new Date()
   const next = new Date(word.nextReview)

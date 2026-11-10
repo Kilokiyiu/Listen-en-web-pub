@@ -1,17 +1,21 @@
 <template>
   <PageShell
-    title="考研英语完形填空与阅读在线练习"
-    subtitle="英语一 / 英语二历年真题，提交后查看答案与解析"
+    title="考研英语刷题_英语二阅读原文免费练习"
+    subtitle="英语一 / 英语二完形与阅读免费刷题；整卷 PDF 可查阅作文题"
     :back="false"
     badge="KY"
   >
     <p class="intro">
-      考研英语备考可在此按英语一、英语二筛选试卷，在线完成完形填空与阅读理解，提交后查看正确答案与解析。
+      作为英语刷题网站的考研专区，可在此免费练习考研英语二阅读原文与完形填空，也可切换英语一历年真题；提交后查看答案与解析。
+      整卷原题 PDF 支持下载，便于对照英语二作文等笔试题型。
       也可配合
-      <router-link to="/cet4">四级听力</router-link>、
-      <router-link to="/cet6">六级听力</router-link>、
+      <router-link to="/cet4">免费四级刷题</router-link>、
+      <router-link to="/cet6">英语六级听力</router-link>、
+      <router-link to="/si-liu-ji">大学四六级练习</router-link>、
       <router-link to="/word-packs">官方词本</router-link>
       一起练习。
+      也可
+      <router-link to="/search?type=kaoyan">搜索考研试卷</router-link>。
     </p>
 
     <QuizSectionTabs

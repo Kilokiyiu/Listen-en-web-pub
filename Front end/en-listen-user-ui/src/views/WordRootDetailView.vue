@@ -103,7 +103,7 @@
             <el-radio
               v-for="(option, index) in quiz.options"
               :key="index"
-              :label="index"
+              :value="index"
             >
               {{ option }}
             </el-radio>

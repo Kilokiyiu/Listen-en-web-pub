@@ -91,3 +91,9 @@ tools/word-pack-import/out/
 
 # =WorkBuddy =
 .workbuddy/
+
+# =公开仓库额外排除=
+baidu_verify*.html
+__pycache__/
+Front end/en-listen-user-ui/public/le*.txt
+

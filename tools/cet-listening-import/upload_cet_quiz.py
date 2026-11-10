@@ -27,6 +27,9 @@ USER = os.environ.get("CET_ADMIN_USER", "")
 PASS = os.environ.get("CET_ADMIN_PASS", "")
 ONLY = os.environ.get("CET_ONLY", "").strip()
 DRY = os.environ.get("CET_DRY_RUN", "0") == "1"
+# 1 = skip albums that already have >= CET_MIN_EXISTING questions (default 25)
+SKIP_EXISTING = os.environ.get("CET_SKIP_EXISTING", "1") == "1"
+MIN_EXISTING = int(os.environ.get("CET_MIN_EXISTING", "25") or "25")
 
 
 def http_json(method: str, url: str, body=None, token: str | None = None):
@@ -137,7 +140,7 @@ def main():
 
     token = login()
     albums = get_albums(token)
-    print(f"Albums on server: {len(albums)}")
+    print(f"Albums on server: {len(albums)} skip_existing={SKIP_EXISTING} min={MIN_EXISTING}")
 
     ok = fail = skip = 0
     for path in files:
@@ -152,6 +155,22 @@ def main():
             print(f"LOW QUALITY skip ({qn} q): {doc['albumNameCn']}")
             skip += 1
             continue
+        if SKIP_EXISTING:
+            try:
+                quiz = http_json(
+                    "GET",
+                    f"{BASE}/api/listen/Listen/GetQuizByAlbumId?albumId={album['id']}&_={album['id']}",
+                    token=token,
+                )
+                sections = (quiz or {}).get("sections") or (quiz or {}).get("Sections") or []
+                existing_qn = sum(len(s.get("questions") or s.get("Questions") or []) for s in sections)
+            except Exception as e:
+                print(f"WARN check existing failed {doc['albumNameCn']}: {e}")
+                existing_qn = 0
+            if existing_qn >= MIN_EXISTING:
+                print(f"SKIP existing ({existing_qn} q): {doc['albumNameCn']}")
+                skip += 1
+                continue
         print(f"{'DRY ' if DRY else ''}UPLOAD {doc['albumNameCn']} -> {album['id']} ({qn} q, {len(doc.get('apiSections') or [])} passages)")
         if DRY:
             ok += 1

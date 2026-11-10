@@ -55,6 +55,11 @@
 
     <section class="section">
       <h2>导入 / 导出</h2>
+      <p class="sync-hint">
+        单词页也可文件导入、分享，以及用分享码导入好友词本。推荐格式：
+        <code>单词 | 释义</code>
+        ；避免把「单词+音标」写在同一行无分隔。也支持 PDF / JSON / TXT。
+      </p>
       <div class="sync-actions">
         <button class="btn-primary" :disabled="busy" @click="exportWords('json')">
           {{ syncing === 'export-json' ? '导出中...' : '导出为 JSON' }}
@@ -70,7 +75,7 @@
         ref="fileInput"
         type="file"
         class="file-input"
-        accept=".json,.txt,application/json,text/plain"
+        accept=".json,.txt,.pdf,.docx,application/json,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         @change="onImportFile"
       />
       <p v-if="ioHint" class="sync-hint">{{ ioHint }}</p>
@@ -113,7 +118,19 @@
           {{ syncing === 'updating' ? `下载中 ${updateProgress}%` : `下载并安装 ${pendingUpdate.versionName}` }}
         </button>
       </div>
-      <p v-if="updateHint" class="sync-hint">{{ updateHint }}</p>
+      <p v-if="updateHintParts.length" class="sync-hint">
+        <template v-for="(part, i) in updateHintParts" :key="i">
+          <a
+            v-if="part.type === 'link'"
+            class="hint-link"
+            :href="part.value"
+            target="_blank"
+            rel="noopener noreferrer"
+            @click.prevent="openExternalUrl(part.value)"
+          >{{ part.value }}</a>
+          <template v-else>{{ part.value }}</template>
+        </template>
+      </p>
     </section>
   </div>
 </template>
@@ -134,14 +151,14 @@ import { downloadCloudToLocal, uploadLocalToCloud } from '../services/wordSyncSe
 import {
   exportActiveWordbook,
   importIntoActiveWordbook,
-  parseWordFile,
-  readFileAsText,
+  parseImportFile,
 } from '../services/wordImportExport'
 import {
   checkForUpdate,
   downloadAndInstallUpdate,
   getLocalAppInfo,
 } from '../services/appUpdateService'
+import { openExternalUrl, splitLinkParts } from '../utils/linkify'
 import { WORDBOOK_TYPES } from '../config'
 import { confirmDialog } from '../utils/dialog'
 import { showToast } from '../utils/toast'
@@ -160,6 +177,7 @@ const updateHint = ref('')
 const updateProgress = ref(0)
 
 const busy = computed(() => !!syncing.value)
+const updateHintParts = computed(() => splitLinkParts(updateHint.value))
 const activeLabel = computed(() =>
   activeWordbook.value === 'local' ? '本地单词本' : '云端单词本'
 )
@@ -258,7 +276,12 @@ const exportWords = async (format) => {
   }
 }
 
-const pickImportFile = () => {
+const pickImportFile = async () => {
+  const ok = await confirmDialog(
+    `导入格式说明：\n\n推荐：abandon | 放弃\n或：每行一个单词\n\n避免：abandon /əˈbændən/\n（单词+音标易被整段当成单词）\n\n导入到「${activeLabel.value}」？`,
+    { title: '从文件导入', confirmText: '选择文件' }
+  )
+  if (!ok) return
   fileInput.value?.click()
 }
 
@@ -267,14 +290,10 @@ const onImportFile = async (event) => {
   event.target.value = ''
   if (!file) return
 
-  const ok = await confirmDialog(`导入到「${activeLabel.value}」？`, { title: '导入' })
-  if (!ok) return
-
   syncing.value = 'import'
   ioHint.value = ''
   try {
-    const text = await readFileAsText(file)
-    const words = parseWordFile(text, file.name)
+    const words = await parseImportFile(file)
     const r = await importIntoActiveWordbook(words)
     const failPart = r.failed ? `，失败 ${r.failed}` : ''
     const updatePart = r.updated ? `，补全 ${r.updated}` : ''
@@ -495,6 +514,14 @@ onMounted(load)
 
 .sync-hint {
   white-space: pre-line;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.hint-link {
+  color: var(--primary);
+  text-decoration: underline;
+  word-break: break-all;
 }
 
 .section.danger h2 {

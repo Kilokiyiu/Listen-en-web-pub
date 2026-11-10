@@ -1,4 +1,5 @@
 import { getActiveWordbook, getCurrentWordBookId } from './appSettings'
+import { isFavoritesBookId } from '../config'
 import * as local from './localWordStore'
 import * as server from './serverWordStore'
 
@@ -10,18 +11,39 @@ async function isCloud() {
   return (await getActiveWordbook()) !== 'local'
 }
 
-/** 云端请求自动附带当前单词本 id */
+function asFavoritesParams(params = {}) {
+  const next = { ...(params || {}) }
+  delete next.wordBookId
+  next.favoritesOnly = true
+  return next
+}
+
+/** 云端附带 Preferences 中的词本 id；本地由 localWordStore 读 currentBookId */
 async function withBookParams(params = {}) {
-  if (!(await isCloud())) return params || {}
+  const p = { ...(params || {}) }
+  if (p.favoritesOnly || isFavoritesBookId(p.wordBookId)) {
+    return asFavoritesParams(p)
+  }
+  if (!(await isCloud())) {
+    // 本地：若当前选中收藏本，也走 favoritesOnly
+    const data = await local.getLocalBooks()
+    if (isFavoritesBookId(data.currentId) && p.wordBookId == null) {
+      return asFavoritesParams(p)
+    }
+    return p
+  }
   const wordBookId = await getCurrentWordBookId()
-  if (!wordBookId) return params || {}
-  return { ...(params || {}), wordBookId }
+  if (isFavoritesBookId(wordBookId) && p.wordBookId == null) {
+    return asFavoritesParams(p)
+  }
+  if (!wordBookId) return p
+  return { ...p, wordBookId }
 }
 
 async function withBookData(data = {}) {
   if (!(await isCloud())) return data || {}
   const wordBookId = await getCurrentWordBookId()
-  if (!wordBookId) return data || {}
+  if (!wordBookId || isFavoritesBookId(wordBookId)) return data || {}
   return { ...(data || {}), wordBookId }
 }
 
@@ -37,6 +59,10 @@ export async function deleteWord(id) {
   return (await store()).deleteWord(id)
 }
 
+export async function deleteWords(ids = []) {
+  return (await store()).deleteWords(ids)
+}
+
 export async function getDueWords(params) {
   return (await store()).getDueWords(await withBookParams(params))
 }
@@ -49,10 +75,12 @@ export async function reviewWord(id, quality) {
   return (await store()).reviewWord(id, quality)
 }
 
+export async function toggleFavorite(id, isFavorite) {
+  return (await store()).toggleFavorite(id, isFavorite)
+}
+
 export async function getStats(params) {
-  const s = await store()
-  if (s === local) return s.getStats()
-  return s.getStats(await withBookParams(params))
+  return (await store()).getStats(await withBookParams(params))
 }
 
 export async function getStorageLabel() {

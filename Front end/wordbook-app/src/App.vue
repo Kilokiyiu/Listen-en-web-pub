@@ -26,6 +26,9 @@ const topBar = computed(() => {
     }
     return { ...meta, title }
   }
+  if (route.name === 'book') {
+    return { ...meta, title: '单词管理', showBack: true, backTo: '/' }
+  }
   return meta
 })
 

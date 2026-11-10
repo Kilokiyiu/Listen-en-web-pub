@@ -15,6 +15,9 @@ public class WordDbContext : DbContext
     public DbSet<WordPack> WordPacks { get; set; }
     public DbSet<WordPackEntry> WordPackEntries { get; set; }
     public DbSet<UserWordPackClaim> UserWordPackClaims { get; set; }
+    public DbSet<SharedWordBook> SharedWordBooks { get; set; }
+    public DbSet<SharedWordBookEntry> SharedWordBookEntries { get; set; }
+    public DbSet<UserAiOrganizeUsage> UserAiOrganizeUsages { get; set; }
 
     public WordDbContext(DbContextOptions<WordDbContext> options) : base(options)
     {

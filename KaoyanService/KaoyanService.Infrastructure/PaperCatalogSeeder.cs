@@ -12,7 +12,7 @@ namespace KaoyanService.Infrastructure;
 public static class PaperCatalogSeeder
 {
     public const int StartYear = 2010;
-    public const int EndYear = 2025;
+    public const int EndYear = 2026;
 
     public static async Task SeedAsync(IServiceProvider services, ILogger logger)
     {

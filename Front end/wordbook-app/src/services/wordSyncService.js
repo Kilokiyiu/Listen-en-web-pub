@@ -1,11 +1,15 @@
 import { getUserWords, addUserWord } from '../api/word'
 import { getCurrentWordBookId } from './appSettings'
 import { getAllWords, importWords } from './localWordStore'
+import { isFavoritesBookId } from '../config'
 
 const PAGE_SIZE = 100
 
 async function cloudListParams(extra = {}) {
   const wordBookId = await getCurrentWordBookId()
+  if (isFavoritesBookId(wordBookId)) {
+    return { ...extra, favoritesOnly: true }
+  }
   return wordBookId ? { ...extra, wordBookId } : { ...extra }
 }
 

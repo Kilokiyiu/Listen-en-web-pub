@@ -7,13 +7,32 @@ export const deleteWordBook = (id, params) => wordApi.delete(`/word-books/${id}`
 
 export const getUserWords = (params) => wordApi.get('/user-words', { params })
 export const addUserWord = (data) => wordApi.post('/user-words', data)
+export const importUserWords = (data) =>
+  wordApi.post('/user-words/import', data, { timeout: 120000 })
+/** AI 整理杂乱文本为词条（需登录；不入库） */
+export const aiOrganizeUserWords = (text) =>
+  wordApi.post('/user-words/ai-organize', { text }, { timeout: 120000 })
 export const deleteUserWord = (id) => wordApi.delete(`/user-words/${id}`)
+export const batchDeleteUserWords = (ids) =>
+  wordApi.post('/user-words/batch-delete', { ids }, { timeout: 60000 })
 export const moveUserWord = (id, wordBookId) =>
   wordApi.post(`/user-words/${id}/move`, { wordBookId })
 export const getDueWords = (params) => wordApi.get('/user-words/due', { params })
 export const getRandomWords = (params) => wordApi.get('/user-words/random', { params })
 export const reviewWord = (id, quality) => wordApi.post(`/user-words/${id}/review`, { quality })
+export const toggleFavoriteWord = (id, isFavorite) =>
+  wordApi.post(`/user-words/${id}/favorite`, isFavorite == null ? {} : { isFavorite })
 export const getWordStats = (params) => wordApi.get('/user-words/stats', { params })
+
+export const shareWordBook = (id) => wordApi.post(`/word-books/${id}/share`)
+export const getSharedWordBook = (code, preview = 20) =>
+  wordApi.get(`/shared-wordbooks/${encodeURIComponent(code)}`, { params: { preview } })
+export const claimSharedWordBook = (code, data = {}) =>
+  wordApi.post(`/shared-wordbooks/${encodeURIComponent(code)}/claim`, data, {
+    timeout: 120000,
+  })
+export const revokeSharedWordBook = (code) =>
+  wordApi.delete(`/shared-wordbooks/${encodeURIComponent(code)}`)
 
 export const getOfficialWordPacks = () => wordApi.get('/word-packs')
 export const getOfficialWordPackDetail = (id, preview = 20) =>

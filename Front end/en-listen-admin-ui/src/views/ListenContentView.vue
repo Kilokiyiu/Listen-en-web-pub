@@ -14,9 +14,9 @@
 
     <div class="filter-bar">
       <el-radio-group v-model="categoryFilter" size="default">
-        <el-radio-button label="all">全部</el-radio-button>
-        <el-radio-button label="CET4">四级</el-radio-button>
-        <el-radio-button label="CET6">六级</el-radio-button>
+        <el-radio-button value="all">全部</el-radio-button>
+        <el-radio-button value="CET4">四级</el-radio-button>
+        <el-radio-button value="CET6">六级</el-radio-button>
       </el-radio-group>
       <el-input
         v-model="keyword"

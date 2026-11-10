@@ -19,6 +19,13 @@
       </div>
 
       <div class="flash-card" :class="{ flipped: isFlipped }" @click="flipCard">
+        <button
+          type="button"
+          class="fav-btn"
+          :class="{ on: currentWord.isFavorite }"
+          :aria-label="currentWord.isFavorite ? '取消收藏' : '加入收藏'"
+          @click.stop="toggleFav"
+        >{{ currentWord.isFavorite ? '★' : '☆' }}</button>
         <div class="card-face front">
           <div class="word">{{ currentWord.word }}</div>
           <p class="hint">点击翻转查看释义</p>
@@ -59,8 +66,8 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getDueWords, getRandomWords, reviewWord } from '../services/wordService'
-import { setCurrentWordBookId } from '../services/appSettings'
+import { getDueWords, getRandomWords, reviewWord, toggleFavorite } from '../services/wordService'
+import { selectBook } from '../services/wordBookService'
 import { showToast } from '../utils/toast'
 import { trackEvent } from '../api/analytics'
 
@@ -92,7 +99,7 @@ const load = async () => {
   try {
     const bookId = route.query.wordBookId
     if (bookId) {
-      await setCurrentWordBookId(String(bookId))
+      await selectBook(String(bookId))
     }
     if (isFreeReview.value) {
       dueWords.value = (await getRandomWords({ limit: 50 })) || []
@@ -113,6 +120,18 @@ const load = async () => {
 }
 
 const flipCard = () => { isFlipped.value = !isFlipped.value }
+
+const toggleFav = async () => {
+  const word = currentWord.value
+  if (!word) return
+  try {
+    const res = await toggleFavorite(word.id)
+    word.isFavorite = !!res?.isFavorite
+    showToast(word.isFavorite ? '已加入收藏' : '已取消收藏')
+  } catch (e) {
+    showToast(typeof e === 'string' ? e : '收藏失败')
+  }
+}
 
 const messages = { 0: '没关系，下次会记住的！', 3: '继续加油！', 5: '太棒了！' }
 
@@ -224,6 +243,26 @@ onMounted(load)
   cursor: pointer;
   position: relative;
   margin-bottom: 28px;
+}
+
+.fav-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text-muted);
+  font-size: 20px;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+}
+
+.fav-btn.on {
+  color: #f59e0b;
 }
 
 .card-face {

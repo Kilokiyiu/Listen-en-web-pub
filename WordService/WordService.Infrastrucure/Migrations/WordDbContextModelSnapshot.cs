@@ -22,6 +22,101 @@ namespace WordService.Infrastrucure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("WordService.Domain.Entity.SharedWordBook", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SourceWordBookId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("OwnerUserId", "SourceWordBookId");
+
+                    b.ToTable("T_SharedWordBook", (string)null);
+                });
+
+            modelBuilder.Entity("WordService.Domain.Entity.SharedWordBookEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Definition")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Example")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("Rank")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("SharedWordBookId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Word")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SharedWordBookId", "Rank");
+
+                    b.HasIndex("SharedWordBookId", "Word");
+
+                    b.ToTable("T_SharedWordBookEntry", (string)null);
+                });
+
+            modelBuilder.Entity("WordService.Domain.Entity.UserAiOrganizeUsage", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("LastUsedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly>("LastUsedDate")
+                        .HasColumnType("date");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("T_UserAiOrganizeUsage", (string)null);
+                });
+
             modelBuilder.Entity("WordService.Domain.Entity.UserWord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -45,6 +140,12 @@ namespace WordService.Infrastrucure.Migrations
                         .HasColumnType("nvarchar(2000)");
 
                     b.Property<int>("Interval")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsFavorite")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("LastQuality")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("NextReview")
@@ -400,6 +501,17 @@ namespace WordService.Infrastrucure.Migrations
                     b.HasIndex("WordRootId");
 
                     b.ToTable("T_WordRootQuiz", (string)null);
+                });
+
+            modelBuilder.Entity("WordService.Domain.Entity.SharedWordBookEntry", b =>
+                {
+                    b.HasOne("WordService.Domain.Entity.SharedWordBook", "SharedWordBook")
+                        .WithMany()
+                        .HasForeignKey("SharedWordBookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SharedWordBook");
                 });
 
             modelBuilder.Entity("WordService.Domain.Entity.UserWord", b =>

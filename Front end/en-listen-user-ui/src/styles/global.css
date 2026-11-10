@@ -171,11 +171,7 @@ body::after {
   max-width: var(--le-max-w);
   margin: 12px auto 20px;
   padding: 20px 22px 32px;
-  perspective: 1400px;
-  transform-style: preserve-3d;
-  background: rgba(255, 255, 255, 0.42);
-  backdrop-filter: blur(20px) saturate(1.2);
-  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.58);
   border-radius: 18px;
   box-shadow:
@@ -193,9 +189,7 @@ body::after {
     margin: 8px auto 16px;
     padding: 14px 12px 24px;
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(16px) saturate(1.15);
-    -webkit-backdrop-filter: blur(16px) saturate(1.15);
+    background: rgba(255, 255, 255, 0.92);
   }
   .le-app-main.has-mobile-nav {
     padding-bottom: calc(var(--le-mobile-nav-h) + 16px);
@@ -204,12 +198,6 @@ body::after {
 
 .le-page {
   min-height: calc(100vh - var(--le-header-h) - 48px);
-  animation: le-fade-in 0.35s ease;
-}
-
-@keyframes le-fade-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .le-page-header {
@@ -332,8 +320,7 @@ body::after {
 
 /* paper page-turn entrance */
 .le-paper-flip {
-  transform-origin: left center;
-  animation: le-paper-flip-in 0.7s cubic-bezier(0.22, 0.9, 0.3, 1) backwards;
+  animation: le-paper-flip-in 0.32s ease backwards;
 }
 
 .le-paper-flip-delay-1 { animation-delay: 0.08s; }
@@ -345,11 +332,11 @@ body::after {
 @keyframes le-paper-flip-in {
   from {
     opacity: 0;
-    transform: perspective(1200px) rotateY(-72deg) translateX(-12px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: perspective(1200px) rotateY(0deg) translateX(0);
+    transform: none;
   }
 }
 

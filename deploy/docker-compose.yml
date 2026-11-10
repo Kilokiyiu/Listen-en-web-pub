@@ -126,12 +126,13 @@ services:
       - CorsOrigins__0=https://your-domain.com
       - CorsOrigins__1=https://www.your-domain.com
       - XxApi__ApiKey=${XXAPI_API_KEY:-}
+      - DeepSeek__ApiKey=${DEEPSEEK_API_KEY:-}
     depends_on:
       sqlserver:
         condition: service_healthy
     restart: always
 
-  # KaoyanService 考研英语服务（独立微服务，开发中）
+  # KaoyanService 考研英语服务（独立微服务）
   kaoyan-service:
     build:
       context: ..
@@ -143,6 +144,8 @@ services:
       - JWT_KEY=${JWT_KEY}
       - CorsOrigins__0=https://your-domain.com
       - CorsOrigins__1=https://www.your-domain.com
+    volumes:
+      - ./papers:/app/wwwroot/papers  # 与听力共用 papers 目录（ENG1/ENG2 子目录）
     depends_on:
       sqlserver:
         condition: service_healthy

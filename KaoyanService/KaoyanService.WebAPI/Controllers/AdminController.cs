@@ -15,11 +15,16 @@ public class AdminController : ControllerBase
 {
     private readonly KaoyanDbContext db;
     private readonly KaoyanCacheInvalidator cacheInvalidator;
+    private readonly IWebHostEnvironment env;
 
-    public AdminController(KaoyanDbContext db, KaoyanCacheInvalidator cacheInvalidator)
+    public AdminController(
+        KaoyanDbContext db,
+        KaoyanCacheInvalidator cacheInvalidator,
+        IWebHostEnvironment env)
     {
         this.db = db;
         this.cacheInvalidator = cacheInvalidator;
+        this.env = env;
     }
 
     [HttpGet]
@@ -36,6 +41,10 @@ public class AdminController : ControllerBase
                 seriesName = p.Series == ExamPaper.SeriesEnglish1 ? "英语一" : "英语二",
                 p.Title,
                 p.IsVisible,
+                p.PaperFileUrl,
+                p.AnswerFileUrl,
+                HasPaper = !string.IsNullOrWhiteSpace(p.PaperFileUrl),
+                HasAnswer = !string.IsNullOrWhiteSpace(p.AnswerFileUrl),
                 sectionCount = db.ExamSections.Count(s => s.PaperId == p.Id),
                 questionCount = (
                     from s in db.ExamSections
@@ -45,6 +54,71 @@ public class AdminController : ControllerBase
             })
             .ToListAsync();
         return Ok(papers);
+    }
+
+    /// <summary>
+    /// 上传原题 PDF 或解析 PDF（按试卷维度）
+    /// </summary>
+    [HttpPost]
+    [Consumes("multipart/form-data")]
+    [ApiExplorerSettings(IgnoreApi = true)]
+    public async Task<ActionResult> UploadPaperDocument(
+        [FromForm] Guid paperId,
+        [FromForm] string documentType,
+        [FromForm] IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("请选择 PDF 文件");
+
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (ext != ".pdf")
+            return BadRequest("只支持 PDF 格式");
+
+        var type = documentType?.Trim().ToLowerInvariant();
+        if (type is not ("paper" or "answer"))
+            return BadRequest("documentType 须为 paper（原题）或 answer（解析）");
+
+        var paper = await db.ExamPapers.FindAsync(paperId);
+        if (paper == null)
+            return NotFound("试卷不存在");
+
+        var seriesDir = paper.Series == ExamPaper.SeriesEnglish1 ? "ENG1" : "ENG2";
+        var fileName = type == "paper" ? $"{paperId}.paper.pdf" : $"{paperId}.answer.pdf";
+        var webRoot = string.IsNullOrWhiteSpace(env.WebRootPath)
+            ? Path.Combine(AppContext.BaseDirectory, "wwwroot")
+            : env.WebRootPath;
+        var dirPath = Path.Combine(webRoot, "papers", seriesDir);
+        Directory.CreateDirectory(dirPath);
+        var filePath = Path.Combine(dirPath, fileName);
+        var relativeUrl = $"/papers/{seriesDir}/{fileName}";
+
+        if (type == "paper")
+            TryDeleteWebFile(webRoot, paper.PaperFileUrl);
+        else
+            TryDeleteWebFile(webRoot, paper.AnswerFileUrl);
+
+        await using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        if (type == "paper")
+            paper.SetPaperFileUrl(relativeUrl);
+        else
+            paper.SetAnswerFileUrl(relativeUrl);
+
+        await db.SaveChangesAsync();
+        await cacheInvalidator.InvalidatePaperAsync(paper.Id);
+        return Ok(new { url = relativeUrl, documentType = type });
+    }
+
+    private static void TryDeleteWebFile(string webRoot, string? relativeUrl)
+    {
+        if (string.IsNullOrWhiteSpace(relativeUrl))
+            return;
+        var filePath = Path.Combine(webRoot, relativeUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+        if (System.IO.File.Exists(filePath))
+            System.IO.File.Delete(filePath);
     }
 
     [HttpGet]

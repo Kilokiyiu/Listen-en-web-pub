@@ -75,13 +75,13 @@
           <span class="record-count">共 {{ total }} 条</span>
         </div>
         <el-radio-group v-model="filterType" size="small" class="filter-group" @change="onFilterChange">
-          <el-radio-button label="all">全部</el-radio-button>
-          <el-radio-button label="listen">听力</el-radio-button>
-          <el-radio-button label="listen_quiz">听力答题</el-radio-button>
-          <el-radio-button label="article">阅读</el-radio-button>
-          <el-radio-button label="kaoyan">考研</el-radio-button>
-          <el-radio-button label="CET-4">CET-4</el-radio-button>
-          <el-radio-button label="CET-6">CET-6</el-radio-button>
+          <el-radio-button value="all">全部</el-radio-button>
+          <el-radio-button value="listen">听力</el-radio-button>
+          <el-radio-button value="listen_quiz">听力答题</el-radio-button>
+          <el-radio-button value="article">阅读</el-radio-button>
+          <el-radio-button value="kaoyan">考研</el-radio-button>
+          <el-radio-button value="CET-4">CET-4</el-radio-button>
+          <el-radio-button value="CET-6">CET-6</el-radio-button>
         </el-radio-group>
       </div>
 

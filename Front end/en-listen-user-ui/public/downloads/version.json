@@ -1,7 +1,7 @@
 {
-  "versionName": "0.9.10",
-  "versionCode": 12,
-  "apkUrl": "https://your-domain.com/downloads/EaseWord-0.9.10.apk",
+  "versionName": "0.9.20",
+  "versionCode": 22,
+  "apkUrl": "https://your-domain.com/downloads/EaseWord-0.9.20.apk",
   "forceUpdate": false,
-  "changelog": "版本 0.9.10：官方词本领取，界面与网站统一"
+  "changelog": "版本 0.9.19：\n• 书架可新建/重命名/删除词本；进入词本后专注背词\n• 复习标记「忘记/模糊/记住」后，单词列表可按标记筛选\n• 复习时可收藏单词；书架新增「收藏」词本汇总收藏\n• 听力练习双模式（模拟/练习）与导入/AI 整理体验优化\n\n说明：若应用内在线更新失败，请前往官网下载安装包更新：\nhttps://your-domain.com/downloads/EaseWord-0.9.20.apk"
 }

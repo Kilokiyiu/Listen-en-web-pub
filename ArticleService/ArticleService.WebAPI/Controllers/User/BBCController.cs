@@ -1,8 +1,6 @@
 using System.Text.RegularExpressions;
-using System.Xml;
+using System.Xml.Linq;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.SyndicationFeed;
-using Microsoft.SyndicationFeed.Rss;
 
 namespace ArticleService.WebAPI.Controllers;
 
@@ -59,52 +57,27 @@ public class BBCController : ControllerBase
             response.EnsureSuccessStatusCode();
 
             var xmlContent = await response.Content.ReadAsStringAsync();
+            var doc = XDocument.Parse(xmlContent);
 
-            var newsItems = new List<BBCNewsItem>();
-
-            using (var stringReader = new StringReader(xmlContent))
-            using (var xmlReader = XmlReader.Create(stringReader, new XmlReaderSettings { Async = true }))
-            {
-                var feedReader = new RssFeedReader(xmlReader);
-
-                while (await feedReader.Read())
+            var newsItems = doc.Descendants("item")
+                .Take(30)
+                .Select(item =>
                 {
-                    if (feedReader.ElementType == SyndicationElementType.Item)
+                    var pubDateText = (string?)item.Element("pubDate");
+                    var pubDate = DateTime.TryParse(pubDateText, out var parsed)
+                        ? parsed
+                        : DateTime.Now;
+
+                    return new BBCNewsItem
                     {
-                        ISyndicationItem item = await feedReader.ReadItem();
-
-                        // 获取链接
-                        string link = "";
-                        if (item.Links != null)
-                        {
-                            var firstLink = item.Links.FirstOrDefault();
-                            if (firstLink != null)
-                            {
-                                link = firstLink.Uri?.ToString() ?? "";
-                            }
-                        }
-
-                        // 获取发布时间
-                        DateTime pubDate = DateTime.Now;
-                        if (item.Published != DateTimeOffset.MinValue)
-                        {
-                            pubDate = item.Published.DateTime;
-                        }
-
-                        newsItems.Add(new BBCNewsItem
-                        {
-                            Title = item.Title ?? "",
-                            Description = item.Description ?? "",
-                            Link = link,
-                            PubDate = pubDate,
-                            Category = category ?? "general"
-                        });
-
-                        if (newsItems.Count >= 30)
-                            break;
-                    }
-                }
-            }
+                        Title = ((string?)item.Element("title"))?.Trim() ?? "",
+                        Description = ((string?)item.Element("description"))?.Trim() ?? "",
+                        Link = ((string?)item.Element("link"))?.Trim() ?? "",
+                        PubDate = pubDate,
+                        Category = category ?? "general"
+                    };
+                })
+                .ToList();
 
             return Ok(new { code = 200, data = newsItems });
         }

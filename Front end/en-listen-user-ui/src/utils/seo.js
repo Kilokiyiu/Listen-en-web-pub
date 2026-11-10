@@ -1,10 +1,11 @@
 const SITE_URL = 'https://your-domain.com'
-const DEFAULT_TITLE = 'ListenEase - 英语听力练习与学习资料 | 四六级雅思托福真题'
+const DEFAULT_TITLE =
+  'ListenEase - 四六级备考网站_英语四级真题汇总与六级听力真题'
 const DEFAULT_DESCRIPTION =
-  'ListenEase 专注英语听力练习与英语学习资料：大学英语四级/六级、雅思、托福历年真题听力在线练，真题试卷与答案 PDF 下载，每日英语短文、BBC 新闻阅读、词根词缀与单词本，一站备考提升听力与词汇。'
+  'ListenEase 是免费四六级备考网站与英语刷题网站：英语四级真题汇总、四级往年试卷与六级听力真题在线练，大学英语六级考试卷 PDF 下载，考研阅读原文练习；含听力原文、六级作文真题整卷查阅、每日短文与词本。'
 const DEFAULT_KEYWORDS =
-  '英语听力,英语听力练习,英语学习资料,听力学习资料,四六级听力,英语四级听力,英语六级听力,四六级真题,雅思听力,托福听力,听力真题下载,试卷下载,听力原文,每日英语短文,BBC英语,词根词缀,单词本,ListenEase'
-const OG_IMAGE = `${SITE_URL}/og-cover.png`
+  '四六级备考网站,英语四级真题汇总,六级听力真题,大学英语六级考试卷,免费四级刷题软件,四级往年试卷,大学四六级练习网站,英语刷题网站,英语六级听力,六级作文真题,考研英语二阅读原文,免费刷题,ListenEase'
+const OG_IMAGE = `${SITE_URL}/og-cover.webp`
 
 function upsertMeta (attr, key, content) {
   let el = document.querySelector(`meta[${attr}="${key}"]`)
@@ -16,14 +17,15 @@ function upsertMeta (attr, key, content) {
   el.setAttribute('content', content)
 }
 
-export function setPageMeta ({ title, description, path = '/', noindex = false } = {}) {
+export function setPageMeta ({ title, description, keywords, path = '/', noindex = false } = {}) {
   const pageTitle = title || DEFAULT_TITLE
   const pageDescription = description || DEFAULT_DESCRIPTION
+  const pageKeywords = keywords || DEFAULT_KEYWORDS
   const canonicalUrl = `${SITE_URL}${path === '/' ? '/' : path}`
 
   document.title = pageTitle
   upsertMeta('name', 'description', pageDescription)
-  upsertMeta('name', 'keywords', DEFAULT_KEYWORDS)
+  upsertMeta('name', 'keywords', pageKeywords)
   upsertMeta('name', 'robots', noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large')
   upsertMeta('property', 'og:title', pageTitle)
   upsertMeta('property', 'og:description', pageDescription)

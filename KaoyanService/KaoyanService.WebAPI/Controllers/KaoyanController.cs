@@ -79,6 +79,8 @@ public class KaoyanController : ControllerBase
             paper.Series,
             seriesName = ExamPaper.SeriesDisplayName(paper.Series),
             paper.Title,
+            paper.PaperFileUrl,
+            paper.AnswerFileUrl,
             sections = sections.Select(s =>
             {
                 qBySection.TryGetValue(s.Id, out var qs);

@@ -1,6 +1,12 @@
 /**
  * SEO 栏目页配置（路径型 URL，便于搜索引擎按关键词收录多条结果）
  * 暂不含雅思 / 托福（内容未上线）
+ *
+ * 全站定位参考搜索意图（竞品词持续迭代）：
+ * - 四六级备考网站 / 大学四六级练习网站 / 英语刷题网站
+ * - 免费四级刷题软件、四级往年试卷、英语四级真题汇总
+ * - 六级听力真题、英语六级听力、大学英语六级考试卷
+ * - 考研英语二阅读原文；六级作文真题（整卷 PDF 查阅）
  */
 
 export const SEO_HUBS = {
@@ -9,18 +15,21 @@ export const SEO_HUBS = {
     code: 'cet4',
     kind: 'listening',
     badge: 'CET-4',
-    h1: '英语四级听力真题在线练习',
-    subtitle: '历年大学英语四级听力真题，在线播放、看原文、下载试卷与答案',
-    title: '英语四级听力真题在线练习 - ListenEase',
+    h1: '英语四级真题汇总_免费听力刷题',
+    subtitle: '四级往年试卷听力汇总在线练，看原文、下载试卷答案',
+    title: '英语四级真题汇总_四级往年试卷免费刷题 - ListenEase',
     description:
-      'ListenEase 提供大学英语四级（CET-4）历年听力真题在线练习：音频播放、听力原文、试卷与答案 PDF 下载，助力四级听力备考。',
+      '英语四级真题汇总专区：按套整理四级往年试卷听力，免费在线刷题（网页版），含音频、听力原文、试卷与答案 PDF，服务四六级备考。',
+    keywords:
+      '英语四级真题汇总,四级往年试卷,免费四级刷题软件,四级真题,英语四级听力,四级试卷下载,CET-4,四六级备考,ListenEase',
     intro: [
-      '英语四级听力是四六级考试的重要部分。本站按套卷整理历年真题，支持在线听音频、对照原文、下载试卷与答案。',
-      '选择下方任意一套开始练习；也可进入「四六级听力」专题同时查看六级资源。',
+      '这里汇总大学英语四级真题听力套卷，相当于英语四级真题汇总入口：打开即可免费刷题，无需安装软件。',
+      '支持听音频、对照听力原文、下载四级往年试卷与答案；六级备考可前往六级听力真题或四六级备考专题。',
     ],
     related: [
-      { label: '英语六级听力', to: '/cet6' },
-      { label: '四六级听力专题', to: '/si-liu-ji' },
+      { label: '六级听力真题', to: '/cet6' },
+      { label: '四六级备考专题', to: '/si-liu-ji' },
+      { label: '往年试卷列表', to: '/exams' },
       { label: '官方词本', to: '/word-packs' },
     ],
   },
@@ -29,18 +38,20 @@ export const SEO_HUBS = {
     code: 'cet6',
     kind: 'listening',
     badge: 'CET-6',
-    h1: '英语六级听力真题在线练习',
-    subtitle: '历年大学英语六级听力真题，长对话、篇章与讲座在线练',
-    title: '英语六级听力真题在线练习 - ListenEase',
+    h1: '六级听力真题_大学英语六级考试卷练习',
+    subtitle: '六级听力真题在线刷；整卷考试卷 PDF 可查阅作文题',
+    title: '六级听力真题在线练习_大学英语六级考试卷下载 - ListenEase',
     description:
-      'ListenEase 提供大学英语六级（CET-6）历年听力真题在线练习：长对话、听力篇章、讲座讲话，含音频、原文与 PDF 下载。',
+      '六级听力真题专区：大学英语六级考试卷听力部分免费在线练习，含长对话、篇章与讲座；整卷考试卷 PDF 可下载查阅六级作文真题等笔试题型。',
+    keywords:
+      '六级听力真题,大学英语六级考试卷,英语六级听力,六级作文真题,六级刷题,CET-6,六级试卷下载,四六级备考,ListenEase',
     intro: [
-      '六级听力题型包含长对话、听力篇章与讲座讲话。本站按套卷整理，方便按年份刷题与复盘原文。',
-      '需要同时备考四级时，可前往四级听力或四六级专题页。',
+      '备考六级需要系统刷六级听力真题。本站按年份汇总大学英语六级考试卷听力套题，免费在线练并复盘原文。',
+      '下载整份大学英语六级考试卷 PDF，还可查阅作文等笔试部分；四级可前往英语四级真题汇总页。',
     ],
     related: [
-      { label: '英语四级听力', to: '/cet4' },
-      { label: '四六级听力专题', to: '/si-liu-ji' },
+      { label: '英语四级真题汇总', to: '/cet4' },
+      { label: '四六级备考专题', to: '/si-liu-ji' },
       { label: '官方词本', to: '/word-packs' },
     ],
   },
@@ -49,20 +60,22 @@ export const SEO_HUBS = {
     code: 'si-liu-ji',
     kind: 'combo',
     badge: 'CET',
-    h1: '四六级听力真题专题',
-    subtitle: '大学英语四级 + 六级听力真题一站练习',
-    title: '四六级听力真题在线练习专题 - ListenEase',
+    h1: '四六级备考网站专题',
+    subtitle: '英语四级真题汇总 + 六级听力真题一站入口',
+    title: '四六级备考网站_四级真题汇总与六级听力真题 - ListenEase',
     description:
-      '四六级听力真题专题：英语四级、英语六级历年听力在线练，含音频、原文、试卷与答案下载，服务大学英语四六级备考。',
+      '四六级备考网站专题：汇总英语四级真题、四级往年试卷与六级听力真题、大学英语六级考试卷在线练习，免费刷题并下载试卷答案。',
+    keywords:
+      '四六级备考网站,大学四六级练习网站,英语四级真题汇总,六级听力真题,大学英语六级考试卷,四级往年试卷,免费刷题,ListenEase',
     intro: [
-      '备考四六级时，听力需要按级别系统刷题。本专题汇总四级与六级听力入口，便于收藏与分享。',
-      '也可直接进入「四级听力」或「六级听力」查看完整套卷列表。',
+      'ListenEase 定位为四六级备考网站：把英语四级真题汇总与六级听力真题入口放在同一页，方便收藏和分享。',
+      '可分别进入四级往年试卷或大学英语六级考试卷听力列表，全程免费在线练习。',
     ],
     comboCodes: ['cet4', 'cet6'],
     related: [
-      { label: '四级听力', to: '/cet4' },
-      { label: '六级听力', to: '/cet6' },
-      { label: '考研英语', to: '/kaoyan' },
+      { label: '英语四级真题汇总', to: '/cet4' },
+      { label: '六级听力真题', to: '/cet6' },
+      { label: '考研英语刷题', to: '/kaoyan' },
       { label: '每日短文', to: '/daily' },
     ],
   },
@@ -71,20 +84,22 @@ export const SEO_HUBS = {
     code: 'listening',
     kind: 'hub',
     badge: '听力',
-    h1: '英语听力练习与真题资料',
-    subtitle: '四级、六级听力真题在线练，配套原文与学习资料',
-    title: '英语听力练习与真题资料 - ListenEase',
+    h1: '四六级备考_听力真题免费刷题入口',
+    subtitle: '英语四级真题汇总、六级听力真题与考试卷在线练',
+    title: '四六级备考听力入口_四级真题与六级听力真题 - ListenEase',
     description:
-      'ListenEase 英语听力练习入口：大学英语四级、六级历年听力真题在线练习，听力原文与试卷下载，持续更新备考资料。',
+      '四六级备考听力入口：英语四级真题汇总、六级听力真题与大学英语六级考试卷免费在线刷题，含原文与试卷下载。',
+    keywords:
+      '四六级备考,英语四级真题汇总,六级听力真题,大学英语六级考试卷,英语刷题网站,四级往年试卷,ListenEase',
     intro: [
-      '在这里选择你的目标考试，进入对应听力真题列表开始练习。',
-      '除真题外，还可配合每日短文、BBC 新闻与词本巩固语感与词汇。',
+      '选择考试类型进入真题列表，免费刷四级往年试卷或六级听力真题；网页打开即用。',
+      '除听力外，还可配合考研阅读、每日短文、BBC 新闻与词本继续备考。',
     ],
     hubLinks: [
-      { title: '英语四级听力', desc: 'CET-4 历年真题', to: '/cet4', tag: 'CET-4' },
-      { title: '英语六级听力', desc: 'CET-6 历年真题', to: '/cet6', tag: 'CET-6' },
-      { title: '四六级专题', desc: '四级 + 六级入口汇总', to: '/si-liu-ji', tag: 'CET' },
-      { title: '考研英语', desc: '完形与阅读在线练', to: '/kaoyan', tag: '考研' },
+      { title: '英语四级真题汇总', desc: '四级往年试卷 · 免费刷', to: '/cet4', tag: 'CET-4' },
+      { title: '六级听力真题', desc: '大学英语六级考试卷', to: '/cet6', tag: 'CET-6' },
+      { title: '四六级备考专题', desc: '四级 + 六级入口', to: '/si-liu-ji', tag: 'CET' },
+      { title: '考研英语刷题', desc: '英语二阅读原文', to: '/kaoyan', tag: '考研' },
     ],
     related: [
       { label: '每日短文', to: '/daily' },
@@ -96,57 +111,66 @@ export const SEO_HUBS = {
     path: '/kaoyan',
     code: 'kaoyan',
     kind: 'route-meta-only',
-    title: '考研英语完形填空与阅读在线练习 - ListenEase',
+    title: '考研英语刷题_英语二阅读原文免费在线练习 - ListenEase',
     description:
-      '考研英语一 / 英语二完形填空与阅读理解在线练习，提交后查看正确答案与解析，服务考研英语备考。',
+      '四六级备考之余可练考研：英语二阅读原文与英语一/二历年真题免费在线刷题，完形与阅读提交后看解析；整卷 PDF 可查阅作文题。',
+    keywords:
+      '考研英语刷题,考研英语二阅读原文,考研英语2阅读原文,英语二历年真题,英语二作文,考研阅读,免费刷题,ListenEase',
   },
   daily: {
     path: '/daily',
     code: 'daily',
     kind: 'route-meta-only',
-    title: '每日英语短文阅读与学习资料 - ListenEase',
+    title: '每日英语短文_四六级备考阅读补充 - ListenEase',
     description:
-      '每天一篇精选英语短文，英汉对照阅读，配合听力练习保持语感，适合四六级与考研日常积累。',
+      '每天一篇精选英语短文免费阅读，英汉对照，配合四六级备考与听力真题刷题保持语感。',
+    keywords: '每日英语短文,四六级备考,英语阅读,英语刷题,ListenEase',
   },
   bbcNews: {
     path: '/bbc-news',
     code: 'bbc-news',
     kind: 'route-meta-only',
-    title: 'BBC 英语新闻阅读学习资料 - ListenEase',
+    title: 'BBC英语新闻_四六级备考语感阅读 - ListenEase',
     description:
-      '精选 BBC 英语新闻阅读与学习资料，提升语感、词汇与阅读理解，适合四六级及进阶英语学习。',
+      '精选 BBC 英语新闻免费阅读，作为四六级备考网站的阅读补充，提升语感与理解力。',
+    keywords: 'BBC英语新闻,四六级备考,英语新闻阅读,ListenEase',
   },
   wordRoots: {
     path: '/word-roots',
     code: 'word-roots',
     kind: 'route-meta-only',
-    title: '英语词根词缀学习资料 - ListenEase',
+    title: '英语词根词缀_辅助四级真题与六级听力备考 - ListenEase',
     description:
-      '系统学习英语词根词缀与例词，扩大词汇量，辅助四六级、考研英语单词记忆。',
+      '免费学习词根词缀，扩大词汇量，辅助英语四级真题汇总刷题与六级听力真题备考。',
+    keywords: '词根词缀,四级真题,六级听力真题,四六级备考,ListenEase',
   },
   wordPacks: {
     path: '/word-packs',
     code: 'word-packs',
     kind: 'route-meta-only',
-    title: '四六级考研官方高频词本 - ListenEase',
+    title: '四六级考研词本_备考刷题记单词 - ListenEase',
     description:
-      '领取英语四级、六级、考研官方高频词本，加入个人单词本，用间隔复习高效背单词。',
+      '免费领取四级、六级、考研高频词本，配合英语四级真题与六级听力真题刷题记单词。',
+    keywords: '四六级词本,四级词汇,六级词汇,四六级备考,ListenEase',
   },
   reading: {
     path: '/reading',
     code: 'reading',
     kind: 'route-meta-only',
-    title: '英语阅读练习入口 - 短文新闻考研 - ListenEase',
+    title: '英语阅读_四六级备考与考研阅读原文 - ListenEase',
     description:
-      '英语阅读入口：每日短文、BBC 新闻与考研阅读相关练习，配合听力备考提升综合能力。',
+      '阅读入口：每日短文、BBC 新闻与考研英语二阅读原文，配合四级真题汇总与六级听力真题备考。',
+    keywords: '英语阅读,四六级备考,考研英语二阅读原文,ListenEase',
   },
   exams: {
     path: '/exams',
     code: 'exams',
     kind: 'route-meta-only',
-    title: '英语听力真题列表 - 四级六级 - ListenEase',
+    title: '英语四级真题汇总与六级考试卷列表_免费刷题 - ListenEase',
     description:
-      '浏览大学英语四级、六级听力历年真题列表，在线练习并下载试卷与答案 PDF。',
+      '浏览英语四级真题汇总、四级往年试卷与六级听力真题、大学英语六级考试卷列表，免费在线刷题并下载 PDF。',
+    keywords:
+      '英语四级真题汇总,四级往年试卷,六级听力真题,大学英语六级考试卷,四六级备考网站,试卷下载,ListenEase',
   },
 }
 

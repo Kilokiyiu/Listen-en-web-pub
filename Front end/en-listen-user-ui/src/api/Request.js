@@ -1,5 +1,11 @@
 import axios from "axios";
-import { ElMessage } from "element-plus";
+
+const showError = (msg) => {
+    Promise.all([
+        import("element-plus/es/components/message/index.mjs"),
+        import("element-plus/es/components/message/style/css.mjs"),
+    ]).then(([{ ElMessage }]) => ElMessage.error(msg))
+}
 
 //----------这是整个前端请求的入口，所有的API都是基于此----------
 
@@ -52,7 +58,7 @@ const addTokenInterceptor = (instance) => {
             } else {
                 msg = "网络错误，请稍后重试";
             }
-            ElMessage.error(msg)
+            showError(msg)
             if(error.response?.status === 401){
                 localStorage.removeItem('token');
                 localStorage.removeItem('username');

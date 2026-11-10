@@ -32,7 +32,7 @@ export const wordRequest = axios.create({
 // 创建 KaoyanService 的 axios 实例（考研英语独立微服务）
 export const kaoyanRequest = axios.create({
   baseURL: "/api/kaoyan",
-  timeout: 10000,
+  timeout: 600000, // 整卷解析 PDF 上传可能较慢
 })
 
 // 三个实例都添加 token 拦截器

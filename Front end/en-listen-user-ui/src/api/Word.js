@@ -1,5 +1,11 @@
 import axios from "axios";
-import { ElMessage } from "element-plus";
+
+const showError = (msg) => {
+    Promise.all([
+        import("element-plus/es/components/message/index.mjs"),
+        import("element-plus/es/components/message/style/css.mjs"),
+    ]).then(([{ ElMessage }]) => ElMessage.error(msg))
+}
 
 // 单词服务请求实例
 const wordRequest = axios.create({
@@ -36,7 +42,7 @@ wordRequest.interceptors.response.use(
         } else {
             msg = "网络错误，请稍后重试";
         }
-        ElMessage.error(msg)
+        showError(msg)
         if(error.response?.status === 401){
             localStorage.removeItem('token');
             localStorage.removeItem('username');
@@ -63,6 +69,20 @@ export const deleteWordBook = (id, params) => wordRequest.delete(`/word-books/${
 
 const CURRENT_WORD_BOOK_KEY = 'currentWordBookId'
 
+/** 虚拟「收藏」单词本 */
+export const FAVORITES_BOOK_ID = '__favorites__'
+
+export const isFavoritesBookId = (id) => id === FAVORITES_BOOK_ID
+
+export const makeFavoritesBook = (wordCount = 0) => ({
+  id: FAVORITES_BOOK_ID,
+  name: '收藏',
+  description: '复习时收藏的单词',
+  isDefault: false,
+  isFavorites: true,
+  wordCount: Number(wordCount) || 0,
+})
+
 export const getCurrentWordBookId = () => localStorage.getItem(CURRENT_WORD_BOOK_KEY) || null
 
 export const setCurrentWordBookId = (id) => {
@@ -70,21 +90,54 @@ export const setCurrentWordBookId = (id) => {
     else localStorage.removeItem(CURRENT_WORD_BOOK_KEY)
 }
 
+export const wordListParams = (params = {}) => {
+  const next = { ...(params || {}) }
+  if (next.favoritesOnly || isFavoritesBookId(next.wordBookId)) {
+    delete next.wordBookId
+    next.favoritesOnly = true
+    return next
+  }
+  return next
+}
+
 /** 添加单词时附带当前选中的单词本（无则走后端默认本） */
 export const addUserWordToCurrentBook = (data) => {
     const wordBookId = getCurrentWordBookId()
-    return addUserWord(wordBookId ? { ...data, wordBookId } : data)
+    if (!wordBookId || isFavoritesBookId(wordBookId)) return addUserWord(data)
+    return addUserWord({ ...data, wordBookId })
 }
 
 // 单词列表 / 复习相关 API
-export const getUserWords = (params) => wordRequest.get('/user-words', { params })
+export const getUserWords = (params) =>
+  wordRequest.get('/user-words', { params: wordListParams(params) })
 export const addUserWord = (data) => wordRequest.post('/user-words', data)
+export const importUserWords = (data) =>
+  wordRequest.post('/user-words/import', data, { timeout: 120000 })
+/** AI 整理杂乱文本为词条（需登录；不入库） */
+export const aiOrganizeUserWords = (text) =>
+  wordRequest.post('/user-words/ai-organize', { text }, { timeout: 120000 })
 export const deleteUserWord = (id) => wordRequest.delete(`/user-words/${id}`)
+export const batchDeleteUserWords = (ids) =>
+  wordRequest.post('/user-words/batch-delete', { ids }, { timeout: 60000 })
 export const moveUserWord = (id, wordBookId) => wordRequest.post(`/user-words/${id}/move`, { wordBookId })
-export const getDueWords = (params) => wordRequest.get('/user-words/due', { params })
-export const getRandomWords = (params) => wordRequest.get('/user-words/random', { params })
+export const getDueWords = (params) =>
+  wordRequest.get('/user-words/due', { params: wordListParams(params) })
+export const getRandomWords = (params) =>
+  wordRequest.get('/user-words/random', { params: wordListParams(params) })
 export const reviewWord = (id, quality) => wordRequest.post(`/user-words/${id}/review`, { quality })
-export const getWordStats = (params) => wordRequest.get('/user-words/stats', { params })
+export const toggleFavoriteWord = (id, isFavorite) =>
+  wordRequest.post(`/user-words/${id}/favorite`, isFavorite == null ? {} : { isFavorite })
+export const getWordStats = (params) =>
+  wordRequest.get('/user-words/stats', { params: wordListParams(params) })
+
+// 分享单词本
+export const shareWordBook = (id) => wordRequest.post(`/word-books/${id}/share`)
+export const getSharedWordBook = (code, preview = 20) =>
+  wordRequest.get(`/shared-wordbooks/${encodeURIComponent(code)}`, { params: { preview } })
+export const claimSharedWordBook = (code, data = {}) =>
+  wordRequest.post(`/shared-wordbooks/${encodeURIComponent(code)}/claim`, data, { timeout: 120000 })
+export const revokeSharedWordBook = (code) =>
+  wordRequest.delete(`/shared-wordbooks/${encodeURIComponent(code)}`)
 
 // 官方词本
 export const getOfficialWordPacks = () => wordRequest.get('/word-packs')

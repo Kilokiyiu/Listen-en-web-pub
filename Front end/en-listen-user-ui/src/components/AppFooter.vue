@@ -4,36 +4,19 @@
       <div class="footer-top">
         <div class="footer-brand">
           <div class="footer-logo">
-            <div class="footer-logo-icon">
-              <el-icon :size="18"><Headset /></el-icon>
-            </div>
+            <div class="footer-logo-icon">听</div>
             <span class="footer-name">ListenEase</span>
           </div>
           <p class="footer-desc">专业的英语听力练习平台，开源共建，持续更新。</p>
         </div>
         <div class="footer-links">
-          <router-link to="/about" class="footer-link">
-            <el-icon :size="14"><User /></el-icon>
-            关于我们
-          </router-link>
-          <router-link to="/feedback" class="footer-link">
-            <el-icon :size="14"><ChatDotRound /></el-icon>
-            意见反馈
-          </router-link>
-          <a href="https://github.com/Kilokiyiu/Listen-en-web-pub" target="_blank" rel="noopener noreferrer" class="footer-link">
-            <el-icon :size="14"><Link /></el-icon>
-            GitHub 源码
-          </a>
-          <a href="mailto:" class="footer-link">
-            <el-icon :size="14"><Message /></el-icon>
-            联系邮箱
-          </a>
-          <a href="https://mywebpage-f2u.pages.dev/" target="_blank" rel="noopener noreferrer" class="footer-link">
-            <el-icon :size="14"><User /></el-icon>
-            作者主页
-          </a>
+          <router-link to="/about" class="footer-link">关于我们</router-link>
+          <router-link to="/feedback" class="footer-link">意见反馈</router-link>
+          <a href="https://github.com/Kilokiyiu/Listen-en-web-pub" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub 源码</a>
+          <a href="mailto:" class="footer-link">联系邮箱</a>
         </div>
       </div>
+      <BlogCta class="footer-blog" />
       <div class="footer-bottom">
         <p>&copy; {{ currentYear }} ListenEase · Vue 3 + .NET · SQL Server</p>
       </div>
@@ -43,7 +26,8 @@
 
 <script setup>
 import { computed } from 'vue'
-import { Headset, ChatDotRound, Link, Message, User } from '@element-plus/icons-vue'
+import BlogCta from './BlogCta.vue'
+
 const currentYear = computed(() => new Date().getFullYear())
 </script>
 
@@ -70,7 +54,7 @@ const currentYear = computed(() => new Date().getFullYear())
   align-items: flex-start;
   gap: 24px;
   flex-wrap: wrap;
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 }
 
 .footer-logo {
@@ -130,6 +114,11 @@ const currentYear = computed(() => new Date().getFullYear())
   background: var(--le-bg-muted);
   border-color: var(--le-border-strong);
   color: var(--le-primary);
+}
+
+.footer-blog {
+  display: flex;
+  margin: 0 0 24px;
 }
 
 .footer-bottom {

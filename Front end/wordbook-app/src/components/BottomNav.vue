@@ -33,7 +33,7 @@ const iconPacks =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M4 7h16"/></svg>'
 
 const navItems = [
-  { path: '/', label: '单词本', icon: iconBook, match: ['words', 'add'] },
+  { path: '/', label: '单词本', icon: iconBook, match: ['words', 'book', 'add'] },
   { path: '/packs', label: '词库', icon: iconPacks, match: ['packs'] },
   { path: '/review', label: '复习', icon: iconReview, match: ['review'] },
   { path: '/settings', label: '我的', icon: iconUser, match: ['settings'] },

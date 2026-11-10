@@ -117,6 +117,14 @@ export const importKaoyanPaper = (data) =>
 export const saveKaoyanPaperContent = (data) =>
   kaoyanRequest.post('/Admin/SavePaperContent', data)
 
+export const uploadKaoyanPaperDocument = (paperId, documentType, file) => {
+  const formData = new FormData()
+  formData.append('paperId', paperId)
+  formData.append('documentType', documentType)
+  formData.append('file', file)
+  return kaoyanRequest.post('/Admin/UploadPaperDocument', formData)
+}
+
 // ========== ArticleService 文章管理 ==========
 export const getAllArticles = () =>
   articleRequest.get('/Admin/GetAllArticles')

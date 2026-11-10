@@ -3,7 +3,13 @@
     <div class="cloze-header">
       <div>
         <h3 class="cloze-title">{{ title || '完形填空' }}</h3>
-        <p class="cloze-sub">点击文中空格可直接选题，也可在下方列表作答；全部答完后提交再看对错</p>
+        <p class="cloze-sub">
+          {{
+            deferCheck
+              ? '点击文中空格或下方选项作答，进度会自动保存；做完全卷后再统一对答案'
+              : '点击文中空格可直接选题，也可在下方列表作答；全部答完后提交再看对错'
+          }}
+        </p>
       </div>
       <el-tag v-if="submitted" type="success" effect="light">
         {{ correctCount }}/{{ questions.length }} · {{ scorePercent }}%
@@ -55,7 +61,7 @@
           <el-radio
             v-for="(opt, idx) in q.options || []"
             :key="idx"
-            :label="idx"
+            :value="idx"
             class="quiz-option"
           >
             {{ opt }}
@@ -75,7 +81,7 @@
       </div>
     </div>
 
-    <div v-if="questions.length" class="submit-row">
+    <div v-if="questions.length && !deferCheck" class="submit-row">
       <el-button
         v-if="!submitted"
         type="primary"
@@ -104,7 +110,7 @@
           <el-radio
             v-for="(opt, idx) in activeQ.options || []"
             :key="idx"
-            :label="idx"
+            :value="idx"
             class="quiz-option"
           >
             {{ opt }}
@@ -138,17 +144,26 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import {
+  clearQuizProgress,
+  loadQuizProgress,
+  saveQuizProgress,
+} from '../utils/quizProgressStore.js'
 
 const props = defineProps({
   title: { type: String, default: '完形填空' },
   passage: { type: String, default: '' },
   questions: { type: Array, default: () => [] },
-  submitFn: { type: Function, required: true },
+  submitFn: { type: Function, default: null },
+  /** 传入则本会话内保留作答与判分结果（切换分区 / 刷新不丢） */
+  persistKey: { type: String, default: '' },
+  /** 延后对答案：只选题保存，由父级整卷提交后 applyGrade */
+  deferCheck: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['submitted', 'reset'])
+const emit = defineEmits(['submitted', 'reset', 'progress'])
 
 const submitting = ref(false)
 const submitted = ref(false)
@@ -159,6 +174,10 @@ const drawerOpen = ref(false)
 const pendingIndex = ref(null)
 const feedbackMap = reactive({})
 const selectedMap = reactive({})
+
+const questionIdsKey = computed(() =>
+  (props.questions || []).map((q) => q.id).join(',')
+)
 
 const clearState = () => {
   Object.keys(feedbackMap).forEach((k) => delete feedbackMap[k])
@@ -171,7 +190,53 @@ const clearState = () => {
   pendingIndex.value = null
 }
 
-watch(() => props.questions, () => clearState(), { deep: true })
+const emitProgress = () => {
+  const answered = Object.keys(selectedMap).length
+  const total = (props.questions || []).length
+  emit('progress', {
+    answered,
+    total,
+    complete: total > 0 && answered === total,
+    graded: submitted.value,
+  })
+}
+
+const persistNow = () => {
+  if (!props.persistKey) return
+  saveQuizProgress(props.persistKey, {
+    selectedMap: { ...selectedMap },
+    feedbackMap: { ...feedbackMap },
+    submitted: submitted.value,
+    correctCount: correctCount.value,
+    scorePercent: scorePercent.value,
+    questionIds: questionIdsKey.value,
+  })
+}
+
+const restorePersisted = () => {
+  if (!props.persistKey) return false
+  const data = loadQuizProgress(props.persistKey)
+  if (!data || data.questionIds !== questionIdsKey.value) return false
+  clearState()
+  Object.assign(selectedMap, data.selectedMap || {})
+  Object.assign(feedbackMap, data.feedbackMap || {})
+  submitted.value = !!data.submitted
+  correctCount.value = data.correctCount ?? 0
+  scorePercent.value = data.scorePercent ?? 0
+  emitProgress()
+  return true
+}
+
+watch(questionIdsKey, () => {
+  clearState()
+  restorePersisted()
+  emitProgress()
+})
+
+onMounted(() => {
+  restorePersisted()
+  emitProgress()
+})
 
 const qByNumber = computed(() => {
   const map = {}
@@ -233,9 +298,12 @@ const resultClass = (id) => {
 }
 
 const setAnswer = (id, value) => {
+  if (submitted.value) return
   selectedMap[id] = value
   const q = (props.questions || []).find((x) => x.id === id)
   if (q) focusNumber.value = q.number
+  persistNow()
+  emitProgress()
 }
 
 /** 点击文中空格：直接弹出选项，不跳转下方列表 */
@@ -253,11 +321,43 @@ const focusBlank = (num) => {
 const confirmDrawer = () => {
   const q = activeQ.value
   if (!q || pendingIndex.value === null || pendingIndex.value === undefined) return
+  if (submitted.value) return
   selectedMap[q.id] = pendingIndex.value
   drawerOpen.value = false
+  persistNow()
+  emitProgress()
+}
+
+const applyGrade = (res) => {
+  correctCount.value = res.correctCount ?? 0
+  scorePercent.value = res.scorePercent ?? 0
+  Object.keys(feedbackMap).forEach((k) => delete feedbackMap[k])
+  for (const r of res.results || []) {
+    const id = r.questionId || r.QuestionId
+    feedbackMap[id] = {
+      isCorrect: !!(r.isCorrect ?? r.IsCorrect),
+      correctAnswer: r.correctAnswer ?? r.CorrectAnswer,
+      explanation: r.explanation ?? r.Explanation,
+    }
+  }
+  submitted.value = true
+  persistNow()
+  emitProgress()
+}
+
+const getAnswers = () =>
+  (props.questions || []).map((q) => ({
+    questionId: q.id,
+    selectedIndex: selectedMap[q.id],
+  }))
+
+const isComplete = () => {
+  const qs = props.questions || []
+  return qs.length > 0 && qs.every((q) => selectedMap[q.id] !== undefined && selectedMap[q.id] !== null)
 }
 
 const onSubmit = async () => {
+  if (typeof props.submitFn !== 'function') return
   const unanswered = (props.questions || []).filter((q) => selectedMap[q.id] === undefined || selectedMap[q.id] === null)
   if (unanswered.length) {
     ElMessage.warning(`还有 ${unanswered.length} 个空格未作答，请全部选完再提交`)
@@ -265,23 +365,8 @@ const onSubmit = async () => {
   }
   submitting.value = true
   try {
-    const answers = (props.questions || []).map((q) => ({
-      questionId: q.id,
-      selectedIndex: selectedMap[q.id],
-    }))
-    const res = await props.submitFn(answers)
-    correctCount.value = res.correctCount ?? 0
-    scorePercent.value = res.scorePercent ?? 0
-    Object.keys(feedbackMap).forEach((k) => delete feedbackMap[k])
-    for (const r of res.results || []) {
-      const id = r.questionId || r.QuestionId
-      feedbackMap[id] = {
-        isCorrect: !!(r.isCorrect ?? r.IsCorrect),
-        correctAnswer: r.correctAnswer ?? r.CorrectAnswer,
-        explanation: r.explanation ?? r.Explanation,
-      }
-    }
-    submitted.value = true
+    const res = await props.submitFn(getAnswers())
+    applyGrade(res)
     emit('submitted', res)
   } catch {
     /* */
@@ -292,8 +377,21 @@ const onSubmit = async () => {
 
 const onReset = () => {
   clearState()
+  clearQuizProgress(props.persistKey)
+  emitProgress()
   emit('reset')
 }
+
+defineExpose({
+  submitted,
+  correctCount,
+  scorePercent,
+  getAnswers,
+  isComplete,
+  applyGrade,
+  resetAll: onReset,
+  answeredCount,
+})
 </script>
 
 <style scoped>

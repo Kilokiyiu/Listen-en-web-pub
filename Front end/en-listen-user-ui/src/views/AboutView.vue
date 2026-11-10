@@ -1,7 +1,7 @@
 <template>
   <PageShell
     title="关于 ListenEase"
-    subtitle="认识这个学习站，以及它为什么存在"
+    subtitle="四六级备考网站 · 英语刷题工具"
     :back="true"
   >
     <div class="about-page">
@@ -10,18 +10,20 @@
         <p class="sheet-label">ABOUT</p>
         <h2 class="sheet-title">这是什么？</h2>
         <p class="sheet-body">
-          ListenEase是一个面向英语学习者的听力练习平台。你可以在这里做四六级、雅思、托福等真题听力(雅思、托福仍在整理开发中)，
-          阅读每日短文与 BBC 外刊，通过词根与单词本系统积累词汇，并把学习进度记在账号里。
+          ListenEase 是面向英语学习者的四六级备考网站与英语刷题网站。
+          你可以在这里查看英语四级真题汇总、练习四级往年试卷与六级听力真题，下载大学英语六级考试卷，
+          做考研英语阅读原文，阅读每日短文与 BBC 外刊（雅思、托福听力仍在整理中）。
         </p>
         <p class="sheet-body">
-          站点坚持开源共建、持续更新，目标很简单：让备考与日常听力练习更顺手，少一点分散注意力的干扰。
+          网页打开即用，相当于轻量「刷题软件」；坚持免费、开源共建，让备考少一点广告与付费墙干扰。
         </p>
         <ul class="feature-list">
-          <li>历年真题听力在线练习，支持阅读原文与试卷 / 答案 PDF</li>
+          <li>英语四级真题汇总与六级听力真题免费刷，支持原文与考试卷 / 答案 PDF</li>
+          <li>考研英语二阅读原文等在线刷题</li>
           <li>每日短文、BBC 新闻，保持语感</li>
-          <li>词根学习与单词本复习</li>
-          <li>学习记录与账号同步（含 Android 单词本APP EaseWord）</li>
+          <li>词根学习与单词本复习（含 Android 词本 APP EaseWord）</li>
         </ul>
+        <BlogCta class="about-blog" />
       </section>
 
       <!-- Why -->
@@ -70,15 +72,6 @@
               </a>
               <a
                 class="author-link"
-                href="https://mywebpage-f2u.pages.dev/"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <el-icon><User /></el-icon>
-                作者主页
-              </a>
-              <a
-                class="author-link"
                 href="https://github.com/Kilokiyiu/Listen-en-web-pub"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -104,8 +97,9 @@
 </template>
 
 <script setup>
-import { Message, Link, User } from '@element-plus/icons-vue'
+import { Message, Link } from '@element-plus/icons-vue'
 import PageShell from '@/components/PageShell.vue'
+import BlogCta from '@/components/BlogCta.vue'
 </script>
 
 <style scoped>
@@ -236,6 +230,11 @@ import PageShell from '@/components/PageShell.vue'
   border-color: var(--le-border-strong);
   color: var(--le-primary);
   background: #fff;
+}
+
+.about-blog {
+  display: flex;
+  margin-top: 18px;
 }
 
 .sheet-note {

@@ -19,6 +19,13 @@ public class ExamPaper : IEntity, ICreationTime
     public string Title { get; private set; } = string.Empty;
     public bool IsVisible { get; private set; }
     public int SequenceNumber { get; private set; }
+
+    /// <summary>原题 PDF 相对路径，如 /papers/ENG1/{paperId}.paper.pdf</summary>
+    public string? PaperFileUrl { get; private set; }
+
+    /// <summary>解析 PDF 相对路径，如 /papers/ENG1/{paperId}.answer.pdf</summary>
+    public string? AnswerFileUrl { get; private set; }
+
     public DateTime CreationTime { get; init; }
 
     private ExamPaper() { }
@@ -58,6 +65,18 @@ public class ExamPaper : IEntity, ICreationTime
     public ExamPaper Hide()
     {
         IsVisible = false;
+        return this;
+    }
+
+    public ExamPaper SetPaperFileUrl(string? url)
+    {
+        PaperFileUrl = url;
+        return this;
+    }
+
+    public ExamPaper SetAnswerFileUrl(string? url)
+    {
+        AnswerFileUrl = url;
         return this;
     }
 }

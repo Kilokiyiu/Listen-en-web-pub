@@ -113,6 +113,7 @@ import { getDailyArticle, markArticleRead, toggleFavorite as toggleFavoriteApi }
 import { useAudioPlayer } from '../composables/useAudioPlayer.js'
 import { recordStudyActivity } from '../api/Study.js'
 import { trackEvent } from '../api/Analytics.js'
+import { promptFeedbackGift } from '../utils/promptFeedbackGift.js'
 import SectionSubNav from '../components/SectionSubNav.vue'
 import { readingTabs } from '../utils/sectionTabs'
 import dayjs from 'dayjs'
@@ -240,6 +241,12 @@ const markAsRead = async () => {
       /* study record is best-effort */
     }
     ElMessage.success('已标记为已读')
+    const title = article.value.titleChinese || article.value.titleEnglish || '每日短文'
+    promptFeedbackGift({
+      source: `每日短文 · ${title}`,
+      context: title,
+      delayMs: 600,
+    })
   } catch (e) {
     // 错误已在拦截器中处理
   }

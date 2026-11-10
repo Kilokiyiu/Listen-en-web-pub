@@ -5,14 +5,16 @@ export default defineConfig({
   plugins: [vue()],
   server: {
     proxy: {
+      // 本地无 Word/Identity 服务时，开发期代理到线上便于预览
       '/api/identity': {
-        target: 'http://localhost:5263',
+        target: 'https://your-domain.com',
         changeOrigin: true,
+        secure: true,
       },
       '/api/word': {
-        target: 'http://localhost:5215',
+        target: 'https://your-domain.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/word/, ''),
+        secure: true,
       },
     },
   },

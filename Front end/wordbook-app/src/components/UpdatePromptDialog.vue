@@ -10,7 +10,19 @@
         <p class="version">
           {{ localVersion }} → <strong>{{ remote?.versionName }}</strong>
         </p>
-        <p v-if="remote?.changelog" class="changelog">{{ remote.changelog }}</p>
+        <p v-if="remote?.changelog" class="changelog">
+          <template v-for="(part, i) in changelogParts" :key="i">
+            <a
+              v-if="part.type === 'link'"
+              class="changelog-link"
+              :href="part.value"
+              target="_blank"
+              rel="noopener noreferrer"
+              @click.prevent="openExternalUrl(part.value)"
+            >{{ part.value }}</a>
+            <template v-else>{{ part.value }}</template>
+          </template>
+        </p>
         <p v-else class="changelog muted">建议更新到最新版本以获得更好体验。</p>
         <p v-if="downloading" class="progress">下载中 {{ progress }}%</p>
         <div class="actions">
@@ -38,7 +50,10 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed } from 'vue'
+import { openExternalUrl, splitLinkParts } from '../utils/linkify'
+
+const props = defineProps({
   visible: { type: Boolean, default: false },
   remote: { type: Object, default: null },
   localVersion: { type: String, default: '' },
@@ -47,6 +62,8 @@ defineProps({
 })
 
 defineEmits(['later', 'update'])
+
+const changelogParts = computed(() => splitLinkParts(props.remote?.changelog))
 </script>
 
 <style scoped>
@@ -98,6 +115,14 @@ defineEmits(['later', 'update'])
   white-space: pre-line;
   max-height: 160px;
   overflow-y: auto;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.changelog-link {
+  color: var(--primary);
+  text-decoration: underline;
+  word-break: break-all;
 }
 
 .changelog.muted {

@@ -1,4 +1,11 @@
 import request from './Request'
+import {
+  isMockAlbum,
+  mockAlbum,
+  mockEpisodes,
+  mockQuizPaper,
+  mockSubmitQuiz,
+} from '../utils/mockListeningQuiz.js'
 
 const CACHE_KEY = 'listenease_cache'
 const CACHE_EXPIRE = 5 * 60 * 1000 // 缓存5分钟
@@ -55,20 +62,28 @@ export const getAlbumsByCategoryId = (categoryId) => {
 }
 
 // 获取试卷详情（含试卷/答案 PDF 地址）
-export const getAlbumById = (albumId) =>
-  request.get('/Listen/GetAlbumById', { params: { albumId } })
+export const getAlbumById = (albumId) => {
+  if (isMockAlbum(albumId)) return Promise.resolve(mockAlbum)
+  return request.get('/Listen/GetAlbumById', { params: { albumId } })
+}
 
 // 获取试卷下的所有题目（音频）
-export const getEpisodesByAlbumId = (albumId) =>
-  request.get('/Listen/GetEpisodesByAlbumId', { params: { albumId } })
+export const getEpisodesByAlbumId = (albumId) => {
+  if (isMockAlbum(albumId)) return Promise.resolve(mockEpisodes)
+  return request.get('/Listen/GetEpisodesByAlbumId', { params: { albumId } })
+}
 
 /** 听力在线单选题（不含答案） */
-export const getQuizByAlbumId = (albumId) =>
-  request.get('/Listen/GetQuizByAlbumId', { params: { albumId } })
+export const getQuizByAlbumId = (albumId) => {
+  if (isMockAlbum(albumId)) return Promise.resolve(mockQuizPaper)
+  return request.get('/Listen/GetQuizByAlbumId', { params: { albumId } })
+}
 
 /** 提交听力答题并获取判分与正确答案（可按 section） */
-export const submitQuiz = (albumId, answers, sectionId) =>
-  request.post('/Listen/SubmitQuiz', { albumId, sectionId: sectionId || null, answers })
+export const submitQuiz = (albumId, answers, sectionId) => {
+  if (isMockAlbum(albumId)) return mockSubmitQuiz(albumId, answers, sectionId)
+  return request.post('/Listen/SubmitQuiz', { albumId, sectionId: sectionId || null, answers })
+}
 
 // 清除缓存
 export const clearCache = () => {

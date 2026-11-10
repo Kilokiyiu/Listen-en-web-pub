@@ -2,9 +2,7 @@
   <header class="app-header">
     <div class="header-inner">
       <div class="logo" @click="router.push('/')">
-        <div class="logo-icon">
-          <el-icon :size="18"><Headset /></el-icon>
-        </div>
+        <div class="logo-icon" aria-hidden="true">听</div>
         <span class="logo-text">ListenEase</span>
       </div>
 
@@ -16,13 +14,24 @@
           type="button"
           class="nav-link"
           :class="{ active: isNavActive(link) }"
-          @click="router.push(link.path)"
+          @click="goNav(link.path)"
         >
           {{ link.label }}
         </button>
       </nav>
 
       <div class="header-actions">
+        <button
+          type="button"
+          class="action-chip action-chip--search"
+          :class="{ active: route.name === 'paperSearch' }"
+          aria-label="搜索试卷"
+          @click="goSearch"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <span class="hide-mobile">搜索</span>
+        </button>
+
         <button
           type="button"
           class="action-chip"
@@ -39,7 +48,7 @@
           aria-label="通知"
           @click="announcementVisible = true"
         >
-          <el-icon :size="16"><BellFilled /></el-icon>
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6V11a6 6 0 1 0-12 0v5l-2 2v1h16v-1l-2-2z"/></svg>
         </button>
 
         <template v-if="!isLoggedIn">
@@ -55,37 +64,30 @@
           </button>
         </template>
 
-        <el-dropdown v-else trigger="click" @command="handleCommand">
-          <button type="button" class="user-btn">
-            <el-avatar :size="32" :icon="UserFilled" />
+        <div v-else class="user-menu">
+          <button type="button" class="user-btn" @click="userMenuOpen = !userMenuOpen">
+            <span class="user-avatar">{{ avatarLetter }}</span>
             <span class="username hide-mobile">{{ username }}</span>
-            <el-icon class="hide-mobile"><ArrowDown /></el-icon>
           </button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="profile">个人中心 / 学习记录</el-dropdown-item>
-              <el-dropdown-item command="wordRoots">词根学习</el-dropdown-item>
-              <el-dropdown-item command="myWords">我的单词本</el-dropdown-item>
-              <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+          <div v-if="userMenuOpen" class="user-menu__list">
+            <button type="button" @click="handleCommand('profile')">个人中心 / 学习记录</button>
+            <button type="button" @click="handleCommand('wordRoots')">词根学习</button>
+            <button type="button" @click="handleCommand('myWords')">我的单词本</button>
+            <button type="button" @click="handleCommand('logout')">退出登录</button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <el-dialog
-      v-model="announcementVisible"
-      title="平台公告"
-      width="520px"
-      append-to-body
-      class="announcement-dialog"
-      @closed="markAnnouncementSeen"
-    >
+    <Teleport to="body">
+    <div v-if="announcementVisible" class="announce-modal" @click.self="closeAnnouncement">
+      <div class="announce-modal__panel" role="dialog" aria-label="平台公告">
+        <h3>平台公告</h3>
       <div v-if="siteStatus" class="site-status-card" :class="`site-status-card--${siteStatusClass}`">
         <div class="site-status-card__head">
           <span class="site-status-dot" />
           <strong>{{ siteStatus.statusText || '网站运行正常' }}</strong>
-          <el-tag size="small" effect="plain" :type="siteStatusTagType">{{ siteStatusLabel }}</el-tag>
+          <span class="status-pill">{{ siteStatusLabel }}</span>
         </div>
         <p v-if="siteStatus.extraInfo" class="site-status-card__extra">{{ siteStatus.extraInfo }}</p>
         <p class="site-status-card__meta">
@@ -98,33 +100,40 @@
         <article v-for="item in announcements" :key="item.id || item.title" class="announcement-item">
           <div class="announcement-item__meta">
             <time>{{ item.date }}</time>
-            <el-tag v-if="item.isPinned" size="small" type="warning" effect="plain">置顶</el-tag>
+            <span v-if="item.isPinned" class="status-pill">置顶</span>
           </div>
           <h4>{{ item.title }}</h4>
           <p>{{ item.content }}</p>
         </article>
-        <el-empty
-          v-if="!announcementLoading && announcements.length === 0"
-          description="暂无公告"
-          :image-size="64"
-        />
+        <p v-if="!announcementLoading && announcements.length === 0">暂无公告</p>
       </div>
       <div class="announcement-footer">
-        <el-checkbox v-model="noShowToday">今日不再显示</el-checkbox>
+        <label><input v-model="noShowToday" type="checkbox" /> 今日不再显示</label>
+        <button type="button" class="action-chip" @click="closeAnnouncement">关闭</button>
       </div>
-    </el-dialog>
+      </div>
+    </div>
+    </Teleport>
   </header>
 </template>
 
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { BellFilled, UserFilled, ArrowDown } from '@element-plus/icons-vue'
 import { getAnnouncementBoard } from '../api/Announcement'
 
 const router = useRouter()
 const route = useRoute()
+
+const goNav = (path) => {
+  if (route.path === path) return
+  router.push(path).catch(() => {})
+}
+
+const goSearch = () => {
+  if (route.name === 'paperSearch') return
+  router.push({ name: 'paperSearch' }).catch(() => {})
+}
 
 const ANNOUNCE_DATE_KEY = 'announcement_last_shown_date'
 const ANNOUNCE_VERSION_KEY = 'announcement_board_version'
@@ -153,6 +162,8 @@ const serverTime = ref('')
 
 const isLoggedIn = ref(false)
 const username = ref('')
+const userMenuOpen = ref(false)
+const avatarLetter = computed(() => (username.value || '用').slice(0, 1))
 
 const siteStatusClass = computed(() => {
   const s = (siteStatus.value?.status || 'Normal').toLowerCase()
@@ -168,14 +179,12 @@ const siteStatusLabel = computed(() => {
   return '正常'
 })
 
-const siteStatusTagType = computed(() => {
-  const s = siteStatus.value?.status || 'Normal'
-  if (s === 'Maintenance') return 'danger'
-  if (s === 'Notice') return 'warning'
-  return 'success'
-})
-
 const serverTimeText = computed(() => formatStatusTime(serverTime.value, true))
+
+const closeAnnouncement = () => {
+  announcementVisible.value = false
+  markAnnouncementSeen()
+}
 
 const todayKey = () => {
   const d = new Date()
@@ -242,12 +251,12 @@ onMounted(() => {
 watch(() => route.path, checkLogin)
 
 const handleCommand = (cmd) => {
+  userMenuOpen.value = false
   if (cmd === 'logout') {
     localStorage.removeItem('token')
     localStorage.removeItem('username')
     localStorage.removeItem('userId')
     isLoggedIn.value = false
-    ElMessage.success('已退出登录')
     router.push('/')
     return
   }
@@ -385,6 +394,13 @@ const handleCommand = (cmd) => {
 .action-chip--icon {
   width: 32px;
   padding: 0;
+  color: var(--le-primary);
+  border-color: rgba(37, 99, 235, 0.35);
+  background: var(--le-gradient-soft);
+}
+
+.action-chip--search {
+  gap: 6px;
   color: var(--le-primary);
   border-color: rgba(37, 99, 235, 0.35);
   background: var(--le-gradient-soft);
@@ -557,5 +573,85 @@ const handleCommand = (cmd) => {
   .action-chip--register {
     padding: 0 12px;
   }
+}
+
+.user-menu {
+  position: relative;
+}
+
+.user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--le-primary);
+  color: #fff;
+  font-size: 14px;
+}
+
+.user-menu__list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 30;
+  min-width: 180px;
+  padding: 6px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+.user-menu__list button {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.user-menu__list button:hover {
+  background: var(--le-bg-muted);
+}
+
+.announce-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(30, 41, 59, 0.35);
+}
+
+.announce-modal__panel {
+  width: min(520px, 100%);
+  max-height: min(80vh, 720px);
+  overflow: auto;
+  padding: 20px;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #eef2f7;
+  font-size: 12px;
+  line-height: 22px;
+}
+
+.announcement-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 </style>

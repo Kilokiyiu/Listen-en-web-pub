@@ -7,10 +7,10 @@
   >
     <div class="filter-bar le-paper-flip">
       <el-radio-group v-model="category">
-        <el-radio-button label="">全部</el-radio-button>
-        <el-radio-button label="cet4">四级</el-radio-button>
-        <el-radio-button label="cet6">六级</el-radio-button>
-        <el-radio-button label="kaoyan">考研</el-radio-button>
+        <el-radio-button value="">全部</el-radio-button>
+        <el-radio-button value="cet4">四级</el-radio-button>
+        <el-radio-button value="cet6">六级</el-radio-button>
+        <el-radio-button value="kaoyan">考研</el-radio-button>
       </el-radio-group>
       <el-button text type="primary" @click="$router.push({ name: 'myWords' })">
         我的书架 →
@@ -241,7 +241,7 @@ onMounted(load)
   position: relative;
   height: 250px;
   transform-origin: left bottom;
-  transition: transform 0.25s ease, filter 0.25s ease;
+  transition: transform 0.2s ease;
   filter: drop-shadow(0 8px 12px rgba(30, 41, 59, 0.12));
 }
 

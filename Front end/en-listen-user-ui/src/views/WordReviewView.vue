@@ -42,6 +42,13 @@
         :class="{ flipped: isFlipped }"
         @click="flipCard"
       >
+        <button
+          type="button"
+          class="fav-btn"
+          :class="{ on: currentWord.isFavorite }"
+          :aria-label="currentWord.isFavorite ? '取消收藏' : '加入收藏'"
+          @click.stop="toggleFav"
+        >{{ currentWord.isFavorite ? '★' : '☆' }}</button>
         <!-- 正面 -->
         <div class="card-face card-front">
           <div class="word-display">{{ currentWord.word }}</div>
@@ -131,8 +138,15 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getDueWords, getRandomWords, reviewWord, getCurrentWordBookId } from '../api/Word.js'
+import {
+  getDueWords,
+  getRandomWords,
+  reviewWord,
+  toggleFavoriteWord,
+  getCurrentWordBookId,
+} from '../api/Word.js'
 import { trackEvent } from '../api/Analytics.js'
+import { promptFeedbackGift } from '../utils/promptFeedbackGift.js'
 import SectionSubNav from '../components/SectionSubNav.vue'
 import { wordsTabs } from '../utils/sectionTabs'
 
@@ -164,6 +178,11 @@ const trackFinishIfNeeded = () => {
   if (!isComplete.value || dueWords.value.length === 0) return
   finishReviewTracked.value = true
   trackEvent('finish_review', '/word-review')
+  promptFeedbackGift({
+    source: isFreeReview.value ? '单词复习 · 自由复习' : '单词复习 · 今日复习',
+    context: isFreeReview.value ? '本轮单词复习' : '今日单词复习',
+    delayMs: 700,
+  })
 }
 
 const loadDueWords = async () => {
@@ -194,6 +213,18 @@ const loadDueWords = async () => {
 
 const flipCard = () => {
   isFlipped.value = !isFlipped.value
+}
+
+const toggleFav = async () => {
+  const word = currentWord.value
+  if (!word) return
+  try {
+    const res = await toggleFavoriteWord(word.id)
+    word.isFavorite = !!res?.isFavorite
+    ElMessage.success(word.isFavorite ? '已加入收藏' : '已取消收藏')
+  } catch (e) {
+    console.error(e)
+  }
 }
 
 const rateWord = async (quality) => {
@@ -325,6 +356,28 @@ onMounted(() => {
   perspective: 1000px;
   cursor: pointer;
   margin-bottom: 32px;
+  position: relative;
+}
+
+.fav-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--text-muted, #94a3b8);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.12);
+}
+
+.fav-btn.on {
+  color: #f59e0b;
 }
 
 .card-face {

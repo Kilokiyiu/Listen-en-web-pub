@@ -14,7 +14,7 @@ export function getVersionManifestUrl() {
 
 export async function getLocalAppInfo() {
   if (!Capacitor.isNativePlatform()) {
-    return { version: '0.9.10', build: '12', id: 'web' }
+    return { version: '0.9.16', build: '18', id: 'web' }
   }
   const info = await App.getInfo()
   return {
@@ -25,10 +25,15 @@ export async function getLocalAppInfo() {
 }
 
 export async function fetchRemoteVersion() {
-  const url = `${getVersionManifestUrl()}?t=${Date.now()}`
+  // params + 防缓存头：避免 Android CapacitorHttp 复用旧 version.json（旧 changelog）
   const res = await CapacitorHttp.get({
-    url,
-    headers: { Accept: 'application/json' },
+    url: getVersionManifestUrl(),
+    params: { t: String(Date.now()), v: '2' },
+    headers: {
+      Accept: 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      Pragma: 'no-cache',
+    },
     connectTimeout: 15000,
     readTimeout: 15000,
   })
@@ -55,30 +60,49 @@ export async function checkForUpdate() {
   return { local, remote, hasUpdate }
 }
 
+/**
+ * 流式下载到缓存目录，带真实进度（避免 CapacitorHttp 整包进内存导致假进度卡在 5%）
+ */
 async function downloadApkToCache(apkUrl, onProgress) {
-  onProgress?.(5)
-  const res = await CapacitorHttp.get({
-    url: apkUrl,
-    responseType: 'blob',
-    connectTimeout: 30000,
-    readTimeout: 300000,
-  })
-  if (res.status < 200 || res.status >= 300) {
-    throw new Error('下载安装包失败')
+  onProgress?.(1)
+  try {
+    await Filesystem.deleteFile({
+      path: UPDATE_APK_NAME,
+      directory: Directory.Cache,
+    })
+  } catch {
+    // 首次下载无旧文件
   }
-  onProgress?.(70)
 
-  const raw = res.data
-  const base64 = typeof raw === 'string' ? raw.replace(/^data:[^;]+;base64,/, '') : null
-  if (!base64) throw new Error('安装包数据无效')
-
-  await Filesystem.writeFile({
-    path: UPDATE_APK_NAME,
-    data: base64,
-    directory: Directory.Cache,
+  let lastPct = 1
+  const progressHandle = await Filesystem.addListener('progress', (status) => {
+    if (!status?.lengthComputable || !status.contentLength) {
+      lastPct = Math.min(90, lastPct + 1)
+      onProgress?.(lastPct)
+      return
+    }
+    // 1–95% 留给下载，末尾留给取 uri
+    const pct = Math.min(95, Math.max(1, Math.round((status.bytes / status.contentLength) * 94) + 1))
+    if (pct > lastPct) {
+      lastPct = pct
+      onProgress?.(pct)
+    }
   })
-  onProgress?.(90)
 
+  try {
+    await Filesystem.downloadFile({
+      url: apkUrl,
+      path: UPDATE_APK_NAME,
+      directory: Directory.Cache,
+      progress: true,
+    })
+  } catch (e) {
+    throw new Error(e?.message || '下载安装包失败')
+  } finally {
+    await progressHandle.remove()
+  }
+
+  onProgress?.(98)
   const { uri } = await Filesystem.getUri({
     path: UPDATE_APK_NAME,
     directory: Directory.Cache,

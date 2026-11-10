@@ -107,7 +107,7 @@
               :label="`选项 ${String.fromCharCode(65 + oIdx)}`"
             >
               <div class="opt-row">
-                <el-radio v-model="q.correctAnswer" :label="oIdx">正确答案</el-radio>
+                <el-radio v-model="q.correctAnswer" :value="oIdx">正确答案</el-radio>
                 <el-input v-model="q.options[oIdx]" :placeholder="`${String.fromCharCode(65 + oIdx)}) ...`" />
               </div>
             </el-form-item>
